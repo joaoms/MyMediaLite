@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Tests</RootNamespace>
     <AssemblyName>Tests</AssemblyName>
-    <ReleaseVersion>3.06</ReleaseVersion>
+    <ReleaseVersion>3.07</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -86,6 +86,8 @@
     <Compile Include="RatingPrediction\SigmoidItemAsymmetricFactorModelTest.cs" />
     <Compile Include="RatingPrediction\SigmoidCombinedAsymmetricFactorModelTest.cs" />
     <Compile Include="MulticoreTest.cs" />
+    <Compile Include="RatingPrediction\ExternalRatingPredictorTest.cs" />
+    <Compile Include="Eval\ItemsTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Core" />

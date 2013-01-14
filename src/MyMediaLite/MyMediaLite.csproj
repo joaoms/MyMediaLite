@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>MyMediaLite</RootNamespace>
     <AssemblyName>MyMediaLite</AssemblyName>
-    <ReleaseVersion>3.06</ReleaseVersion>
+    <ReleaseVersion>3.07</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -37,7 +37,7 @@
     <Reference Include="MathNet.Numerics, Version=2011.4.17.0, Culture=neutral, PublicKeyToken=cd8b63ad3d691a37">
       <HintPath>..\..\lib\MathNet\MathNet.Numerics.dll</HintPath>
     </Reference>
-    <Reference Include="C5">
+    <Reference Include="C5, Version=1.1.1.0, Culture=neutral, PublicKeyToken=06a1b38866503b69">
       <HintPath>..\..\lib\C5\C5.dll</HintPath>
     </Reference>
   </ItemGroup>
@@ -155,14 +155,6 @@
     <Compile Include="ItemRecommendation\Extensions.cs" />
     <Compile Include="Eval\ItemRecommendationEvaluationResults.cs" />
     <Compile Include="Eval\RatingPredictionEvaluationResults.cs" />
-    <Compile Include="Eval\Groups.cs" />
-    <Compile Include="GroupRecommendation\Average.cs" />
-    <Compile Include="GroupRecommendation\GroupRecommender.cs" />
-    <Compile Include="GroupRecommendation\IGroupRecommender.cs" />
-    <Compile Include="GroupRecommendation\Maximum.cs" />
-    <Compile Include="GroupRecommendation\Minimum.cs" />
-    <Compile Include="GroupRecommendation\PairwiseWins.cs" />
-    <Compile Include="GroupRecommendation\WeightedAverage.cs" />
     <Compile Include="RatingPrediction\CoClustering.cs" />
     <Compile Include="Data\Extensions.cs" />
     <Compile Include="DataType\SymmetricMatrix.cs" />
@@ -220,7 +212,6 @@
     <Compile Include="IIncrementalRecommender.cs" />
     <Compile Include="Random.cs" />
     <Compile Include="RecommenderParameters.cs" />
-    <Compile Include="GroupRecommendation\Extensions.cs" />
     <Compile Include="Handlers.cs" />
     <Compile Include="Memory.cs" />
     <Compile Include="MultiCore.cs" />
@@ -248,6 +239,11 @@
     <Compile Include="ItemRecommendation\SLIM.cs" />
     <Compile Include="ItemRecommendation\LeastSquareSLIM.cs" />
     <Compile Include="Eval\EvaluationResults.cs" />
+    <Compile Include="INeedsMappings.cs" />
+    <Compile Include="RatingPrediction\ExternalRatingPredictor.cs" />
+    <Compile Include="ItemRecommendation\ExternalItemRecommender.cs" />
+    <Compile Include="RatingPrediction\GSVDPlusPlus.cs" />
+    <Compile Include="Eval\RatingBasedRankingCrossValidation.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <ItemGroup>
