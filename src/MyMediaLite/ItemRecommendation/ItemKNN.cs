@@ -59,18 +59,6 @@ namespace MyMediaLite.ItemRecommendation
 			updated_neighbors_count = new List<int>();
 		}
 
-		/// <summary>
-		/// Adds the item.
-		/// </summary>
-		/// <param name='item_id'>
-		/// Item_id.
-		/// </param>
-		protected override void AddItem(int item_id)
-		{
-			base.AddItem(item_id);
-			ResizeNearestNeighbors(item_id + 1);
-		}
-		
 		///
 		protected override void AddItem(int item_id)
 		{
@@ -189,7 +177,7 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		///
-		private void RecalculateNeighbors(IEnumerable<int> new_items)
+		private int RecalculateNeighbors(IEnumerable<int> new_items)
 		{
 			float min;
 			var retrain_items = new HashSet<int>(); 
