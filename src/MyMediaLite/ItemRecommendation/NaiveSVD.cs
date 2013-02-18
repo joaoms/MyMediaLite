@@ -103,6 +103,14 @@ namespace MyMediaLite.ItemRecommendation
 			return result;
 		}
 		
+		///
+		public override string ToString()
+		{
+			return string.Format(
+				CultureInfo.InvariantCulture,
+				"NaiveSVD num_factors={0} regularization={1} learn_rate={2} num_iter={3}",
+				NumFactors, Regularization, LearnRate, NumIter);
+		}
 
 
 	}
