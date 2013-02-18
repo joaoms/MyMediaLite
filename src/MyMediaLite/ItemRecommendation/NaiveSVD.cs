@@ -36,13 +36,12 @@ namespace MyMediaLite.ItemRecommendation
 
 		public NaiveSVD ()
 		{
-			NumFactors = 200;
 		}
 
 		///
 		public override void Iterate()
 		{
-			Console.WriteLine("Iteration");
+			//Console.Write(" .");
 			Iterate(true, true);
 		}
 
