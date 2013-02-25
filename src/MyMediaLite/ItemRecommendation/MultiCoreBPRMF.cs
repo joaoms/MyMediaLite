@@ -71,30 +71,5 @@ namespace MyMediaLite.ItemRecommendation
 				this.GetType().Name, num_factors, BiasReg, reg_u, reg_i, reg_j, NumIter, learn_rate, UniformUserSampling, WithReplacement, UpdateJ, MaxThreads);
 		}
 
-		~MultiCoreBPRMF()
-		{
-			double sum_total = 0;
-			double max_total = 0;
-			int reg_ct;
-			
-			Console.WriteLine("Registry count:" + (reg_ct = update_times.Count));
-			Console.WriteLine();
-			
-			for(int i = 0; i < reg_ct; i++)
-			{
-				TimeSpan tt_upd_time = update_times[i];
-				
-				max_total = Math.Max(max_total, tt_upd_time.TotalMilliseconds);
-				sum_total += tt_upd_time.TotalMilliseconds;
-				
-				Console.WriteLine(tt_upd_time.TotalMilliseconds);
-			}
-			Console.WriteLine();
-			
-			Console.WriteLine("Avg update time: " + sum_total/reg_ct);
-			Console.WriteLine("Max update time: " + max_total);
-			
-
-		}
 	}
 }
