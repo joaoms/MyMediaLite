@@ -72,6 +72,9 @@ namespace MyMediaLite.ItemRecommendation
 		/// <param name="update_item">true if item factors to be updated</param>
 		protected virtual void Iterate(bool update_user, bool update_item)
 		{
+			//TODO: respeitar sequencia original
+			// ou não: o objetivo é ter uma sequência diferente por cada iteração.
+			// só se aplica ao treino inicial
 			var indexes = Feedback.RandomIndex;
 			foreach (int index in indexes)
 			{
