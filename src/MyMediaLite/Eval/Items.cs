@@ -91,7 +91,10 @@ namespace MyMediaLite.Eval
 			IList<int> candidate_items = null,
 			CandidateItems candidate_item_mode = CandidateItems.OVERLAP,
 			RepeatedEvents repeated_events = RepeatedEvents.No,
-			int n = -1)
+			int n = -1,
+			// To remove
+			IMapping user_mapping = null,
+			IMapping item_mapping = null)
 		{
 			switch (candidate_item_mode)
 			{
@@ -131,8 +134,9 @@ namespace MyMediaLite.Eval
 					var prediction = recommender.Recommend(user_id, candidate_items:candidate_items, n:n, ignore_items:ignore_items_for_this_user);
 					var prediction_list = (from t in prediction select t.Item1).ToArray();
 					// To remove
-					for (int ii = 0; ii < 20; ii++)
-						Console.WriteLine(prediction_list[ii]);
+					if(prediction_list.Length > 0)
+					    for (int ii = 0; ii < Math.Min(prediction_list.Length, 20); ii++)
+						Console.WriteLine(item_mapping.ToOriginalID(prediction_list[ii]));
 
 					int num_dropped_items = num_candidates_for_this_user - prediction.Count;
 					double auc  = AUC.Compute(prediction_list, correct_items, num_dropped_items);
