@@ -42,9 +42,7 @@ namespace MyMediaLite.Eval
 			IPosOnlyFeedback test, IPosOnlyFeedback training,
 			IList<int> test_users, IList<int> candidate_items,
 			CandidateItems candidate_item_mode,
-			// To remove
-			IMapping user_mapping = null,
-			IMapping item_mapping = null)
+			int n = -1)
 		{
 			var incremental_recommender = recommender as IIncrementalItemRecommender;
 			if (incremental_recommender == null)
@@ -93,10 +91,10 @@ namespace MyMediaLite.Eval
 				if (test_users.Contains(users[index]) && candidate_items.Contains(items[index]))
 				{
 					// evaluate user
-					Console.WriteLine("\n" + user_mapping.ToOriginalID(users[index]) + " " + item_mapping.ToOriginalID(items[index]));
+					Console.WriteLine("\n" + users[index] + " " + items[index]);
 					var current_test = new PosOnlyFeedback<SparseBooleanMatrix>();
 					current_test.Add(users[index], items[index]);
-					var current_result = Items.Evaluate(recommender, current_test, training, current_test.AllUsers, candidate_items, candidate_item_mode, RepeatedEvents.No, -1, user_mapping, item_mapping);
+					var current_result = Items.Evaluate(recommender, current_test, training, current_test.AllUsers, candidate_items, candidate_item_mode, RepeatedEvents.No, n);
 
 					if (current_result["num_users"] == 1)
 						if (results_by_user.ContainsKey(users[index]))
