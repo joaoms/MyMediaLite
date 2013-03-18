@@ -5,26 +5,26 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{E1ECFAE9-E3D8-4567-8FA9-536A50F1C531}</ProjectGuid>
+    <ProjectGuid>{0A94ED78-4D40-44E0-8C99-F64CC9A8BC20}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>ItemRecommendation</RootNamespace>
-    <AssemblyName>item_recommendation</AssemblyName>
-    <ReleaseVersion>3.06</ReleaseVersion>
-    <StartupObject>ItemRecommendation</StartupObject>
+    <RootNamespace>OnlineEvaluator</RootNamespace>
+    <AssemblyName>OnlineEvaluator</AssemblyName>
+    <ReleaseVersion>3.07</ReleaseVersion>
+    <StartupObject>OnlineEvaluator</StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>True</Optimize>
+    <Optimize>False</Optimize>
     <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG</DefineConstants>
+    <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Externalconsole>True</Externalconsole>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
-    <Optimize>False</Optimize>
+    <Optimize>True</Optimize>
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -36,18 +36,14 @@
     <Reference Include="System.Data" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ItemRecommendation.cs" />
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="OnlineEvaluator.cs" />
   </ItemGroup>
-  <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <ProjectReference Include="..\..\MyMediaLite\MyMediaLite.csproj">
       <Project>{73424F09-BEEA-4992-B116-5F123496F5D3}</Project>
       <Name>MyMediaLite</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CommandLineProgram\CommandLineProgram.csproj">
-      <Project>{CF099BD4-46D6-4FB0-B42B-641A1F829241}</Project>
-      <Name>CommandLineProgram</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

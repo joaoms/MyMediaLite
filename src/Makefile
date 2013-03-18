@@ -7,6 +7,8 @@ all: ../lib/mymedialite
 	cp -r Programs/RatingPrediction/bin/Debug/*.exe ../lib/mymedialite
 	cp -r Programs/RatingBasedRanking/bin/Debug/*.mdb ../lib/mymedialite
 	cp -r Programs/RatingBasedRanking/bin/Debug/*.exe ../lib/mymedialite
+	cp -r Programs/OnlineEvaluator/bin/Debug/*.exe ../lib/mymedialite
+	cp -r Programs/OnlineEvaluator/bin/Debug/*.mdb ../lib/mymedialite
 
 ../lib/mymedialite:
 	mkdir ../lib/mymedialite
