@@ -118,14 +118,14 @@ namespace MyMediaLite.ItemRecommendation
 		public override void AddFeedback(ICollection<Tuple<int, int>> feedback)
 		{
 			base.AddFeedback(feedback);
-			//Retrain(feedback);
+			Retrain(feedback);
 		}
 		
 		///
 		public override void RemoveFeedback(ICollection<Tuple<int, int>> feedback)
 		{
 			base.RemoveFeedback(feedback);
-			//Retrain(feedback);
+			Retrain(feedback);
 		}
 		
 		void Retrain(ICollection<Tuple<int, int>> feedback)
