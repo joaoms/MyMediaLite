@@ -94,7 +94,7 @@ class OnlineEvaluator
 			// update recommender
 			var tuple = Tuple.Create(tu, ti);
 			recommender.AddFeedback(new Tuple<int, int>[]{ tuple });
-			if(i % 10000)
+			if(i % 10000 == 0)
 				System.GC.Collect();
 		}
 
