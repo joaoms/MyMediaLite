@@ -161,6 +161,11 @@ class OnlineCrossval
 		dict.Add("MAP", new List<double>());
 		dict.Add("AUC", new List<double>());
 		dict.Add("NDCG", new List<double>());
+		Console.Write(param_name + "\t");
+		foreach(var measure in dict)
+			Console.Write(measure.Key + "\t");
+		Console.WriteLine();
+
 		return dict;
 	}
 
@@ -172,11 +177,6 @@ class OnlineCrossval
 
 		//Compute and print averages
 		//Console.WriteLine();
-
-		Console.Write(param_name + "\t");
-		foreach(var measure in measures)
-			Console.Write(measure.Key + "\t");
-		Console.WriteLine();
 
 		Console.Write(param_val + "\t");
 		foreach (var measure in measures)
