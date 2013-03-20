@@ -142,7 +142,7 @@ class OnlineCrossval
 				if(i % 5000 == 0)
 					System.GC.Collect();
 			}
-			WriteResults(measures);
+			WriteResults(param_val, measures);
 		});
 
 	}
@@ -164,7 +164,7 @@ class OnlineCrossval
 		return dict;
 	}
 
-	private void WriteResults(IDictionary<string, IList<double>> measures)
+	private void WriteResults(string param_val, IDictionary<string, IList<double>> measures)
 	{
 		//string[] metrics = new string[]{"recall@1","recall@5","recall@10","MAP","AUC","NDCG"};
 		//int count = measures[metrics[0]].Count;
@@ -172,6 +172,8 @@ class OnlineCrossval
 
 		//Compute and print averages
 		//Console.WriteLine();
+
+		Console.Write(param_val + "\t");
 		foreach (var measure in measures)
 		{
 			double score = Math.Round(measure.Value.Average(), 5);
