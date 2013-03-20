@@ -159,7 +159,7 @@ class OnlineCrossval
 		//Console.WriteLine();
 		foreach (var measure in measures)
 		{
-			double score = measure.Value.Sum() / measure.Value.Count;
+			double score = Math.Round(measure.Value.Average(), 5);
 			Console.Write(score + "\t");
 		}
 		Console.WriteLine();
