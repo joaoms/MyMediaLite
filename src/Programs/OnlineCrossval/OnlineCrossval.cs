@@ -186,7 +186,7 @@ class OnlineCrossval
 		double spl = -1;
 		try 
 		{
-			spl = Double.Parse(split);
+			spl = Double.Parse(split, System.Globalization.CultureInfo.InvariantCulture);
 		} 
 		catch(Exception) 
 		{
