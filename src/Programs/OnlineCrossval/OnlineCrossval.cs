@@ -173,6 +173,11 @@ class OnlineCrossval
 		//Compute and print averages
 		//Console.WriteLine();
 
+		Console.Write(param_name + "\t");
+		foreach(var measure in measures)
+			Console.Write(measure.Key + "\t");
+		Console.WriteLine();
+
 		Console.Write(param_val + "\t");
 		foreach (var measure in measures)
 		{
