@@ -42,6 +42,7 @@ class OnlineCrossval
 	IList<int> candidate_items;
 	string param_name;
 	string[] param_values;
+	ParallelOptions parallel_opts = new ParallelOptions() { MaxDegreeOfParallelism = 4 };
 
 	public OnlineCrossval(string[] args)
 	{
@@ -79,7 +80,7 @@ class OnlineCrossval
 	
 	private void Run()
 	{
-		Parallel.ForEach(param_values, param_val => {
+		Parallel.ForEach(param_values, parallel_opts, param_val => {
 
 			var measures = InitMeasures();
 
