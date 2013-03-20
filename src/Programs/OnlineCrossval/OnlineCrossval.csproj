@@ -5,11 +5,10 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{7180F796-4365-498D-87AA-4A6F8DE42A1D}</ProjectGuid>
+    <ProjectGuid>{243FFC4C-54AB-4D50-938C-3BA1106BD7D5}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>RatingBasedRanking</RootNamespace>
-    <AssemblyName>rating_based_ranking</AssemblyName>
-    <ReleaseVersion>3.06</ReleaseVersion>
+    <RootNamespace>OnlineCrossval</RootNamespace>
+    <AssemblyName>OnlineCrossval</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -23,7 +22,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -31,24 +30,18 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="RatingBasedRanking.cs" />
+    <Compile Include="OnlineCrossval.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\RatingPrediction\RatingPrediction.csproj">
-      <Project>{7DCAB3F3-B687-4589-80F6-76F8BECBC6F8}</Project>
-      <Name>RatingPrediction</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\MyMediaLite\MyMediaLite.csproj">
       <Project>{73424F09-BEEA-4992-B116-5F123496F5D3}</Project>
       <Name>MyMediaLite</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CommandLineProgram\CommandLineProgram.csproj">
-      <Project>{CF099BD4-46D6-4FB0-B42B-641A1F829241}</Project>
-      <Name>CommandLineProgram</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>
