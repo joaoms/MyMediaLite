@@ -68,8 +68,6 @@ class OnlineCrossval
 		if(args.Length > 7) n_recs = Int32.Parse(args[8]);
 
 		candidate_items = new List<int>(all_data.AllItems);
-
-
 	}
 
 	public static void Main(string[] args)
@@ -80,6 +78,7 @@ class OnlineCrossval
 	
 	private void Run()
 	{
+		Console.WriteLine(param_name + "\trecall@1\trecall@5\trecall@10\tMAP\tAUC\tNDCG");
 		Parallel.ForEach(param_values, parallel_opts, param_val => {
 
 			var measures = InitMeasures();
@@ -162,11 +161,6 @@ class OnlineCrossval
 		dict.Add("MAP", new List<double>());
 		dict.Add("AUC", new List<double>());
 		dict.Add("NDCG", new List<double>());
-		Console.Write(param_name + "\t");
-		foreach(var measure in dict)
-			Console.Write(measure.Key + "\t");
-		Console.WriteLine();
-
 		return dict;
 	}
 
