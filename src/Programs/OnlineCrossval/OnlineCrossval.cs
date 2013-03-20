@@ -20,6 +20,8 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using System.IO;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using MyMediaLite;
 using MyMediaLite.Data;
 using MyMediaLite.DataType;
@@ -30,43 +32,42 @@ using MyMediaLite.ItemRecommendation;
 class OnlineCrossval
 {
 	string method = "NaiveSVD";
+	string recommender_params;
 	int random_seed = 10;
 	int n_recs = 10;
-	//float split = 0.2f;
-	IncrementalItemRecommender recommender;
+	double split = 0.2;
 	IMapping user_mapping = new Mapping();
 	IMapping item_mapping = new Mapping();
 	IPosOnlyFeedback all_data;
-	IPosOnlyFeedback train_data;
-	IPosOnlyFeedback test_data;
-	IDictionary<string, IList<double>> measures;
+	IList<int> candidate_items;
+	string param_name;
+	string[] param_values;
 
 	public OnlineCrossval(string[] args)
 	{
-		if(args.Length < 4) {
-			Console.WriteLine("Usage: online_crossval <recommender> <\"recommender params\"> <data_file> <split> [<random_seed> [<n_recs>]]");
+		if(args.Length < 6) {
+			Console.WriteLine("Usage: online_crossval <recommender> <\"recommender params\"> <parameter_name> <parameter_values> <data_file> <split> [<random_seed> [<n_recs>]]");
 			Environment.Exit(1);
 		}
 		
 		method = args[0];
-		recommender = (IncrementalItemRecommender) method.CreateItemRecommender();
-		if (recommender == null) {
-			Console.WriteLine("Invalid method: "+method);
-			Environment.Exit(1);
-		}
-		
-		SetupRecommender(args[1]);
-		
-		all_data = ItemData.Read(args[2], user_mapping, item_mapping);
 
-		SplitData(args[3]);
+		recommender_params = args[1];
 
-		if(args.Length > 4) random_seed = Int32.Parse(args[4]);
+		param_name = args[2];
+		param_values = Regex.Split(args[3], "\\s");
+
+		all_data = ItemData.Read(args[4], user_mapping, item_mapping);
+
+		split = Double.Parse(args[5], System.Globalization.CultureInfo.InvariantCulture);
+
+		if(args.Length > 6) random_seed = Int32.Parse(args[6]);
 		MyMediaLite.Random.Seed = random_seed;
 		
-		if(args.Length > 5) n_recs = Int32.Parse(args[5]);
+		if(args.Length > 7) n_recs = Int32.Parse(args[8]);
 
-		measures = InitMeasures();
+		candidate_items = new List<int>(all_data.AllItems);
+
 
 	}
 
@@ -78,63 +79,77 @@ class OnlineCrossval
 	
 	private void Run()
 	{
+		Parallel.ForEach(param_values, param_val => {
 
-		var candidate_items = new List<int>(all_data.AllItems);
+			var measures = InitMeasures();
 
-		recommender.Feedback = train_data;
+			var train_test = SplitData(split);
+			var train_data = train_test.Item1;
+			var test_data = train_test.Item2;
 
-		//Console.WriteLine(recommender.ToString());
-
-		recommender.Train();
-
-		for (int i = 0; i < test_data.Count; i++)
-		{
-			int tu = test_data.Users[i];
-			int ti = test_data.Items[i];
-			if (train_data.AllUsers.Contains(tu))
-			{
-				if(!train_data.UserMatrix[tu].Contains(ti))
-				{
-
-					var ignore_items = new HashSet<int>(train_data.UserMatrix[tu]);
-					var rec_list_score = recommender.Recommend(tu, n_recs, ignore_items, candidate_items);
-					var rec_list = new List<int>();
-					foreach (var rec in rec_list_score)
-					{
-						//Console.WriteLine(rec.Item1);
-						rec_list.Add(rec.Item1);
-					}
-
-					var til = new List<int>(){ ti };
-					measures["recall@1"].Add(
-						MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 1));
-					measures["recall@5"].Add(
-						MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 5));
-					measures["recall@10"].Add(
-						MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 10));
-					measures["MAP"].Add(
-						MyMediaLite.Eval.Measures.PrecisionAndRecall.AP(rec_list, til));
-					int num_dropped = candidate_items.Count - ignore_items.Count - n_recs;
-					measures["AUC"].Add(
-						MyMediaLite.Eval.Measures.AUC.Compute(rec_list, til, num_dropped));
-					measures["NDCG"].Add(
-						MyMediaLite.Eval.Measures.NDCG.Compute(rec_list, til));
-				}
+			var recommender = (IncrementalItemRecommender) method.CreateItemRecommender();
+			if (recommender == null) {
+				Console.WriteLine("Invalid method: "+method);
+				Environment.Exit(1);
 			}
-			// update recommender
-			var tuple = Tuple.Create(tu, ti);
-			recommender.AddFeedback(new Tuple<int, int>[]{ tuple });
-			if(i % 5000 == 0)
-				System.GC.Collect();
-		}
+		
+			SetupRecommender(recommender, recommender_params);
+			recommender.SetProperty(param_name, param_val);
+			recommender.Feedback = train_data;
 
-		Terminate();
+			recommender.Train();
+
+			for (int i = 0; i < test_data.Count; i++)
+			{
+				int tu = test_data.Users[i];
+				int ti = test_data.Items[i];
+				if (train_data.AllUsers.Contains(tu))
+				{
+					if(!train_data.UserMatrix[tu].Contains(ti))
+					{
+
+						var ignore_items = new HashSet<int>(train_data.UserMatrix[tu]);
+						var rec_list_score = recommender.Recommend(tu, n_recs, ignore_items, candidate_items);
+						var rec_list = new List<int>();
+						foreach (var rec in rec_list_score)
+						{
+							//Console.WriteLine(rec.Item1);
+							rec_list.Add(rec.Item1);
+						}
+
+						var til = new List<int>(){ ti };
+						int num_dropped = candidate_items.Count - ignore_items.Count - n_recs;
+						lock(measures)
+						{
+							measures["recall@1"].Add(
+								MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 1));
+							measures["recall@5"].Add(
+								MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 5));
+							measures["recall@10"].Add(
+								MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 10));
+							measures["MAP"].Add(
+								MyMediaLite.Eval.Measures.PrecisionAndRecall.AP(rec_list, til));
+							measures["AUC"].Add(
+								MyMediaLite.Eval.Measures.AUC.Compute(rec_list, til, num_dropped));
+							measures["NDCG"].Add(
+								MyMediaLite.Eval.Measures.NDCG.Compute(rec_list, til));
+						}
+					}
+				}
+				// update recommender
+				var tuple = Tuple.Create(tu, ti);
+				recommender.AddFeedback(new Tuple<int, int>[]{ tuple });
+				if(i % 5000 == 0)
+					System.GC.Collect();
+			}
+			WriteResults(measures);
+		});
 
 	}
 
-	private void SetupRecommender(string parameters)
+	private void SetupRecommender(Recommender rec, string parameters)
 	{
-		recommender.Configure(parameters);
+		rec.Configure(parameters);
 	}
 
 	private IDictionary<string, IList<double>> InitMeasures()
@@ -149,7 +164,7 @@ class OnlineCrossval
 		return dict;
 	}
 
-	private void Terminate()
+	private void WriteResults(IDictionary<string, IList<double>> measures)
 	{
 		//string[] metrics = new string[]{"recall@1","recall@5","recall@10","MAP","AUC","NDCG"};
 		//int count = measures[metrics[0]].Count;
@@ -181,36 +196,28 @@ class OnlineCrossval
 		*/
 	}
 
-	private void SplitData(string split)
+	private Tuple<PosOnlyFeedback<SparseBooleanMatrix>, PosOnlyFeedback<SparseBooleanMatrix>> SplitData(double split)
 	{
-		double spl = -1;
-		try 
-		{
-			spl = Double.Parse(split, System.Globalization.CultureInfo.InvariantCulture);
-		} 
-		catch(Exception) 
-		{
-			Console.WriteLine("Split value invalid!");
-			Environment.Exit(1);
-		}		
-		if(spl <= 0 || spl >=1) 
+		if(split <= 0 || split >=1) 
 		{
 			Console.WriteLine("Split value must be between 0 and 1 (excl)!");
 			Environment.Exit(1);
 		}
 
-		train_data = new PosOnlyFeedback<SparseBooleanMatrix>();
-		test_data = new PosOnlyFeedback<SparseBooleanMatrix>();
+		var train_data = new PosOnlyFeedback<SparseBooleanMatrix>();
+		var test_data = new PosOnlyFeedback<SparseBooleanMatrix>();
 
 		int cnt = all_data.Count;
-		int split_idx = (int) Math.Ceiling(cnt * spl);
+		int split_idx = (int) Math.Ceiling(cnt * split);
 		//Console.WriteLine("Split point and index " + split_idx);
 		for (int i = 0; i < cnt; i++)
 		{
 			if(i < split_idx) train_data.Add(all_data.Users[i], all_data.Items[i]);
 			else test_data.Add(all_data.Users[i], all_data.Items[i]);
 		}
-		//Console.WriteLine("train data: " + train_data.Count + " / test data: " + test_data.Count);
+
+		var t = Tuple.Create(train_data, test_data);
+		return t;
 	}
 
 }
