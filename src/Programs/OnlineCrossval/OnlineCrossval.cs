@@ -83,7 +83,7 @@ class OnlineCrossval
 
 		recommender.Feedback = train_data;
 
-		Console.WriteLine(recommender.ToString());
+		//Console.WriteLine(recommender.ToString());
 
 		recommender.Train();
 
@@ -204,13 +204,13 @@ class OnlineCrossval
 
 		int cnt = all_data.Count;
 		int split_idx = (int) Math.Ceiling(cnt * spl);
-		Console.WriteLine("Split point and index " + split_idx);
+		//Console.WriteLine("Split point and index " + split_idx);
 		for (int i = 0; i < cnt; i++)
 		{
 			if(i < split_idx) train_data.Add(all_data.Users[i], all_data.Items[i]);
 			else test_data.Add(all_data.Users[i], all_data.Items[i]);
 		}
-		Console.WriteLine("train data: " + train_data.Count + " / test data: " + test_data.Count);
+		//Console.WriteLine("train data: " + train_data.Count + " / test data: " + test_data.Count);
 	}
 
 }
