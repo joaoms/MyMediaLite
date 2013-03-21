@@ -173,7 +173,7 @@ class OnlineCrossval
 		//Compute and print averages
 		//Console.WriteLine();
 
-		Console.Write(param_val + "\t");
+		Console.Write(param_val.Replace('.',',') + "\t");
 		foreach (var measure in measures)
 		{
 			double score = Math.Round(measure.Value.Average(), 5);
