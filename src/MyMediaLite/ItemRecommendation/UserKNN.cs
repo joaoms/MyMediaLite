@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using MyMediaLite.Correlation;
 using MyMediaLite.DataType;
 
@@ -31,6 +32,9 @@ namespace MyMediaLite.ItemRecommendation
 	{
 		///
 		protected override IBooleanMatrix DataMatrix { get { return Feedback.UserMatrix; } }
+
+		/// 
+		protected ParallelOptions parallel_opts = new ParallelOptions() { MaxDegreeOfParallelism = 4 };
 
 		///
 		public override void Train()
@@ -232,8 +236,12 @@ namespace MyMediaLite.ItemRecommendation
 			// Recently added users also need retraining
 			retrain_users.UnionWith(new_users);
 			// Recalculate neighborhood of selected users
-			foreach (int r_user in retrain_users)
-				nearest_neighbors[r_user] = correlation.GetNearestNeighbors(r_user, k);
+			Parallel.ForEach(retrain_users, parallel_opts, r_user => {
+				var neighbors = correlation.GetNearestNeighbors(r_user, k);
+				lock(nearest_neighbors) {
+					nearest_neighbors[r_user] = neighbors;
+				}
+			});
 
 			return retrain_users.Count;
 		}
