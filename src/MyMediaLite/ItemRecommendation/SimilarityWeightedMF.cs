@@ -53,6 +53,7 @@ namespace MyMediaLite.ItemRecommendation
 			UpdateUsers = true;
 			UpdateItems = true;
 			Alpha = 0.5f;
+			SimilarityWeight = 1f;
 		}
 
 		/// <summary>
