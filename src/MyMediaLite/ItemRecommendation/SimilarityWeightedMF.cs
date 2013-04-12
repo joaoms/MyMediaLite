@@ -42,7 +42,8 @@ namespace MyMediaLite.ItemRecommendation
 		protected IBinaryDataCorrelationMatrix correlation;
 
 		/// <summary>A factor for similarity weights.</summary>
-		public float SimilarityWeight { get; set; }
+		public float SimilarityWeight { get { return similarity_weight; } set { similarity_weight = value; } }
+		float similarity_weight = 1.0f;
 
 		/// 
 		//protected ParallelOptions parallel_opts = new ParallelOptions() { MaxDegreeOfParallelism = 4 };
