@@ -58,7 +58,7 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		public override void Iterate()
 		{
-			Iterate(true, true);
+			Iterate(UpdateUsers, UpdateItems);
 		}
 
 		public override float ComputeObjective()
@@ -131,7 +131,7 @@ namespace MyMediaLite.ItemRecommendation
 		void Retrain(ICollection<Tuple<int, int>> feedback)
 		{
 			foreach (var entry in feedback)
-				UpdateFactors(entry.Item1, entry.Item2, true, true);
+				UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems);
 		}
 		
 		///

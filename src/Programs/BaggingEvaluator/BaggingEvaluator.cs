@@ -75,7 +75,7 @@ class BaggingEvaluator
 	{
 
 		var train_bags = CreateTrainBags();
-		List<List<int>> test_idbags = CreateTestBagIds();
+		List<List<int>> test_bag_ids = CreateTestBagIds();
 
 		Parallel.For(0, num_bags, parallel_opts, this_bag => {
 
@@ -141,15 +141,17 @@ class BaggingEvaluator
 					}
 				}
 				// update recommender
-				retrain_start = DateTime.Now;
-				if(test_idbags[this_bag].Contains(i)) {
-					var tuple = Tuple.Create(tu, ti);
-					recommender.AddFeedback(new Tuple<int, int>[]{ tuple });
+				if(test_bag_ids[this_bag].Contains(i)) {
+					recommender.UpdateUsers = true;
+					recommender.UpdateItems = true;
 				} else {
-					// TODO: this removes the item from candidates to *all users*
-					// need to create ignore_items by user structure
-					candidate_items.RemoveAll(lambda => lambda == ti);
+					recommender.UpdateUsers = false;
+					recommender.UpdateItems = false;
 				}
+
+				retrain_start = DateTime.Now;
+				var tuple = Tuple.Create(tu, ti);
+				recommender.AddFeedback(new Tuple<int, int>[]{ tuple });
 				retrain_end = DateTime.Now;
 				measures["retrain_time"].Add((retrain_end - retrain_start).TotalMilliseconds);
 				if(i % 5000 == 0)
@@ -186,6 +188,25 @@ class BaggingEvaluator
 			train_bags.Add(bag);
 		}
 		return bags;
+	}
+
+	private IList<IList<int>> CreateTestBagIds()
+	{
+		double logistic = 1 - 1 / Math.E;
+		var rand = MyMediaLite.Random.GetInstance();
+		var test_bag_ids = new List<List<int>>();
+		for (int i = 0; i < num_bags; i++)
+		{
+			var bag = new List<int>(); 
+			for (int j = 0; j < train_data.Count; j++)
+			{
+				double rn = 0.001 * rand.Next(0,1000); 
+				if(rn < logistic) 
+					bag.Add(j);
+			}
+			test_bag_ids.Add(bag);
+		}
+		return test_bag_ids;
 	}
 
 	private IDictionary<string, IList<double>> InitMeasures()
