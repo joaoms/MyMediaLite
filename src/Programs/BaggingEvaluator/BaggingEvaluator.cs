@@ -75,14 +75,14 @@ class BaggingEvaluator
 	{
 
 		var train_bags = CreateTrainBags();
-		List<List<int>> test_bag_ids = CreateTestBagIds();
+		var test_bag_ids = CreateTestBagIds();
+		candidate_items = new List<int>(train_data.AllItems.Union(test_data.AllItems));
 
 		Parallel.For(0, num_bags, parallel_opts, this_bag => {
 
 			DateTime rec_start, rec_end, retrain_start, retrain_end;
 			var log = new StreamWriter("ov" + method + "_bag" + this_bag + ".log");
 
-			var candidate_items = new List<int>(train_data.AllItems.Union(test_data.AllItems));
 			var measures = InitMeasures();
 
 			var recommender = (IncrementalItemRecommender) method.CreateItemRecommender();
@@ -92,7 +92,6 @@ class BaggingEvaluator
 			}
 		
 			SetupRecommender(recommender, recommender_params);
-			recommender.SetProperty(param_name, param_val);
 			recommender.Feedback = train_bags[this_bag];
 
 			log.WriteLine(recommender.ToString());
@@ -171,7 +170,7 @@ class BaggingEvaluator
 		rec.Configure(parameters);
 	}
 
-	private IList<IPosOnlyFeedback> CreateTrainBags()
+	private List<PosOnlyFeedback<SparseBooleanMatrix>> CreateTrainBags()
 	{
 		double logistic = 1 - 1 / Math.E;
 		var rand = MyMediaLite.Random.GetInstance();
@@ -187,10 +186,10 @@ class BaggingEvaluator
 			}
 			train_bags.Add(bag);
 		}
-		return bags;
+		return train_bags;
 	}
 
-	private IList<IList<int>> CreateTestBagIds()
+	private List<List<int>> CreateTestBagIds()
 	{
 		double logistic = 1 - 1 / Math.E;
 		var rand = MyMediaLite.Random.GetInstance();
@@ -225,7 +224,6 @@ class BaggingEvaluator
 
 	private void WriteResults(int num_bag, StreamWriter log, IDictionary<string, IList<double>> measures)
 	{
-		int count = measures["retrain_time"].Count;
 
 		//Compute and print averages
 		log.WriteLine();
@@ -237,6 +235,8 @@ class BaggingEvaluator
 		}
 
 		// Save one by one results
+		string[] metrics = new string[]{"recall@1","recall@5","recall@10","MAP","AUC","NDCG","rec_time"};
+		int count = measures["retrain_time"].Count;
 		StreamWriter w = new StreamWriter("measures" + method + "_bag" + num_bag + ".log");
 		foreach (string m in metrics)
 			w.Write(m + "\t");
