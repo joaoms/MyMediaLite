@@ -77,8 +77,10 @@ class BaggingEvaluator
 		var train_bags = CreateTrainBags();
 		var test_bag_ids = CreateTestBagIds();
 		candidate_items = new List<int>(train_data.AllItems.Union(test_data.AllItems));
+		List<int> bags = new List<int>(num_bags);
+		for (int i = 0; i < num_bags; i++) bags.Add(i);
 
-		Parallel.For(0, num_bags, parallel_opts, this_bag => {
+		Parallel.ForEach(bags, parallel_opts, this_bag => {
 
 			DateTime rec_start, rec_end, retrain_start, retrain_end;
 			var log = new StreamWriter("ov" + method + "_bag" + this_bag + ".log");
