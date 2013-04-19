@@ -238,7 +238,7 @@ class BaggingEvaluator
 
 		// Save one by one results
 		string[] metrics = new string[]{"recall@1","recall@5","recall@10","MAP","AUC","NDCG","rec_time"};
-		int count = measures["retrain_time"].Count;
+		int count = measures[metrics[0]].Count;
 		StreamWriter w = new StreamWriter("measures" + method + "_bag" + num_bag + ".log");
 		foreach (string m in metrics)
 			w.Write(m + "\t");
