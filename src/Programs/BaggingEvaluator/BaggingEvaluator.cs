@@ -183,7 +183,7 @@ class BaggingEvaluator
 			for (int j = 0; j < train_data.Count; j++)
 			{
 				double rn = 0.001 * rand.Next(0,1000); 
-				if(rn < logistic) 
+				if(rn <= logistic) 
 					bag.Add(train_data.Users[j], train_data.Items[j]);
 			}
 			train_bags.Add(bag);
@@ -202,7 +202,7 @@ class BaggingEvaluator
 			for (int j = 0; j < train_data.Count; j++)
 			{
 				double rn = 0.001 * rand.Next(0,1000); 
-				if(rn < logistic) 
+				if(rn <= logistic) 
 					bag.Add(j);
 			}
 			test_bag_ids.Add(bag);
