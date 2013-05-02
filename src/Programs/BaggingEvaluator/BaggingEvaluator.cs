@@ -108,12 +108,12 @@ class BaggingEvaluator
 				int tu = test_data.Users[i];
 				int ti = test_data.Items[i];
 				log.WriteLine("\n" + tu + " " + ti);
-				if (train_data.AllUsers.Contains(tu))
+				if (recommender.Feedback.AllUsers.Contains(tu))
 				{
-					if(!train_data.UserMatrix[tu].Contains(ti))
+					if(!recommender.Feedback.UserMatrix[tu].Contains(ti))
 					{
 
-						var ignore_items = new HashSet<int>(train_data.UserMatrix[tu]);
+						var ignore_items = new HashSet<int>(recommender.Feedback.UserMatrix[tu]);
 						rec_start = DateTime.Now;
 						var rec_list_score = recommender.Recommend(tu, n_recs, ignore_items, candidate_items);
 						rec_end = DateTime.Now;
