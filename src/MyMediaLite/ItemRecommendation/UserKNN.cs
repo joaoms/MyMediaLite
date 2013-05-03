@@ -189,6 +189,9 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			float min;
 			var retrain_users = new HashSet<int>();
+
+			// Option 1 (complete): Update every neighbor list that may have changed
+			/*
 			foreach (int user in Feedback.AllUsers.Except(new_users))
 			{
 				// Get the correlation of the least correlated neighbor
@@ -205,6 +208,16 @@ namespace MyMediaLite.ItemRecommendation
 					if (correlation[user, new_user] > min)
 						retrain_users.Add(user);
 			}
+			*/
+
+			// Option 2 (heuristic): Update only neighbors of added users
+			foreach (int user in new_users)
+			{
+				retrain_users.UnionWith(nearest_neighbors[user]);
+			}
+
+			// Option 3: Only update neighbor lists of added users
+
 			// Recently added users also need retraining
 			retrain_users.UnionWith(new_users);
 			// Recalculate neighborhood of selected users
