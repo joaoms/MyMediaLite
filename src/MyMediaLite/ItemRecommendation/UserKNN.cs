@@ -187,11 +187,11 @@ namespace MyMediaLite.ItemRecommendation
 		/// </param>
 		protected override void RecomputeNeighbors(ICollection<int> new_users)
 		{
-			float min;
 			var retrain_users = new HashSet<int>();
 
 			// Option 1 (complete): Update every neighbor list that may have changed
 			/*
+			float min;
 			foreach (int user in Feedback.AllUsers.Except(new_users))
 			{
 				// Get the correlation of the least correlated neighbor
