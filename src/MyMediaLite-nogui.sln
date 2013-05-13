@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineCrossval", "Programs\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BaggingEvaluator", "Programs\BaggingEvaluator\BaggingEvaluator.csproj", "{91401B81-FAA0-48E0-87B0-711182679BA6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatchEvaluator", "Programs\BatchEvaluator\BatchEvaluator.csproj", "{8C06BF85-A57A-4AAE-95FF-B43631291664}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,6 +74,12 @@ Global
 		{7DCAB3F3-B687-4589-80F6-76F8BECBC6F8}.Default|Any CPU.Build.0 = Debug|Any CPU
 		{7DCAB3F3-B687-4589-80F6-76F8BECBC6F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7DCAB3F3-B687-4589-80F6-76F8BECBC6F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C06BF85-A57A-4AAE-95FF-B43631291664}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C06BF85-A57A-4AAE-95FF-B43631291664}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C06BF85-A57A-4AAE-95FF-B43631291664}.Default|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C06BF85-A57A-4AAE-95FF-B43631291664}.Default|Any CPU.Build.0 = Debug|Any CPU
+		{8C06BF85-A57A-4AAE-95FF-B43631291664}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C06BF85-A57A-4AAE-95FF-B43631291664}.Release|Any CPU.Build.0 = Release|Any CPU
 		{91401B81-FAA0-48E0-87B0-711182679BA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{91401B81-FAA0-48E0-87B0-711182679BA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91401B81-FAA0-48E0-87B0-711182679BA6}.Default|Any CPU.ActiveCfg = Debug|Any CPU
@@ -125,6 +133,7 @@ Global
 		{0A94ED78-4D40-44E0-8C99-F64CC9A8BC20} = {233B7F1D-99AA-4D55-BDD9-770B3428A317}
 		{243FFC4C-54AB-4D50-938C-3BA1106BD7D5} = {233B7F1D-99AA-4D55-BDD9-770B3428A317}
 		{91401B81-FAA0-48E0-87B0-711182679BA6} = {233B7F1D-99AA-4D55-BDD9-770B3428A317}
+		{8C06BF85-A57A-4AAE-95FF-B43631291664} = {233B7F1D-99AA-4D55-BDD9-770B3428A317}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = MyMediaLite\MyMediaLite.csproj

@@ -5,11 +5,10 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{91401B81-FAA0-48E0-87B0-711182679BA6}</ProjectGuid>
+    <ProjectGuid>{8C06BF85-A57A-4AAE-95FF-B43631291664}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>BaggingEvaluator</RootNamespace>
-    <AssemblyName>BaggingEvaluator</AssemblyName>
-    <ReleaseVersion>3.06</ReleaseVersion>
+    <RootNamespace>BatchEvaluator</RootNamespace>
+    <AssemblyName>BatchEvaluator</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -36,7 +35,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="BaggingEvaluator.cs" />
+    <Compile Include="BatchEvaluator.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
