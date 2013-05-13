@@ -137,6 +137,7 @@ class BatchEvaluator
 			train_data.Add(tu, ti);
 			if(i > 0 && i % retrain_interval == 0) 
 			{
+				recommender.Feedback = train_data;
 				retrain_start = DateTime.Now;
 				recommender.Train();
 				retrain_end = DateTime.Now;
