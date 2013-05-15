@@ -33,7 +33,7 @@ class BatchEvaluator
 	int random_seed = 10;
 	int n_recs = 20;
 	int retrain_interval = 10000;
-	ItemRecommender recommender;
+	IncrementalItemRecommender recommender;
 	IMapping user_mapping = new Mapping();
 	IMapping item_mapping = new Mapping();
 	IPosOnlyFeedback train_data;
@@ -48,14 +48,16 @@ class BatchEvaluator
 		}
 		
 		method = args[0];
-		recommender = (ItemRecommender) method.CreateItemRecommender();
+		recommender = (IncrementalItemRecommender) method.CreateItemRecommender();
 		if (recommender == null) {
 			Console.WriteLine("Invalid method: "+method);
 			Environment.Exit(1);
 		}
-		
-		SetupRecommender(args[1]);
-		
+
+		recommender.UpdateUsers = false;
+		recommender.UpdateItems = false;
+		recommender.Configure(args[1]);
+
 		train_data = ItemData.Read(args[2], user_mapping, item_mapping);
 		test_data = ItemData.Read(args[3], user_mapping, item_mapping);
 		
@@ -134,25 +136,22 @@ class BatchEvaluator
 				}
 			}
 			// Add observed event to train data
-			train_data.Add(tu, ti);
+			var tuple = Tuple.Create(tu, ti);
+			recommender.AddFeedback(new Tuple<int,int>[] { tuple });
 			if(i > 0 && i % retrain_interval == 0) 
 			{
-				recommender.Feedback = train_data;
 				retrain_start = DateTime.Now;
 				recommender.Train();
 				retrain_end = DateTime.Now;
 				measures["retrain_time"].Add((retrain_end - retrain_start).TotalMilliseconds);
-				System.GC.Collect();
 			}
+			if(i % 5000 == 0)
+				System.GC.Collect();
+
 		}
 		
 		Terminate();
 		
-	}
-	
-	private void SetupRecommender(string parameters)
-	{
-		recommender.Configure(parameters);
 	}
 	
 	private IDictionary<string, IList<double>> InitMeasures()
