@@ -211,12 +211,14 @@ namespace MyMediaLite.ItemRecommendation
 			*/
 
 			// Option 2 (heuristic): Update only neighbors of added users
+			/*
 			foreach (int user in new_users)
 			{
 				if(nearest_neighbors[user] != null)
 					if(nearest_neighbors[user].Count > 0)
 						retrain_users.UnionWith(nearest_neighbors[user]);
 			}
+			*/
 
 			// Option 3: Only update neighbor lists of added users
 

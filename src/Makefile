@@ -13,6 +13,8 @@ all: ../lib/mymedialite
 	cp -r Programs/OnlineCrossval/bin/Debug/*.mdb ../lib/mymedialite
 	cp -r Programs/BaggingEvaluator/bin/Debug/*.exe ../lib/mymedialite
 	cp -r Programs/BaggingEvaluator/bin/Debug/*.mdb ../lib/mymedialite
+	cp -r Programs/BatchEvaluator/bin/Debug/*.exe ../lib/mymedialite
+	cp -r Programs/BatchEvaluator/bin/Debug/*.mdb ../lib/mymedialite
 
 ../lib/mymedialite:
 	mkdir ../lib/mymedialite
