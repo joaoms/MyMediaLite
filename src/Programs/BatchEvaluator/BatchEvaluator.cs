@@ -140,9 +140,13 @@ class BatchEvaluator
 			recommender.AddFeedback(new Tuple<int,int>[] { tuple });
 			if(i > 0 && i % retrain_interval == 0) 
 			{
+				recommender.UpdateUsers = true;
+				recommender.UpdateItems = true;
 				retrain_start = DateTime.Now;
 				recommender.Train();
 				retrain_end = DateTime.Now;
+				recommender.UpdateUsers = false;
+				recommender.UpdateItems = false;
 				measures["retrain_time"].Add((retrain_end - retrain_start).TotalMilliseconds);
 			}
 			if(i % 5000 == 0)
