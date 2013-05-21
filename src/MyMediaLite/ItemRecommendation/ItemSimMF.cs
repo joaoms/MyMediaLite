@@ -25,9 +25,19 @@ using MyMediaLite.Data;
 
 namespace MyMediaLite.ItemRecommendation
 {
+	/// <summary>
+	/// Item sim M.
+	/// </summary>
 	public class ItemSimMF : IncrementalItemRecommender, IIterativeModel
 	{
+		/// <summary>
+		/// The row_factors.
+		/// </summary>
 		protected Matrix<float> row_factors;
+
+		/// <summary>
+		/// The col_factors.
+		/// </summary>
 		protected Matrix<float> col_factors;
 
 		/// <summary>Mean of the normal distribution used to initialize the latent factors</summary>
@@ -54,6 +64,9 @@ namespace MyMediaLite.ItemRecommendation
 
 
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="MyMediaLite.ItemRecommendation.ItemSimMF"/> class.
+		/// </summary>
 		public ItemSimMF ()
 		{
 			NumIter = 30;
@@ -61,7 +74,10 @@ namespace MyMediaLite.ItemRecommendation
 			InitStdDev = 0.1;
 		}
 
-		protected override void InitModel()
+		/// <summary>
+		/// Inits the model.
+		/// </summary>
+		protected virtual void InitModel()
 		{
 			row_factors = new Matrix<float>(MaxItemID + 1, NumFactors);
 			col_factors = new Matrix<float>(MaxItemID + 1, NumFactors);
@@ -71,13 +87,28 @@ namespace MyMediaLite.ItemRecommendation
 
 		}
 
-		public override float ComputeObjective()
+		public override void Train()
+		{
+			InitModel();
+
+			for (uint i = 0; i < NumIter; i++)
+				Iterate();
+
+		}
+
+		/// <summary>
+		/// Compute the current optimization objective (usually loss plus regularization term) of the model
+		/// </summary>
+		/// <returns>
+		/// the current objective; -1 if not implemented
+		/// </returns>
+		public virtual float ComputeObjective()
 		{
 			return -1;
 		}
 
 		/// <summary>Iterate once over feedback data and adjust corresponding factors (stochastic gradient descent)</summary>
-		protected virtual void Iterate()
+		public void Iterate()
 		{
 			//TODO: respeitar sequencia original
 			// ou não: o objetivo é ter uma sequência diferente por cada iteração.
@@ -89,7 +120,7 @@ namespace MyMediaLite.ItemRecommendation
 				int i = Feedback.Items[index];
 				//Console.WriteLine("User " + u + " Item " + i);
 
-				UpdateFactors(u, i, update_user, update_item);
+				UpdateFactors(u, i);
 			}
 
 		}
@@ -113,7 +144,7 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		///
-		protected float Predict(int user_id, int item_id, bool bound)
+		public override float Predict(int user_id, int item_id)
 		{
 			if (user_id > MaxUserID)
 				return float.MinValue;
@@ -125,9 +156,9 @@ namespace MyMediaLite.ItemRecommendation
 			double normalization = 0;
 			foreach (int item in Feedback.AllItems)
 			{
-				corr = Math.Pow(GetCorrelation(item_id, item, true), Q);
+				corr = Math.Pow(GetCorrelation(item_id, item, true), 1);
 				normalization += corr;
-				if (Feedback.ItemMatrix[neighbor, user_id])
+				if (Feedback.ItemMatrix[item, user_id])
 					sum += corr;
 			}
 			if (sum == 0) return 0;
@@ -151,16 +182,7 @@ namespace MyMediaLite.ItemRecommendation
 		void Retrain(ICollection<Tuple<int, int>> feedback)
 		{
 			foreach (var entry in feedback)
-				UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems);
-		}
-		
-		///
-		protected override void AddUser(int user_id)
-		{
-			base.AddUser(user_id);
-			
-			user_factors.AddRows(user_id + 1);
-			user_factors.RowInitNormal(user_id, InitMean, InitStdDev);
+				UpdateFactors(entry.Item1, entry.Item2);
 		}
 		
 		///
@@ -168,27 +190,20 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.AddItem(item_id);
 			
-			item_factors.AddRows(item_id + 1);
-			item_factors.RowInitNormal(item_id, InitMean, InitStdDev);
+			row_factors.AddRows(item_id + 1);
+			col_factors.AddRows(item_id + 1);
+			row_factors.RowInitNormal(item_id, InitMean, InitStdDev);
+			col_factors.RowInitNormal(item_id, InitMean, InitStdDev);
 		}
 
-
-		///
-		public override void RemoveUser(int user_id)
-		{
-			base.RemoveUser(user_id);
-			
-			// set user latent factors to zero
-			user_factors.SetRowToOneValue(user_id, 0);
-		}
-		
 		///
 		public override void RemoveItem(int item_id)
 		{
 			base.RemoveItem(item_id);
 			
 			// set item latent factors to zero
-			item_factors.SetRowToOneValue(item_id, 0);
+			row_factors.SetRowToOneValue(item_id, 0);
+			col_factors.SetRowToOneValue(item_id, 0);
 		}
 		
 		/// <summary>
@@ -196,28 +211,23 @@ namespace MyMediaLite.ItemRecommendation
 		/// </summary>
 		/// <param name="user_id">User_id.</param>
 		/// <param name="item_id">Item_id.</param>
-		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
+		protected virtual void UpdateFactors(int user_id, int item_id)
 		{
 			//Console.WriteLine(float.MinValue);
-			float err = 1 - Predict(user_id, item_id, false);
+			float err = 1 - Predict(user_id, item_id);
 			
 			// adjust factors
 			for (int f = 0; f < NumFactors; f++)
 			{
-				float u_f = user_factors[user_id, f];
-				float i_f = item_factors[item_id, f];
+				float r_f = row_factors[item_id, f];
+				float c_f = col_factors[item_id, f];
 				
 				// if necessary, compute and apply updates
-				if (update_user)
-				{
-					double delta_u = err * i_f - Regularization * u_f;
-					user_factors.Inc(user_id, f, current_learnrate * delta_u);
-				}
-				if (update_item)
-				{
-					double delta_i = err * u_f - Regularization * i_f;
-					item_factors.Inc(item_id, f, current_learnrate * delta_i);
-				}
+				double delta_r = err * c_f - Regularization * r_f;
+				row_factors.Inc(item_id, f, LearnRate * delta_r);
+
+				double delta_c = err * r_f - Regularization * c_f;
+				col_factors.Inc(item_id, f, LearnRate * delta_c);
 			}
 
 		}
@@ -227,8 +237,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"NaiveSVD num_factors={0} regularization={1} learn_rate={2} num_iter={3} decay={4}",
-				NumFactors, Regularization, LearnRate, NumIter, Decay);
+				"NaiveSVD num_factors={0} regularization={1} learn_rate={2} num_iter={3}",
+				NumFactors, Regularization, LearnRate, NumIter);
 		}
 
 
