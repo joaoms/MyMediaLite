@@ -156,7 +156,7 @@ namespace MyMediaLite.ItemRecommendation
 			double normalization = 0;
 			foreach (int item in Feedback.AllItems)
 			{
-				corr = Math.Pow(GetCorrelation(item_id, item, true), 1);
+				corr = GetCorrelation(item_id, item, true);
 				normalization += corr;
 				if (Feedback.ItemMatrix[item, user_id])
 					sum += corr;
