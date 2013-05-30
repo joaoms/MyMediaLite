@@ -54,8 +54,8 @@ class BatchEvaluator
 			Environment.Exit(1);
 		}
 
-		recommender.UpdateUsers = false;
-		recommender.UpdateItems = false;
+		recommender.UpdateUsers = true;
+		recommender.UpdateItems = true;
 		recommender.Configure(args[1]);
 
 		train_data = ItemData.Read(args[2], user_mapping, item_mapping);
@@ -91,6 +91,8 @@ class BatchEvaluator
 		recommender.Train();
 		TimeSpan train_time = DateTime.Now - start_train;
 		
+		recommender.UpdateUsers = false;
+		recommender.UpdateItems = false;
 		Console.WriteLine("Train time: " + train_time.TotalMilliseconds);
 		
 		DateTime rec_start, rec_end, retrain_start, retrain_end;
