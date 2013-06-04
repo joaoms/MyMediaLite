@@ -91,7 +91,6 @@ namespace MyMediaLite.Eval
 				if (test_users.Contains(users[index]) && candidate_items.Contains(items[index]))
 				{
 					// evaluate user
-					Console.WriteLine("\n" + users[index] + " " + items[index]);
 					var current_test = new PosOnlyFeedback<SparseBooleanMatrix>();
 					current_test.Add(users[index], items[index]);
 					var current_result = Items.Evaluate(recommender, current_test, training, current_test.AllUsers, candidate_items, candidate_item_mode, RepeatedEvents.No, n);

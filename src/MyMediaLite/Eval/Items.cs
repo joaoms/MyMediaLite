@@ -130,10 +130,6 @@ namespace MyMediaLite.Eval
 
 					var prediction = recommender.Recommend(user_id, candidate_items:candidate_items, n:n, ignore_items:ignore_items_for_this_user);
 					var prediction_list = (from t in prediction select t.Item1).ToArray();
-					// To remove
-					if(prediction_list.Length > 0)
-					    foreach (int pred_item in prediction_list)
-							Console.WriteLine(pred_item);
 
 					int num_dropped_items = num_candidates_for_this_user - prediction.Count;
 					double auc  = AUC.Compute(prediction_list, correct_items, num_dropped_items);
