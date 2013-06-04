@@ -50,7 +50,7 @@ namespace MyMediaLite.Eval
 		static public ICollection<string> Measures
 		{
 			get {
-				string[] measures = { "AUC", "prec@1", "prec@5", "prec@10", "MAP", "recall@1", "recall@5", "recall@10", "NDCG", "MRR" };
+				string[] measures = { "AUC", "prec@1", "prec@5", "prec@10", "prec@20", "MAP", "recall@1", "recall@5", "recall@10", "recall@20", "NDCG", "MRR" };
 				return new HashSet<string>(measures);
 			}
 		}
@@ -136,7 +136,7 @@ namespace MyMediaLite.Eval
 					double map  = PrecisionAndRecall.AP(prediction_list, correct_items);
 					double ndcg = NDCG.Compute(prediction_list, correct_items);
 					double rr   = ReciprocalRank.Compute(prediction_list, correct_items);
-					var positions = new int[] { 1, 5, 10 };
+					var positions = new int[] { 1, 5, 10, 20 };
 					var prec   = PrecisionAndRecall.PrecisionAt(prediction_list, correct_items, positions);
 					var recall = PrecisionAndRecall.RecallAt(prediction_list, correct_items, positions);
 
@@ -151,9 +151,11 @@ namespace MyMediaLite.Eval
 						result["prec@1"]	+= (float) prec[1];
 						result["prec@5"]    += (float) prec[5];
 						result["prec@10"]   += (float) prec[10];
+						result["prec@20"]	+= (float) prec[20];
 						result["recall@1"]  += (float) recall[1];
 						result["recall@5"]  += (float) recall[5];
 						result["recall@10"] += (float) recall[10];
+						result["recall@20"] += (float) recall[20];
 					}
 
 					if (num_users % 1000 == 0)
