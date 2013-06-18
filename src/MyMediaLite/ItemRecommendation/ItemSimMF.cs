@@ -61,7 +61,11 @@ namespace MyMediaLite.ItemRecommendation
 		/// <summary>Learn rate (update step size)</summary>
 		public float LearnRate { get { return learn_rate; } set { learn_rate = value; } }
 		float learn_rate = 0.31f;
-
+		
+		/// <summary>Alpha parameter for </summary>
+		public float Alpha { get { return alpha; } set { alpha = value; } }
+		float alpha = 0.4f;
+		
 
 
 		/// <summary>
@@ -144,24 +148,26 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		///
-		public override float Predict(int user_id, int item_id)
+		public float Predict(int user_id, int item_id)
 		{
 			if (user_id > MaxUserID)
 				return float.MinValue;
 			if (item_id > MaxItemID)
 				return float.MinValue;
 
-			double corr;
 			double sum = 0;
-			double normalization = 0;
-			foreach (int item in Feedback.AllItems)
-			{
-				corr = GetCorrelation(item_id, item, true);
-				normalization += corr;
-				if (Feedback.ItemMatrix[item, user_id])
-					sum += corr;
-			}
-			if (sum == 0) return 0;
+			var user_items = Feedback.UserMatrix.GetEntriesByRow(user_id);
+			if (user_items.Count == 0)
+				return float.MinValue;
+
+			var user_items_count = user_items.Count;
+			foreach (int item in user_items)
+				if (item != item_id) 
+					sum += GetCorrelation(item_id, item, false);
+				else
+					user_items_count--;
+
+			var normalization = Math.Pow(user_items_count, Alpha);
 			return (float) (sum / normalization);
 		}
 		
@@ -237,8 +243,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"NaiveSVD num_factors={0} regularization={1} learn_rate={2} num_iter={3}",
-				NumFactors, Regularization, LearnRate, NumIter);
+				"ItemSimMF num_factors={0} regularization={1} learn_rate={2} num_iter={3} alpha={4}",
+				NumFactors, Regularization, LearnRate, NumIter, Alpha);
 		}
 
 
