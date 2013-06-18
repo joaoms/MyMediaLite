@@ -148,7 +148,7 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		///
-		public float Predict(int user_id, int item_id)
+		public override float Predict(int user_id, int item_id)
 		{
 			if (user_id > MaxUserID)
 				return float.MinValue;
