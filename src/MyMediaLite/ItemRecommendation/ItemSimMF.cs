@@ -131,7 +131,7 @@ namespace MyMediaLite.ItemRecommendation
 
 		private float GetCorrelation(int item_i, int item_j, bool bound)
 		{
-			if(item_i >= row_factors.dim1 || item_j >= col_factors.dim1)
+			if (item_i >= row_factors.dim1 || item_j >= col_factors.dim1)
 				return float.MinValue;
 		
 			float result = DataType.MatrixExtensions.RowScalarProduct(row_factors, item_i, col_factors, item_j);
@@ -157,15 +157,20 @@ namespace MyMediaLite.ItemRecommendation
 
 			double sum = 0;
 			var user_items = Feedback.UserMatrix.GetEntriesByRow(user_id);
-			if (user_items.Count == 0)
+			var user_items_count = user_items.Count;
+			if (user_items_count == 0)
 				return float.MinValue;
 
-			var user_items_count = user_items.Count;
-			foreach (int item in user_items)
+			foreach (int item in user_items) 
+			{
 				if (item != item_id) 
-					sum += GetCorrelation(item_id, item, false);
-				else
+					sum += GetCorrelation (item_id, item, false);
+				else {
 					user_items_count--;
+					if (user_items_count == 0)
+						return float.MinValue;
+				}
+			}
 
 			var normalization = Math.Pow(user_items_count, Alpha);
 			return (float) (sum / normalization);
@@ -188,7 +193,10 @@ namespace MyMediaLite.ItemRecommendation
 		void Retrain(ICollection<Tuple<int, int>> feedback)
 		{
 			foreach (var entry in feedback)
+			{
+				Console.WriteLine(entry.Item1 + " " + entry.Item2);
 				UpdateFactors(entry.Item1, entry.Item2);
+			}
 		}
 		
 		///
