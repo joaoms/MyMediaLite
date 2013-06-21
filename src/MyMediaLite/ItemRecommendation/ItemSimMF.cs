@@ -193,10 +193,7 @@ namespace MyMediaLite.ItemRecommendation
 		void Retrain(ICollection<Tuple<int, int>> feedback)
 		{
 			foreach (var entry in feedback)
-			{
-				Console.WriteLine(entry.Item1 + " " + entry.Item2);
 				UpdateFactors(entry.Item1, entry.Item2);
-			}
 		}
 		
 		///
