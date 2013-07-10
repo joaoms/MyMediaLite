@@ -33,6 +33,7 @@ class BatchEvaluator
 	int random_seed = 10;
 	int n_recs = 20;
 	int retrain_interval = 10000;
+	bool repeated_items = false;
 	IncrementalItemRecommender recommender;
 	IMapping user_mapping = new Mapping();
 	IMapping item_mapping = new Mapping();
@@ -43,7 +44,7 @@ class BatchEvaluator
 	public BatchEvaluator(string[] args)
 	{
 		if(args.Length < 5) {
-			Console.WriteLine("Usage: batch_evaluator <recommender> <\"recommender params\"> <training_file> <test_file> <retrain_interval> [<random_seed> [<n_recs>]]");
+			Console.WriteLine("Usage: batch_evaluator <recommender> <\"recommender params\"> <training_file> <test_file> <retrain_interval> [<random_seed> [<n_recs> [<repeated_items>]]]");
 			Environment.Exit(1);
 		}
 		
@@ -67,7 +68,9 @@ class BatchEvaluator
 		MyMediaLite.Random.Seed = random_seed;
 		
 		if(args.Length > 6) n_recs = Int32.Parse(args[6]);
-		
+
+		if(args.Length > 7) repeated_items = Boolean.Parse(args[7]);
+
 		measures = InitMeasures();
 		
 	}
@@ -104,10 +107,17 @@ class BatchEvaluator
 			Console.WriteLine("\n" + tu + " " + ti);
 			if (train_data.AllUsers.Contains(tu))
 			{
-				if(!train_data.UserMatrix[tu].Contains(ti))
+				bool recommend = true;
+				if(!repeated_items)
+					if(train_data.UserMatrix[tu].Contains(ti))
+						recommend = false;
+				if(recommend)
 				{
-					
-					var ignore_items = new HashSet<int>(train_data.UserMatrix[tu]);
+					HashSet<int> ignore_items;
+					if(repeated_items)
+						ignore_items = new HashSet<int>();
+					else
+						ignore_items = new HashSet<int>(train_data.UserMatrix[tu]);
 					rec_start = DateTime.Now;
 					var rec_list_score = recommender.Recommend(tu, n_recs, ignore_items, candidate_items);
 					rec_end = DateTime.Now;
