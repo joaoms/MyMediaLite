@@ -65,7 +65,7 @@ class OnlineCrossval
 		if(args.Length > 6) random_seed = Int32.Parse(args[6]);
 		MyMediaLite.Random.Seed = random_seed;
 		
-		if(args.Length > 7) n_recs = Int32.Parse(args[8]);
+		if(args.Length > 7) n_recs = Int32.Parse(args[7]);
 
 		candidate_items = new List<int>(all_data.AllItems);
 	}
