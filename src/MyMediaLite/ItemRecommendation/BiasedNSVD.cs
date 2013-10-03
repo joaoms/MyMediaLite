@@ -92,7 +92,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected override void AddItem(int item_id)
 		{
 			base.AddItem(item_id);
-			Array.Resize(ref item_bias, MaxUserID + 1);
+			Array.Resize(ref item_bias, MaxItemID + 1);
 		}
 
 
