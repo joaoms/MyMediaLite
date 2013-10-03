@@ -52,7 +52,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			InitModel();
 
-			global_bias = Feedback.Count / (Feedback.Users.Count * Feedback.Items.Count);
+			global_bias = Feedback.Count / ((MaxUserID + 1) * (MaxItemID + 1));
 
 			for (uint i = 0; i < NumIter; i++)
 				Iterate();
@@ -62,12 +62,14 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		protected float Predict(int user_id, int item_id, bool bound)
 		{
+			float result = global_bias;
+
+			if (user_id < user_bias.Length)
+				result += user_bias[user_id];
+			if (item_id < item_bias.Length)
+				result += item_bias[item_id];
 			if (user_id >= user_factors.dim1 || item_id >= item_factors.dim1)
-				return float.MinValue;
-
-			float result = global_bias + user_bias[user_id] + item_bias[item_id];
-
-			result += DataType.MatrixExtensions.RowScalarProduct(user_factors, user_id, item_factors, item_id);
+				result += DataType.MatrixExtensions.RowScalarProduct(user_factors, user_id, item_factors, item_id);
 
 			if (bound)
 			{
