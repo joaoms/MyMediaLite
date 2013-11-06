@@ -78,8 +78,6 @@ class ForgettingProfile
 	private void Run()
 	{
 
-		var candidate_items = new List<int>(train_data.AllItems.Union(test_data.AllItems));
-
 		recommender.Feedback = train_data;
 
 		Console.WriteLine(recommender.ToString());
@@ -112,7 +110,10 @@ class ForgettingProfile
 			});
 
 			if(i % 5000 == 0)
+			{
+				Console.Write(".");
 				System.GC.Collect();
+			}
 		}
 
 		Terminate();
