@@ -126,6 +126,7 @@ class ForgettingProfile
 
 	private void Terminate()
 	{
+		DateTime dt = DateTime.Now;
 		string filename = "forgetting_profiles_" + method + String.Format("{0:yyMMddHHmm}", dt) + ".log";
 		Console.WriteLine("Writing data in: " + filename);
 		// Save results
