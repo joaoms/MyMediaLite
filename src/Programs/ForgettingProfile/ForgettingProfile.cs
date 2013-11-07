@@ -33,6 +33,8 @@ class ForgettingProfile
 {
 	string method = "NaiveSVD";
 	int random_seed = 10;
+	int sample_size = 0;
+	int[] sample_idx;
 	IncrementalItemRecommender recommender;
 	IMapping user_mapping = new Mapping();
 	IMapping item_mapping = new Mapping();
@@ -43,7 +45,7 @@ class ForgettingProfile
 	public ForgettingProfile(string[] args)
 	{
 		if(args.Length < 4) {
-			Console.WriteLine("Usage: forgetting_profile <recommender> <\"recommender params\"> <training_file> <test_file> [<random_seed>]");
+			Console.WriteLine("Usage: forgetting_profile <recommender> <\"recommender params\"> <training_file> <test_file> [<random_seed> [<sample_size>]]");
 			Environment.Exit(1);
 		}
 
@@ -61,6 +63,8 @@ class ForgettingProfile
 
 		if(args.Length > 4) random_seed = Int32.Parse(args[4]);
 		MyMediaLite.Random.Seed = random_seed;
+
+		if(args.Length > 5) sample_size = Int32.Parse(args[5]);
 
 	}
 
@@ -87,6 +91,17 @@ class ForgettingProfile
 		// Save results
 		StreamWriter w = new StreamWriter(filename);
 
+		if(sample_size > 0)
+		{
+			Console.WriteLine("Using sampling: sample size is " + sample_size);
+			var rand = MyMediaLite.Random.GetInstance();
+			sample_idx = new int[sample_size];
+			for(int r = 0; r < sample_size; r++)
+				sample_idx[r] = rand.Next(0,train_data.Count-1);
+		}
+
+		int n = sample_size;
+
 		for (int i = 0; i < test_data.Count; i++)
 		{
 			int tu = test_data.Users[i];
@@ -95,11 +110,17 @@ class ForgettingProfile
 			var pair = Tuple.Create(tu, ti);
 			recommender.AddFeedback(new Tuple<int, int>[]{ pair });
 
-			var sc = new float[recommender.Feedback.Count];
+			if (sample_size == 0)
+			{
+				n = recommender.Feedback.Count;
+				sample_idx = Enumerable.Range(0,n-1).ToArray();
+			}
 
-			Parallel.For (0, recommender.Feedback.Count, parallel_opts, j => {
-				sc[j] = recommender.Predict(recommender.Feedback.Users[j], 
-				                            recommender.Feedback.Items[j]);
+			var sc = new float[n];
+
+			Parallel.For (0, n, parallel_opts, j => {
+				sc[j] = recommender.Predict(recommender.Feedback.Users[sample_idx[j]], 
+				                            recommender.Feedback.Items[sample_idx[j]]);
 			});
 
 			w.WriteLine(tu + "-" + ti + "\t" + String.Join("\t",sc));
