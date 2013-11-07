@@ -102,7 +102,7 @@ class ForgettingProfile
 				                            recommender.Feedback.Items[j]);
 			});
 
-			w.Write(tu + "-" + ti + "\t" + String.Join("\t",sc));
+			w.WriteLine(tu + "-" + ti + "\t" + String.Join("\t",sc));
 
 			if(i % 5000 == 0)
 			{
