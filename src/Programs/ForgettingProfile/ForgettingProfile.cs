@@ -97,7 +97,11 @@ class ForgettingProfile
 			var rand = MyMediaLite.Random.GetInstance();
 			sample_idx = new int[sample_size];
 			for(int r = 0; r < sample_size; r++)
-				sample_idx[r] = rand.Next(0,train_data.Count-1);
+			{
+				int k;
+				while (sample_idx.Contains(k = rand.Next(0,train_data.Count-1)));
+				sample_idx[r] = k;
+			}
 			Array.Sort(sample_idx);
 			Console.WriteLine("\nSampled indexes:\n");
 			Console.WriteLine(String.Join("\t",sample_idx));
