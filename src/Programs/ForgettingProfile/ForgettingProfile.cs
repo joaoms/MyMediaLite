@@ -38,7 +38,6 @@ class ForgettingProfile
 	IMapping item_mapping = new Mapping();
 	IPosOnlyFeedback train_data;
 	IPosOnlyFeedback test_data;
-	IList<float[]> scores;
 	ParallelOptions parallel_opts = new ParallelOptions() { MaxDegreeOfParallelism = 4 };
 
 	public ForgettingProfile(string[] args)
@@ -74,22 +73,19 @@ class ForgettingProfile
 	private void Run()
 	{
 
-		scores = new List<float[]>(test_data.Count + 1);
-
 		recommender.Feedback = train_data;
 
 		Console.WriteLine(recommender.ToString());
 
 		recommender.Train();
 
-		var s = new float[train_data.Count];
-
-		for (int i = 0; i < train_data.Count; i++)
-			s[i] = recommender.Predict(train_data.Users[i], train_data.Items[i]);
-
-		scores.Add(s);
-
 		Console.WriteLine("Trained model with " + train_data.Count + " observations");
+
+		DateTime dt = DateTime.Now;
+		string filename = "forgetting_profiles_" + method + String.Format("{0:yyMMddHHmm}", dt) + ".log";
+		Console.WriteLine("Writing data in: " + filename);
+		// Save results
+		StreamWriter w = new StreamWriter(filename);
 
 		for (int i = 0; i < test_data.Count; i++)
 		{
@@ -106,7 +102,7 @@ class ForgettingProfile
 				                            recommender.Feedback.Items[j]);
 			});
 
-			scores.Add(sc);
+			w.Write(tu + "-" + ti + "\t" + String.Join("\t",sc));
 
 			if(i % 5000 == 0)
 			{
@@ -115,7 +111,7 @@ class ForgettingProfile
 			}
 		}
 
-		Terminate();
+		w.Close();
 
 	}
 
@@ -123,27 +119,5 @@ class ForgettingProfile
 	{
 		recommender.Configure(parameters);
 	}
-
-	private void Terminate()
-	{
-		DateTime dt = DateTime.Now;
-		string filename = "forgetting_profiles_" + method + String.Format("{0:yyMMddHHmm}", dt) + ".log";
-		Console.WriteLine("Writing data in: " + filename);
-		// Save results
-		StreamWriter w = new StreamWriter(filename);
-		for (int i = 0; i < recommender.Feedback.Count; i++)
-		{
-			var user = recommender.Feedback.Users[i];
-			var item = recommender.Feedback.Items[i];
-
-			w.Write(user + "-" + item);
-
-			foreach(var s in scores[i])
-				w.Write("\t" + s);
-			w.WriteLine();
-		}
-
-		w.Close();
-	}
-
+	
 }
