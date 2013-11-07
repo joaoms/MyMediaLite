@@ -98,6 +98,7 @@ class ForgettingProfile
 			sample_idx = new int[sample_size];
 			for(int r = 0; r < sample_size; r++)
 				sample_idx[r] = rand.Next(0,train_data.Count-1);
+			Array.Sort(sample_idx);
 			Console.WriteLine("\nSampled indexes:\n");
 			Console.WriteLine(String.Join("\t",sample_idx));
 		}
@@ -115,7 +116,7 @@ class ForgettingProfile
 			if (sample_size == 0)
 			{
 				n = recommender.Feedback.Count;
-				sample_idx = Enumerable.Range(0,n-1).ToArray();
+				sample_idx = Enumerable.Range(0,n).ToArray();
 			}
 
 			var sc = new float[n];
