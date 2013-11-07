@@ -33,14 +33,12 @@ class ForgettingProfile
 {
 	string method = "NaiveSVD";
 	int random_seed = 10;
-	int n_recs = 10;
-	bool repeated_items = false;
 	IncrementalItemRecommender recommender;
 	IMapping user_mapping = new Mapping();
 	IMapping item_mapping = new Mapping();
 	IPosOnlyFeedback train_data;
 	IPosOnlyFeedback test_data;
-	IList<int[]> scores;
+	IList<float[]> scores;
 	ParallelOptions parallel_opts = new ParallelOptions() { MaxDegreeOfParallelism = 4 };
 
 	public ForgettingProfile(string[] args)
@@ -76,7 +74,7 @@ class ForgettingProfile
 	private void Run()
 	{
 
-		scores = new List<int[]>(test_data.Count + 1);
+		scores = new List<float[]>(test_data.Count + 1);
 
 		recommender.Feedback = train_data;
 
@@ -84,7 +82,7 @@ class ForgettingProfile
 
 		recommender.Train();
 
-		var s = new int[train_data.Count];
+		var s = new float[train_data.Count];
 
 		for (int i = 0; i < train_data.Count; i++)
 			s[i] = recommender.Predict(train_data.Users[i], train_data.Items[i]);
@@ -101,7 +99,7 @@ class ForgettingProfile
 			var pair = Tuple.Create(tu, ti);
 			recommender.AddFeedback(new Tuple<int, int>[]{ pair });
 
-			var sc = new int[recommender.Feedback.Count];
+			var sc = new float[recommender.Feedback.Count];
 
 			Parallel.For (0, recommender.Feedback.Count, parallel_opts, j => {
 				sc[j] = recommender.Predict(recommender.Feedback.Users[j], 
