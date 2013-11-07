@@ -40,7 +40,7 @@ class ForgettingProfile
 	IMapping item_mapping = new Mapping();
 	IPosOnlyFeedback train_data;
 	IPosOnlyFeedback test_data;
-	IDictionary<Tuple<int,int>,IList<float>> scores;
+	IList<int[]> scores;
 	ParallelOptions parallel_opts = new ParallelOptions() { MaxDegreeOfParallelism = 4 };
 
 	public ForgettingProfile(string[] args)
@@ -65,8 +65,6 @@ class ForgettingProfile
 		if(args.Length > 4) random_seed = Int32.Parse(args[4]);
 		MyMediaLite.Random.Seed = random_seed;
 
-		scores = new ConcurrentDictionary<Tuple<int, int>, IList<float>>();
-
 	}
 
 	public static void Main(string[] args)
@@ -78,19 +76,20 @@ class ForgettingProfile
 	private void Run()
 	{
 
+		scores = new List<int[]>(test_data.Count + 1);
+
 		recommender.Feedback = train_data;
 
 		Console.WriteLine(recommender.ToString());
 
 		recommender.Train();
 
+		var s = new int[train_data.Count];
+
 		for (int i = 0; i < train_data.Count; i++)
-		{
-			var pair = Tuple.Create(train_data.Users[i], train_data.Items[i]);
-			scores.Add(pair,new List<float>());
-			var score = recommender.Predict(train_data.Users[i], train_data.Items[i]);
-			scores[pair].Add(score);
-		}
+			s[i] = recommender.Predict(train_data.Users[i], train_data.Items[i]);
+
+		scores.Add(s);
 
 		Console.WriteLine("Trained model with " + train_data.Count + " observations");
 
@@ -102,12 +101,14 @@ class ForgettingProfile
 			var pair = Tuple.Create(tu, ti);
 			recommender.AddFeedback(new Tuple<int, int>[]{ pair });
 
-			scores.Add(pair, new List<float>());
+			var sc = new int[recommender.Feedback.Count];
 
-			Parallel.ForEach (scores.Keys, parallel_opts, t => {
-				var score = recommender.Predict(t.Item1, t.Item2);
-				scores[t].Add(score);
+			Parallel.For (0, recommender.Feedback.Count, parallel_opts, j => {
+				sc[j] = recommender.Predict(recommender.Feedback.Users[j], 
+				                            recommender.Feedback.Items[j]);
 			});
+
+			scores.Add(sc);
 
 			if(i % 5000 == 0)
 			{
@@ -137,11 +138,9 @@ class ForgettingProfile
 			var user = recommender.Feedback.Users[i];
 			var item = recommender.Feedback.Items[i];
 
-			var t = Tuple.Create(user,item);
+			w.Write(user + "-" + item);
 
-			w.Write(t.Item1 + "-" + t.Item2);
-
-			foreach(var s in scores[t])
+			foreach(var s in scores[i])
 				w.Write("\t" + s);
 			w.WriteLine();
 		}
