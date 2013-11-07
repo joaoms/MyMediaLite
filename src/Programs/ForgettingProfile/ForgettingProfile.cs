@@ -99,7 +99,7 @@ class ForgettingProfile
 			for(int r = 0; r < sample_size; r++)
 				sample_idx[r] = rand.Next(0,train_data.Count-1);
 			Console.WriteLine("\nSampled indexes:\n");
-			Console.WriteLine(String.Join("\t",sample_idx);
+			Console.WriteLine(String.Join("\t",sample_idx));
 		}
 
 		int n = sample_size;
