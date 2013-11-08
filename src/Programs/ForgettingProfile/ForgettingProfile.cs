@@ -126,7 +126,8 @@ class ForgettingProfile
 			var sc = new float[n];
 
 			Parallel.For (0, n, parallel_opts, j => {
-				sc[j] = recommender.Predict(recommender.Feedback.Users[sample_idx[j]], 
+				lock(sc)
+					sc[j] = recommender.Predict(recommender.Feedback.Users[sample_idx[j]], 
 				                            recommender.Feedback.Items[sample_idx[j]]);
 			});
 
