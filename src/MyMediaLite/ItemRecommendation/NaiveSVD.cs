@@ -221,7 +221,7 @@ namespace MyMediaLite.ItemRecommendation
 			if (n == -1)
 			{
 				var scored_items = new List<Tuple<int, float>>();
-				/*
+
 				foreach (int item_id in candidate_items)
 					if (!ignore_items.Contains(item_id))
 					{
@@ -229,7 +229,8 @@ namespace MyMediaLite.ItemRecommendation
 						if (score > float.MinValue)
 							scored_items.Add(Tuple.Create(item_id, score));
 					}
-				*/
+
+				/*
 				Parallel.ForEach(candidate_items, item_id => {
 					if (!ignore_items.Contains(item_id))
 					{
@@ -239,6 +240,7 @@ namespace MyMediaLite.ItemRecommendation
 								scored_items.Add(Tuple.Create(item_id, score));
 					}
 				});
+				*/
 				ordered_items = scored_items.OrderByDescending(x => x.Item2).ToArray();
 			}
 			else
@@ -247,7 +249,6 @@ namespace MyMediaLite.ItemRecommendation
 				var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
 				float min_relevant_score = float.MinValue;
 
-				/*
 				foreach (int item_id in candidate_items)
 					if (!ignore_items.Contains(item_id))
 					{
@@ -262,8 +263,8 @@ namespace MyMediaLite.ItemRecommendation
 							}
 						}
 					}
-				*/
 
+				/*
 				Parallel.ForEach(candidate_items, item_id => {
 					if (!ignore_items.Contains(item_id))
 					{
@@ -282,6 +283,7 @@ namespace MyMediaLite.ItemRecommendation
 						}
 					}
 				});
+				*/
 				ordered_items = new Tuple<int, float>[heap.Count];
 				for (int i = 0; i < ordered_items.Count; i++)
 					ordered_items[i] = heap.DeleteMax();
