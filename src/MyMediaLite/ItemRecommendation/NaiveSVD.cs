@@ -16,6 +16,8 @@
 //  along with MyMediaLite.  If not, see <http://www.gnu.org/licenses/>.
 //
 using System;
+using C5;
+using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -115,20 +117,20 @@ namespace MyMediaLite.ItemRecommendation
 
 
 		///
-		public override void AddFeedback(ICollection<Tuple<int, int>> feedback)
+		public override void AddFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			base.AddFeedback(feedback);
 			Retrain(feedback);
 		}
 		
 		///
-		public override void RemoveFeedback(ICollection<Tuple<int, int>> feedback)
+		public override void RemoveFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			base.RemoveFeedback(feedback);
 			Retrain(feedback);
 		}
 		
-		void Retrain(ICollection<Tuple<int, int>> feedback)
+		void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			foreach (var entry in feedback)
 				UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems);
@@ -201,6 +203,93 @@ namespace MyMediaLite.ItemRecommendation
 			}
 
 		}
+
+
+		///
+		public override System.Collections.Generic.IList<Tuple<int, float>> Recommend(
+			int user_id, int n = -1,
+			System.Collections.Generic.ICollection<int> ignore_items = null,
+			System.Collections.Generic.ICollection<int> candidate_items = null)
+		{
+			if (candidate_items == null)
+				candidate_items = Enumerable.Range(0, MaxItemID - 1).ToList();
+			if (ignore_items == null)
+				ignore_items = new int[0];
+
+			System.Collections.Generic.IList<Tuple<int, float>> ordered_items;
+
+			if (n == -1)
+			{
+				var scored_items = new List<Tuple<int, float>>();
+				/*
+				foreach (int item_id in candidate_items)
+					if (!ignore_items.Contains(item_id))
+					{
+						float score = Predict(user_id, item_id);
+						if (score > float.MinValue)
+							scored_items.Add(Tuple.Create(item_id, score));
+					}
+				*/
+				Parallel.ForEach(candidate_items, item_id => {
+					if (!ignore_items.Contains(item_id))
+					{
+						float score = -Math.Abs(1 - Predict(user_id, item_id));
+						if (score > float.MinValue)
+							lock(scored_items)
+								scored_items.Add(Tuple.Create(item_id, score));
+					}
+				});
+				ordered_items = scored_items.OrderByDescending(x => x.Item2).ToArray();
+			}
+			else
+			{
+				var comparer = new DelegateComparer<Tuple<int, float>>( (a, b) => a.Item2.CompareTo(b.Item2) );
+				var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
+				float min_relevant_score = float.MinValue;
+
+				/*
+				foreach (int item_id in candidate_items)
+					if (!ignore_items.Contains(item_id))
+					{
+						float score = Predict(user_id, item_id);
+						if (score > min_relevant_score)
+						{
+							heap.Add(Tuple.Create(item_id, score));
+							if (heap.Count > n)
+							{
+								heap.DeleteMin();
+								min_relevant_score = heap.FindMin().Item2;
+							}
+						}
+					}
+				*/
+
+				Parallel.ForEach(candidate_items, item_id => {
+					if (!ignore_items.Contains(item_id))
+					{
+						float score = -Math.Abs(1 - Predict(user_id, item_id));
+						if (score > min_relevant_score)
+						{
+							lock (heap)
+							{
+								heap.Add(Tuple.Create(item_id, score));
+								if (heap.Count > n)
+								{
+									heap.DeleteMin();
+									min_relevant_score = heap.FindMin().Item2;
+								}
+							}
+						}
+					}
+				});
+				ordered_items = new Tuple<int, float>[heap.Count];
+				for (int i = 0; i < ordered_items.Count; i++)
+					ordered_items[i] = heap.DeleteMax();
+			}
+
+			return ordered_items;
+		}
+
 
 		///
 		public override string ToString()
