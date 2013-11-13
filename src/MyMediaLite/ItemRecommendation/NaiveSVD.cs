@@ -45,6 +45,8 @@ namespace MyMediaLite.ItemRecommendation
 		/// <summary>The learn rate used for the current epoch</summary>
 		protected internal float current_learnrate;
 
+		float max_score = 1.0f;
+
 		public NaiveSVD ()
 		{
 			UpdateUsers = true;
@@ -181,8 +183,14 @@ namespace MyMediaLite.ItemRecommendation
 		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
 		{
 			//Console.WriteLine(float.MinValue);
-			float err = 1 - Predict(user_id, item_id, false);
-			
+			float err = max_score - Predict(user_id, item_id, false);
+
+			if (err < 0)
+			{ 
+				max_score -= err;
+				err = 0;
+			}
+
 			// adjust factors
 			for (int f = 0; f < NumFactors; f++)
 			{
