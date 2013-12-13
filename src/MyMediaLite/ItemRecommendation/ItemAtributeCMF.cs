@@ -293,7 +293,7 @@ namespace MyMediaLite.ItemRecommendation
 				foreach (int item_id in candidate_items)
 					if (!ignore_items.Contains(item_id))
 					{
-						float score = Predict(user_id, item_id);
+						float score = -Math.Abs(1 - Predict(user_id, item_id));
 						if (score > float.MinValue)
 							scored_items.Add(Tuple.Create(item_id, score));
 					}
@@ -320,7 +320,7 @@ namespace MyMediaLite.ItemRecommendation
 				foreach (int item_id in candidate_items)
 					if (!ignore_items.Contains(item_id))
 					{
-						float score = Predict(user_id, item_id);
+						float score = -Math.Abs(1 - Predict(user_id, item_id));
 						if (score > min_relevant_score)
 						{
 							heap.Add(Tuple.Create(item_id, score));
