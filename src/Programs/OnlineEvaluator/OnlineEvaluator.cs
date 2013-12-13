@@ -39,11 +39,13 @@ class OnlineEvaluator
 	IPosOnlyFeedback train_data;
 	IPosOnlyFeedback test_data;
 	IDictionary<string, IList<double>> measures;
+	IBooleanMatrix user_attributes;
+	IBooleanMatrix item_attributes;
 
 	public OnlineEvaluator(string[] args)
 	{
 		if(args.Length < 4) {
-			Console.WriteLine("Usage: online_evaluator <recommender> <\"recommender params\"> <training_file> <test_file> [<random_seed> [<n_recs> [<repeated_items>]]]");
+			Console.WriteLine("Usage: online_evaluator <recommender> <\"recommender params\"> <training_file> <test_file> [<random_seed> [<n_recs> [<repeated_items> [<attributes>]]]]");
 			Environment.Exit(1);
 		}
 		
@@ -65,6 +67,20 @@ class OnlineEvaluator
 		if(args.Length > 5) n_recs = Int32.Parse(args[5]);
 
 		if(args.Length > 6) repeated_items = Boolean.Parse(args[6]);
+
+		if(args.Length > 7)
+		{
+			if(recommender is IUserAttributeAwareRecommender) 
+			{
+				user_attributes = AttributeData.Read(args[7], user_mapping);
+				((IUserAttributeAwareRecommender)recommender).UserAttributes = user_attributes;
+			}
+			else if(recommender is IItemAttributeAwareRecommender)
+			{
+				item_attributes = AttributeData.Read(args[7], item_mapping);
+				((IItemAttributeAwareRecommender)recommender).ItemAttributes = item_attributes;
+			}
+		}
 
 		measures = InitMeasures();
 
