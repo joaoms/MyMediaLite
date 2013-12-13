@@ -20,7 +20,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
-    <GenerateDocumentation>true</GenerateDocumentation>
+    <DocumentationFile>bin\Debug\MyMediaLite.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -248,6 +248,7 @@
     <Compile Include="ItemRecommendation\SimilarityWeightedMF.cs" />
     <Compile Include="ItemRecommendation\ItemSimMF.cs" />
     <Compile Include="ItemRecommendation\BiasedNSVD.cs" />
+    <Compile Include="ItemRecommendation\ItemAtributeCMF.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <ItemGroup>
