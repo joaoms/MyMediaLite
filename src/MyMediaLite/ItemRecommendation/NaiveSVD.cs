@@ -45,7 +45,7 @@ namespace MyMediaLite.ItemRecommendation
 		/// <summary>The learn rate used for the current epoch</summary>
 		protected internal float current_learnrate;
 
-		float max_score = 1.0f;
+		// float max_score = 1.0f;
 
 		public NaiveSVD ()
 		{
@@ -183,13 +183,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
 		{
 			//Console.WriteLine(float.MinValue);
-			float err = max_score - Predict(user_id, item_id, false);
-
-			if (err < 0)
-			{ 
-				max_score -= err;
-				err = 0;
-			}
+			float err = 1 - Predict(user_id, item_id, false);
 
 			// adjust factors
 			for (int f = 0; f < NumFactors; f++)
@@ -233,7 +227,7 @@ namespace MyMediaLite.ItemRecommendation
 				foreach (int item_id in candidate_items)
 					if (!ignore_items.Contains(item_id))
 					{
-						float score = Predict(user_id, item_id);
+						float score = -Math.Abs(1 - Predict(user_id, item_id));
 						if (score > float.MinValue)
 							scored_items.Add(Tuple.Create(item_id, score));
 					}
@@ -260,7 +254,7 @@ namespace MyMediaLite.ItemRecommendation
 				foreach (int item_id in candidate_items)
 					if (!ignore_items.Contains(item_id))
 					{
-						float score = Predict(user_id, item_id);
+						float score = -Math.Abs(1 - Predict(user_id, item_id));
 						if (score > min_relevant_score)
 						{
 							heap.Add(Tuple.Create(item_id, score));
