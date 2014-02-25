@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using MyMediaLite.Correlation;
 using MyMediaLite.DataType;
 
@@ -33,6 +34,8 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		protected override IBooleanMatrix DataMatrix { get { return Feedback.ItemMatrix; } }
 
+		/// 
+		protected ParallelOptions parallel_opts = new ParallelOptions() { MaxDegreeOfParallelism = 4 };
 
 		///
 		public override void Train()
@@ -122,29 +125,50 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		protected override void RecomputeNeighbors(ICollection<int> new_items)
 		{
-			float min;
 			var retrain_items = new HashSet<int>(); 
+
+			// Option 1 (complete): Update every neighbor list that may have changed
+			/*
+			float min;
 			foreach (int item in Feedback.AllItems.Except(new_items))
 			{
 				// Get the correlation of the least correlated neighbor
-				if(nearest_neighbors[item] == null) 
+				if (nearest_neighbors[item] == null)
 					min = 0;
-				else if(nearest_neighbors[item].Count < k)
+				else if (nearest_neighbors[item].Count < k)
 					min = 0;
-				else 
+				else
 					min = correlation[item, nearest_neighbors[item].Last()];
-				
+
 				// Check if any of the added items have a higher correlation
 				// (requires retraining if it is a new neighbor or an existing one)
-				foreach(int new_item in new_items)
-					if(correlation[item, new_item] > min)
+				foreach (int new_item in new_items)
+					if (correlation[item, new_item] > min)
 						retrain_items.Add(item);
 			}
-			// Recently added items also need retraining
+			*/
+
+			// Option 2 (heuristic): Update only neighbors of added items
+			/*
+			foreach (int item in new_items)
+			{
+				if(nearest_neighbors[item] != null)
+					if(nearest_neighbors[item].Count > 0)
+						retrain_items.UnionWith(nearest_neighbors[item]);
+			}
+			*/
+
+			// Option 3: Only update neighbor lists of added users
+
+			// Recently added users also need retraining
 			retrain_items.UnionWith(new_items);
-			// Recalculate neighborhood of selected items
-			foreach (int r_item in retrain_items)
-				nearest_neighbors[r_item] = correlation.GetNearestNeighbors(r_item, k);
+			// Recalculate neighborhood of selected users
+			Parallel.ForEach(retrain_items, parallel_opts, r_item => {
+				var neighbors = correlation.GetNearestNeighbors(r_item, k);
+				lock(nearest_neighbors) {
+					nearest_neighbors[r_item] = neighbors;
+				}
+			});
 		}
 
 		/// <summary>
