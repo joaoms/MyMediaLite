@@ -111,7 +111,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.AddFeedback(feedback);
 			if (UpdateItems)
-				Update(feedback);
+				Update(feedback, true);
 		}
 
 		///
@@ -119,7 +119,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.RemoveFeedback(feedback);
 			if (UpdateItems)
-				Update(feedback);
+				Update(feedback, true);
 		}
 
 		///

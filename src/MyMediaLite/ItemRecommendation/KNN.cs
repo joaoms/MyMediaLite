@@ -107,11 +107,17 @@ namespace MyMediaLite.ItemRecommendation
 
 		/// <summary>Update the correlation matrix for the given feedback</summary>
 		/// <param name='feedback'>the feedback (user-item tuples)</param>
-		protected void Update(ICollection<Tuple<int, int>> feedback)
+		/// <param name='items'>true if item-based</param>
+		protected void Update(ICollection<Tuple<int, int>> feedback, bool items = false)
 		{
 			var update_entities = new HashSet<int>();
 			foreach (var t in feedback)
-				update_entities.Add(t.Item1);
+			{
+				if(items)
+					update_entities.Add(t.Item2);
+				else
+					update_entities.Add(t.Item1);
+			}
 
 			foreach (int i in update_entities)
 			{
