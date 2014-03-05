@@ -42,12 +42,12 @@ class OnlineCrossval
 	IList<int> candidate_items;
 	string param_name;
 	string[] param_values;
-	ParallelOptions parallel_opts = new ParallelOptions() { MaxDegreeOfParallelism = 4 };
+	int max_cores = -1;
 
 	public OnlineCrossval(string[] args)
 	{
 		if(args.Length < 6) {
-			Console.WriteLine("Usage: online_crossval <recommender> <\"recommender params\"> <parameter_name> <parameter_values> <data_file> <split> [<random_seed> [<n_recs>]]");
+			Console.WriteLine("Usage: online_crossval <recommender> <\"recommender params\"> <parameter_name> <parameter_values> <data_file> <split> [<random_seed> [<n_recs> [<max_cores>]]]");
 			Environment.Exit(1);
 		}
 		
@@ -67,6 +67,8 @@ class OnlineCrossval
 		
 		if(args.Length > 7) n_recs = Int32.Parse(args[7]);
 
+		if(args.Length > 8) max_cores = Int32.Parse(args[8]);
+
 		candidate_items = new List<int>(all_data.AllItems);
 	}
 
@@ -79,6 +81,7 @@ class OnlineCrossval
 	private void Run()
 	{
 		Console.WriteLine(param_name + "\trecall@1\trecall@5\trecall@10\tMAP\tAUC\tNDCG");
+		var parallel_opts = new ParallelOptions() { MaxDegreeOfParallelism = max_cores };
 		Parallel.ForEach(param_values, parallel_opts, param_val => {
 
 			var measures = InitMeasures();
