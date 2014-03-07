@@ -241,7 +241,7 @@ namespace MyMediaLite.ItemRecommendation
 						if (error > float.MaxValue)
 							error = float.MaxValue;
 						lock(scored_items)
-							scored_items.Add(Tuple.Create(item_id, score));
+							scored_items.Add(Tuple.Create(item_id, error));
 					}
 				});
 
