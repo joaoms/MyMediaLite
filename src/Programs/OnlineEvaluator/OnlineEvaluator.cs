@@ -41,7 +41,7 @@ class OnlineEvaluator
 	IDictionary<string, IList<double>> measures;
 	IBooleanMatrix user_attributes;
 	IBooleanMatrix item_attributes;
-	string[] metrics = new string[]{"recall@1","recall@5","recall@10","MAP","AUC","NDCG","rec_time"};
+	string[] metrics = new string[]{"recall@1","recall@5","recall@10","recall@20","MAP","AUC","NDCG","rec_time"};
 	StreamWriter output_scores;
 	StreamWriter output_times;
 
