@@ -182,7 +182,7 @@ class OnlineEvaluator
 			retrain_start = DateTime.Now;
 			recommender.AddFeedback(new Tuple<int, int>[]{ tuple });
 			retrain_end = DateTime.Now;
-			measures["retrain_time"].Add((retrain_end - retrain_start).TotalMilliseconds);
+			measures["retrain_times"].Add((retrain_end - retrain_start).TotalMilliseconds);
 			output_times.WriteLine(i + "\t" + user_mapping.ToOriginalID(tu) + "\t" + 
 				item_mapping.ToOriginalID(ti) + "\t" + (retrain_end - retrain_start).TotalMilliseconds);
 			if(i % 5000 == 0)
