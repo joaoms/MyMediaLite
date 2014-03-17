@@ -89,9 +89,9 @@ class OnlineEvaluator
 
 		DateTime dt = DateTime.Now;
 
-		output_scores = new StreamWriter("ov" + method + args[3].Substring(args[3].IndexOf(".")) + String.Format("{0:yyMMdd}", dt) + ".log");
+		output_scores = new StreamWriter("ov" + method + args[3].Substring(args[3].LastIndexOf("/")+1,16) + String.Format("{0:yyMMdd}", dt) + ".log");
 		output_scores.WriteLine("idx\tuser\titem\trecall@1\trecall@5\trecall@10\trecall@20\tmap\tauc\tndcg\trec_time");
-		output_times = new StreamWriter("update_times" + method + args[3].Substring(args[3].IndexOf(".")) + String.Format("{0:yyMMdd}", dt) + ".log");
+		output_times = new StreamWriter("update_times" + method + args[3].Substring(args[3].LastIndexOf("/")+1,16) + String.Format("{0:yyMMdd}", dt) + ".log");
 		output_times.WriteLine("idx\tuser\titem\tretrain_time");
 
 	}
