@@ -42,6 +42,10 @@ namespace MyMediaLite.ItemRecommendation
 		public float Decay { get { return decay; } set { decay = value; } }
 		float decay = 1.0f;
 
+		/// <summary>Learn rate (update step size)</summary>
+		public uint IncrIter { get { return incr_iter; } set { incr_iter = value; } }
+		uint incr_iter = 1;
+
 		/// <summary>The learn rate used for the current epoch</summary>
 		protected internal float current_learnrate;
 
@@ -134,8 +138,9 @@ namespace MyMediaLite.ItemRecommendation
 		
 		void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
-			foreach (var entry in feedback)
-				UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems);
+			for (uint i = 0; i < IncrIter; i++)
+				foreach (var entry in feedback)
+					UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems);
 		}
 		
 		///
@@ -301,8 +306,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"NaiveSVD num_factors={0} regularization={1} learn_rate={2} num_iter={3} decay={4}",
-				NumFactors, Regularization, LearnRate, NumIter, Decay);
+				"NaiveSVD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay);
 		}
 
 
