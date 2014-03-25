@@ -42,9 +42,13 @@ namespace MyMediaLite.ItemRecommendation
 		public float Decay { get { return decay; } set { decay = value; } }
 		float decay = 1.0f;
 
-		/// <summary>Learn rate (update step size)</summary>
+		/// <summary>Incremental iteration number</summary>
 		public uint IncrIter { get { return incr_iter; } set { incr_iter = value; } }
 		uint incr_iter = 1;
+
+		/// <summary>Incremental iteration number</summary>
+		public bool UseMulticore { get { return use_multicore; } set { use_multicore = value; } }
+		bool use_multicore = true;
 
 		/// <summary>The learn rate used for the current epoch</summary>
 		protected internal float current_learnrate;
@@ -228,27 +232,28 @@ namespace MyMediaLite.ItemRecommendation
 			if (n == -1)
 			{
 				var scored_items = new List<Tuple<int, float>>();
-				/*
-				foreach (int item_id in candidate_items)
-					if (!ignore_items.Contains(item_id))
-					{
-						float error = Math.Abs(1 - Predict(user_id, item_id));
-						if (error > float.MaxValue)
-							error = float.MaxValue;
-						scored_items.Add(Tuple.Create(item_id, error));
-					}
-
-				*/
-				Parallel.ForEach(candidate_items, item_id => {
-					if (!ignore_items.Contains(item_id))
-					{
-						float error = Math.Abs(1 - Predict(user_id, item_id));
-						if (error > float.MaxValue)
-							error = float.MaxValue;
-						lock(scored_items)
+				if (UseMulticore)
+				{
+					Parallel.ForEach(candidate_items, item_id => {
+						if (!ignore_items.Contains(item_id))
+						{
+							float error = Math.Abs(1 - Predict(user_id, item_id));
+							if (error > float.MaxValue)
+								error = float.MaxValue;
+							lock(scored_items)
+								scored_items.Add(Tuple.Create(item_id, error));
+						}
+					});
+				} else {
+					foreach (int item_id in candidate_items)
+						if (!ignore_items.Contains(item_id))
+						{
+							float error = Math.Abs(1 - Predict(user_id, item_id));
+							if (error > float.MaxValue)
+								error = float.MaxValue;
 							scored_items.Add(Tuple.Create(item_id, error));
-					}
-				});
+						}
+				}
 
 				ordered_items = scored_items.OrderBy(x => x.Item2).ToArray();
 			}
@@ -257,29 +262,33 @@ namespace MyMediaLite.ItemRecommendation
 				var comparer = new DelegateComparer<Tuple<int, float>>( (a, b) => a.Item2.CompareTo(b.Item2) );
 				var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
 				float max_error = float.MaxValue;
-				/*
-				foreach (int item_id in candidate_items)
-					if (!ignore_items.Contains(item_id))
-					{
-						float error = Math.Abs(1 - Predict(user_id, item_id));
-						if (error < max_error)
+
+				if (UseMulticore)
+				{
+					Parallel.ForEach(candidate_items, item_id => {
+						if (!ignore_items.Contains(item_id))
 						{
-							heap.Add(Tuple.Create(item_id, error));
-							if (heap.Count > n)
+							float error = Math.Abs(1 - Predict(user_id, item_id));
+							if (error < max_error)
 							{
-								heap.DeleteMax();
-								max_error = heap.FindMax().Item2;
+								lock (heap)
+								{
+									heap.Add(Tuple.Create(item_id, error));
+									if (heap.Count > n)
+									{
+										heap.DeleteMax();
+										max_error = heap.FindMax().Item2;
+									}
+								}
 							}
 						}
-					}
-				*/
-				Parallel.ForEach(candidate_items, item_id => {
-					if (!ignore_items.Contains(item_id))
-					{
-						float error = Math.Abs(1 - Predict(user_id, item_id));
-						if (error < max_error)
+					});
+				} else {
+					foreach (int item_id in candidate_items)
+						if (!ignore_items.Contains(item_id))
 						{
-							lock (heap)
+							float error = Math.Abs(1 - Predict(user_id, item_id));
+							if (error < max_error)
 							{
 								heap.Add(Tuple.Create(item_id, error));
 								if (heap.Count > n)
@@ -289,8 +298,7 @@ namespace MyMediaLite.ItemRecommendation
 								}
 							}
 						}
-					}
-				});
+				}
 
 				ordered_items = new Tuple<int, float>[heap.Count];
 				for (int i = 0; i < ordered_items.Count; i++)
