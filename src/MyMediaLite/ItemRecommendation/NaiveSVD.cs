@@ -87,8 +87,11 @@ namespace MyMediaLite.ItemRecommendation
 			//TODO: respeitar sequencia original
 			// ou não: o objetivo é ter uma sequência diferente por cada iteração.
 			// só se aplica ao treino inicial
-			var indexes = Feedback.RandomIndex;
-			foreach (int index in indexes)
+			/*
+			 * var indexes = Feedback.RandomIndex;
+			 * foreach (int index in indexes)
+			 */
+			for (int index = 0; index < Feedback.Count; index++)
 			{
 				int u = Feedback.Users[index];
 				int i = Feedback.Items[index];
