@@ -43,8 +43,7 @@ namespace MyMediaLite.ItemRecommendation
 		float decay = 1.0f;
 
 		/// <summary>Incremental iteration number</summary>
-		public uint IncrIter { get { return incr_iter; } set { incr_iter = value; } }
-		uint incr_iter = 1;
+		public uint IncrIter { get; set; }
 
 		/// <summary>Incremental iteration number</summary>
 		public bool UseMulticore { get { return use_multicore; } set { use_multicore = value; } }
@@ -59,6 +58,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
+			IncrIter = NumIter;
 		}
 
 		protected override void InitModel()
