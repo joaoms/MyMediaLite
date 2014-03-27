@@ -249,6 +249,7 @@
     <Compile Include="ItemRecommendation\ItemSimMF.cs" />
     <Compile Include="ItemRecommendation\BiasedNSVD.cs" />
     <Compile Include="ItemRecommendation\ItemAtributeCMF.cs" />
+    <Compile Include="ItemRecommendation\NaiveSVDRank.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <ItemGroup>
