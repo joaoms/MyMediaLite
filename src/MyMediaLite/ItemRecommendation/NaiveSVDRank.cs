@@ -58,9 +58,15 @@ namespace MyMediaLite.ItemRecommendation
 		/// <param name="item_id">Item_id.</param>
 		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
 		{
+			var ignore_items = new System.Collections.Generic.HashSet<int>(Feedback.UserMatrix[user_id]);
+			var score = Predict(user_id, item_id, false);
+			var reclist = Recommend(user_id, MaxListSize, ignore_items);
+			float rel_position = 1;
+			if (reclist.Count > 0)
+				rel_position = reclist.IndexOf(Tuple.Create(item_id, score)) / reclist.Count;
+
 			//Console.WriteLine(float.MinValue);
-			float err = 1 - Predict(user_id, item_id, false);
-			float rank_correction = ScoreRank(user_id, item_id, 1-err);
+			float err = Math.Abs(rel_position);
 
 			// adjust factors
 			for (int f = 0; f < NumFactors; f++)
@@ -72,34 +78,17 @@ namespace MyMediaLite.ItemRecommendation
 				if (update_user)
 				{
 					double delta_u = err * i_f - Regularization * u_f;
-					user_factors.Inc(user_id, f, rank_correction * current_learnrate * delta_u);
+					user_factors.Inc(user_id, f, current_learnrate * delta_u);
 				}
 				if (update_item)
 				{
 					double delta_i = err * u_f - Regularization * i_f;
-					item_factors.Inc(item_id, f, rank_correction * current_learnrate * delta_i);
+					item_factors.Inc(item_id, f, current_learnrate * delta_i);
 				}
 			}
 
 		}
-
-		/// <summary>
-		/// Scores the rank.
-		/// </summary>
-		/// <returns>The score.</returns>
-		/// <param name="user_id">User_id.</param>
-		/// <param name="item_id">Item_id.</param>
-		/// <param name="score">Score.</param>
-		public virtual float ScoreRank(int user_id, int item_id, float score)
-		{
-			var ignore_items = new System.Collections.Generic.HashSet<int>(Feedback.UserMatrix[user_id]);
-			var reclist = Recommend(user_id, MaxListSize, ignore_items);
-			if(reclist.Count == 0)
-				return 1;
-			var position = reclist.IndexOf(Tuple.Create(item_id,score));
-			return position / reclist.Count;
-		}
-
+			
 
 		///
 		public override System.Collections.Generic.IList<Tuple<int, float>> Recommend(
