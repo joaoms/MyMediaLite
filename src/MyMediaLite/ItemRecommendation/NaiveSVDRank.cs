@@ -115,7 +115,7 @@ namespace MyMediaLite.ItemRecommendation
 					Parallel.ForEach(candidate_items, item_id => {
 						if (!ignore_items.Contains(item_id))
 						{
-							float error = Math.Abs(1 - Predict(user_id, item_id));
+							float error = Math.Abs(Predict(user_id, item_id));
 							if (error > float.MaxValue)
 								error = float.MaxValue;
 							lock(scored_items)
@@ -126,7 +126,7 @@ namespace MyMediaLite.ItemRecommendation
 					foreach (int item_id in candidate_items)
 						if (!ignore_items.Contains(item_id))
 						{
-							float error = Math.Abs(1 - Predict(user_id, item_id));
+							float error = Math.Abs(Predict(user_id, item_id));
 							if (error > float.MaxValue)
 								error = float.MaxValue;
 							scored_items.Add(Tuple.Create(item_id, error));
@@ -146,7 +146,7 @@ namespace MyMediaLite.ItemRecommendation
 					Parallel.ForEach(candidate_items, item_id => {
 						if (!ignore_items.Contains(item_id))
 						{
-							float error = Math.Abs(1 - Predict(user_id, item_id));
+							float error = Math.Abs(Predict(user_id, item_id));
 							if (error < max_error)
 							{
 								lock (heap)
@@ -165,7 +165,7 @@ namespace MyMediaLite.ItemRecommendation
 					foreach (int item_id in candidate_items)
 						if (!ignore_items.Contains(item_id))
 						{
-							float error = Math.Abs(1 - Predict(user_id, item_id));
+							float error = Math.Abs(Predict(user_id, item_id));
 							if (error < max_error)
 							{
 								heap.Add(Tuple.Create(item_id, error));
