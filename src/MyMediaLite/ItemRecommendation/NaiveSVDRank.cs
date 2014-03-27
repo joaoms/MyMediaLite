@@ -34,7 +34,7 @@ namespace MyMediaLite.ItemRecommendation
 		int max_list_size = -1;
 
 		///
-		protected float Predict(int user_id, int item_id, bool bound)
+		protected override float Predict(int user_id, int item_id, bool bound)
 		{
 			if (user_id >= user_factors.dim1 || item_id >= item_factors.dim1)
 				return float.MinValue;
@@ -56,7 +56,7 @@ namespace MyMediaLite.ItemRecommendation
 		/// </summary>
 		/// <param name="user_id">User_id.</param>
 		/// <param name="item_id">Item_id.</param>
-		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
+		protected override void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
 		{
 			var ignore_items = new System.Collections.Generic.HashSet<int>(Feedback.UserMatrix[user_id]);
 			var score = Predict(user_id, item_id, false);

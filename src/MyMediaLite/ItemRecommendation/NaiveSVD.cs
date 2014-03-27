@@ -105,7 +105,7 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		///
-		protected float Predict(int user_id, int item_id, bool bound)
+		protected virtual float Predict(int user_id, int item_id, bool bound)
 		{
 			if (user_id >= user_factors.dim1 || item_id >= item_factors.dim1)
 				return float.MinValue;
