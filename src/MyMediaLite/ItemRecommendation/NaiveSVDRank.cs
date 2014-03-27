@@ -59,15 +59,15 @@ namespace MyMediaLite.ItemRecommendation
 		protected override void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
 		{
 			var ignore_items = new System.Collections.Generic.HashSet<int>(Feedback.UserMatrix[user_id]);
+			ignore_items.Remove(item_id);
 			var reclist = Recommend(user_id, MaxListSize, ignore_items);
 			float rel_position = 1;
 			if (reclist.Count > 0)
-				for (int i = 0; i < reclist.Count; i++)
-					if (reclist[i].Item1 == item_id)
-					{
-						rel_position = i / reclist.Count;
-						break;
-					}
+			{
+				int i = -1;
+				while (reclist[++i].Item1 != item_id) continue;
+				rel_position = i / reclist.Count;
+			}
 			
 			//Console.WriteLine(rel_position);
 			float err = Math.Abs(rel_position);
