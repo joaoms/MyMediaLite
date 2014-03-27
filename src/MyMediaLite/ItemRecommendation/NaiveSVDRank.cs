@@ -64,8 +64,8 @@ namespace MyMediaLite.ItemRecommendation
 			float rel_position = 1;
 			if (reclist.Count > 0)
 			{
-				int i = -1;
-				while (reclist[++i].Item1 != item_id) continue;
+				int i = 0;
+				while (reclist[i].Item1 != item_id) i++;
 				rel_position = i / reclist.Count;
 			}
 			
