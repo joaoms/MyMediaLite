@@ -250,6 +250,7 @@
     <Compile Include="ItemRecommendation\BiasedNSVD.cs" />
     <Compile Include="ItemRecommendation\ItemAtributeCMF.cs" />
     <Compile Include="ItemRecommendation\NaiveSVDRank.cs" />
+    <Compile Include="ItemRecommendation\NaiveSVDZI.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <ItemGroup>
