@@ -69,16 +69,21 @@ namespace MyMediaLite.ItemRecommendation
 
 		void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
-			for (uint i = 0; i < IncrIter; i++)
-				foreach (var entry in feedback)
+			foreach (var entry in feedback)
+			{
+				int qi;
+				do 
+					qi = item_queue.RemoveFirst();
+				while (qi != entry.Item2);
+				for (uint i = 0; i < IncrIter; i++)
 				{
-					int qi = item_queue.RemoveFirst();
-					UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
-					item_queue.Remove(entry.Item2);
-					item_queue.InsertLast(entry.Item2);
 					UpdateFactors(entry.Item1, qi, UpdateUsers, UpdateItems, 0);
-					item_queue.InsertLast(qi);
+					UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
 				}
+				item_queue.Remove(entry.Item2);
+				item_queue.InsertLast(entry.Item2);
+				item_queue.InsertLast(qi);
+			}
 		}
 
 		///
