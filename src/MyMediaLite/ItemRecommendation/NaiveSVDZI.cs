@@ -74,7 +74,7 @@ namespace MyMediaLite.ItemRecommendation
 				int qi;
 				do 
 					qi = item_queue.RemoveFirst();
-				while (qi != entry.Item2);
+				while (qi == entry.Item2);
 				for (uint i = 0; i < IncrIter; i++)
 				{
 					UpdateFactors(entry.Item1, qi, UpdateUsers, UpdateItems, 0);
