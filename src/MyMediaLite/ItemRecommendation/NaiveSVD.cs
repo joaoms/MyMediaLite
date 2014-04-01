@@ -143,7 +143,7 @@ namespace MyMediaLite.ItemRecommendation
 			Retrain(feedback);
 		}
 		
-		void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
+		protected virtual void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			for (uint i = 0; i < IncrIter; i++)
 				foreach (var entry in feedback)

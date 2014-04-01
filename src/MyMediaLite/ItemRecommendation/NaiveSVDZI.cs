@@ -39,35 +39,10 @@ namespace MyMediaLite.ItemRecommendation
 
 			item_queue = new HashedLinkedList<int>();
 			item_queue.AddAll(Feedback.Items);
+			//Console.WriteLine("Item queue initialized with "+item_queue.Count+" items.");
 		}
 
-		/// <summary>Iterate once over feedback data and adjust corresponding factors (stochastic gradient descent)</summary>
-		/// <param name="rating_indices">a list of indices pointing to the feedback to iterate over</param>
-		/// <param name="update_user">true if user factors to be updated</param>
-		/// <param name="update_item">true if item factors to be updated</param>
-		protected override void Iterate(bool update_user, bool update_item)
-		{
-			//TODO: respeitar sequencia original
-			// ou não: o objetivo é ter uma sequência diferente por cada iteração.
-			// só se aplica ao treino inicial
-			/*
-			 * var indexes = Feedback.RandomIndex;
-			 * foreach (int index in indexes)
-			 */
-			for (int index = 0; index < Feedback.Count; index++)
-			{
-				int u = Feedback.Users[index];
-				int i = Feedback.Items[index];
-				//Console.WriteLine("User " + u + " Item " + i);
-
-				UpdateFactors(u, i, update_user, update_item);
-			}
-
-			UpdateLearnRate();
-			
-		}
-
-		void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
+		protected override void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			foreach (var entry in feedback)
 			{
@@ -75,6 +50,7 @@ namespace MyMediaLite.ItemRecommendation
 				do 
 					qi = item_queue.RemoveFirst();
 				while (qi == entry.Item2);
+				//Console.WriteLine("Forgetting item "+qi);
 				for (uint i = 0; i < IncrIter; i++)
 				{
 					UpdateFactors(entry.Item1, qi, UpdateUsers, UpdateItems, 0);
