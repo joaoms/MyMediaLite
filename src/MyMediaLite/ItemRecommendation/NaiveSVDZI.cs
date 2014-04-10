@@ -53,7 +53,7 @@ namespace MyMediaLite.ItemRecommendation
 				//Console.WriteLine("Forgetting item "+qi);
 				for (uint i = 0; i < IncrIter; i++)
 				{
-					UpdateFactors(entry.Item1, qi, false, true, 0);
+					UpdateFactors(entry.Item1, qi, true, false, 0);
 					UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
 				}
 				item_queue.Remove(entry.Item2);
