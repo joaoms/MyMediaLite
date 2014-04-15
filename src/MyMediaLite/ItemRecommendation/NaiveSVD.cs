@@ -58,13 +58,13 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
-			IncrIter = NumIter;
 		}
 
 		protected override void InitModel()
 		{
 			base.InitModel();
 			current_learnrate = LearnRate;
+			IncrIter = NumIter;
 		}
 
 		///
