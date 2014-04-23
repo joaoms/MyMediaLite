@@ -251,6 +251,7 @@
     <Compile Include="ItemRecommendation\ItemAtributeCMF.cs" />
     <Compile Include="ItemRecommendation\NaiveSVDRank.cs" />
     <Compile Include="ItemRecommendation\NaiveSVDZI.cs" />
+    <Compile Include="DataType\ListMatrix.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <ItemGroup>

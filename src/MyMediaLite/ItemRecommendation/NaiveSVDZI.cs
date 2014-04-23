@@ -29,36 +29,88 @@ namespace MyMediaLite.ItemRecommendation
 {
 	public class NaiveSVDZI : NaiveSVD
 	{
+
+		public bool ForgetUsersInUsers { get; set; }
+		public bool ForgetItemsInUsers { get; set; }
+		public bool ForgetUsersInItems { get; set; }
+		public bool ForgetItemsInItems { get; set; }
+
+		private bool forget_users;
+		private bool forget_items;
+
 		protected HashedLinkedList<int> item_queue;
+		protected HashedLinkedList<int> user_queue;
 
 		// float max_score = 1.0f;
+
+		public NaiveSVDZI()
+		{
+			ForgetUsersInUsers = false;
+			ForgetUsersInItems = false;
+			ForgetItemsInUsers = true;
+			ForgetItemsInItems = false;
+		}
 
 		protected override void InitModel()
 		{
 			base.InitModel();
 
-			item_queue = new HashedLinkedList<int>();
-			item_queue.AddAll(Feedback.Items);
-			//Console.WriteLine("Item queue initialized with "+item_queue.Count+" items.");
+			forget_users = ForgetUsersInUsers || ForgetUsersInItems;
+			forget_items = ForgetItemsInUsers || ForgetItemsInItems;
+
+			if (forget_users)
+			{
+				user_queue = new HashedLinkedList<int>();
+				user_queue.AddAll(Feedback.Users);
+			}
+			if (forget_items)
+			{
+				item_queue = new HashedLinkedList<int>();
+				item_queue.AddAll(Feedback.Items);
+			}
 		}
 
 		protected override void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			foreach (var entry in feedback)
 			{
-				int qi;
-				do 
-					qi = item_queue.RemoveFirst();
-				while (qi == entry.Item2);
+				int qu = -1;
+				int qi = -1;
+				if (forget_users)
+				{
+					do 
+						qu = user_queue.RemoveFirst();
+					while (qu == entry.Item1);
+				}
+				if (forget_items)
+				{
+					do 
+						qi = item_queue.RemoveFirst();
+					while (qi == entry.Item2);
+				}
 				//Console.WriteLine("Forgetting item "+qi);
 				for (uint i = 0; i < IncrIter; i++)
 				{
-					UpdateFactors(entry.Item1, qi, true, false, 0);
+					if (forget_users && qu >= 0)
+						UpdateFactors(qu, entry.Item2, ForgetUsersInUsers, ForgetUsersInItems, 0);
+					if (forget_items && qi >= 0)
+						UpdateFactors(entry.Item1, qi, ForgetItemsInUsers, ForgetItemsInItems, 0);
 					UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
 				}
-				item_queue.Remove(entry.Item2);
-				item_queue.InsertLast(entry.Item2);
-				item_queue.InsertLast(qi);
+				if (forget_items)
+				{
+					item_queue.Remove(entry.Item2);
+					item_queue.InsertLast(entry.Item2);
+					if (qi >= 0)
+						item_queue.InsertLast(qi);
+				}
+				if (forget_users)
+				{
+					user_queue.Remove(entry.Item1);
+					user_queue.InsertLast(entry.Item1);
+					if (qu >= 0)
+						user_queue.InsertLast(qu);
+				}
 			}
 		}
 
@@ -66,10 +118,20 @@ namespace MyMediaLite.ItemRecommendation
 		public override void RemoveItem(int item_id)
 		{
 			base.RemoveItem(item_id);
-			
-			item_queue.Remove(item_id);
+
+			if (forget_items)
+				item_queue.Remove(item_id);
 		}
-		
+
+		///
+		public override void RemoveUser(int user_id)
+		{
+			base.RemoveUser(user_id);
+
+			if (forget_users)
+				user_queue.Remove(user_id);
+		}
+
 		/// <summary>
 		/// Performs factor updates for a user and item pair.
 		/// </summary>
