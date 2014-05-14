@@ -215,7 +215,7 @@ class OnlineEvaluator
 		if (output_times_buffer_count == output_interval || final)
 		{
 			for (int i = 0; i < output_times_buffer_count; i++)
-				output_times.Write(output_times_buffer[i]);
+				output_times.WriteLine(output_times_buffer[i]);
 			output_times_buffer_count = 0;
 		}
 		if (output_recs_buffer_count == output_interval || final)
@@ -227,7 +227,7 @@ class OnlineEvaluator
 		if (output_measure_buffer_count == output_interval || final)
 		{
 			for (int i = 0; i < output_measure_buffer_count; i++)
-				output_scores.Write(output_measure_buffer[i]);
+				output_scores.WriteLine(output_measure_buffer[i]);
 			output_measure_buffer_count = 0;
 		}
 	}
