@@ -164,7 +164,7 @@ class OnlineEvaluator
 					rec_list = new List<int>();
 					foreach (var rec in rec_list_score)
 					{
-						output_recs_buffer[output_recs_buffer_count] = rec.Item1 + "\t" + rec.Item2 + "\n";
+						output_recs_buffer[output_recs_buffer_count] += rec.Item1 + "\t" + rec.Item2 + "\n";
 						rec_list.Add(rec.Item1);
 					}
 					output_recs_buffer_count++;
