@@ -42,13 +42,21 @@ class OnlineEvaluator
 	IBooleanMatrix user_attributes;
 	IBooleanMatrix item_attributes;
 	string[] metrics = new string[]{"recall@1","recall@5","recall@10","recall@20","MAP","AUC","NDCG","rec_time"};
+	string[] output_recs_buffer;
+	int output_recs_buffer_count = 0;
+	string[] output_measure_buffer;
+	int output_measure_buffer_count = 0;
+	string[] output_times_buffer;
+	int output_times_buffer_count = 0;
+	StreamWriter output_recs;
 	StreamWriter output_scores;
 	StreamWriter output_times;
+	int output_interval = 1000;
 
 	public OnlineEvaluator(string[] args)
 	{
 		if(args.Length < 4) {
-			Console.WriteLine("Usage: online_evaluator <recommender> <\"recommender params\"> <training_file> <test_file> [<random_seed> [<n_recs> [<repeated_items> [<attributes>]]]]");
+			Console.WriteLine("Usage: online_evaluator <recommender> <\"recommender params\"> <training_file> <test_file> [<random_seed> [<n_recs> [<repeated_items> [<output_interval> [<attributes>]]]]]");
 			Environment.Exit(1);
 		}
 		
@@ -71,16 +79,18 @@ class OnlineEvaluator
 
 		if(args.Length > 6) repeated_items = Boolean.Parse(args[6]);
 
-		if(args.Length > 7)
+		if(args.Length > 7) output_interval = Int32.Parse(args[7]);
+
+		if(args.Length > 8)
 		{
 			if(recommender is IUserAttributeAwareRecommender) 
 			{
-				user_attributes = AttributeData.Read(args[7], user_mapping);
+				user_attributes = AttributeData.Read(args[8], user_mapping);
 				((IUserAttributeAwareRecommender)recommender).UserAttributes = user_attributes;
 			}
 			else if(recommender is IItemAttributeAwareRecommender)
 			{
-				item_attributes = AttributeData.Read(args[7], item_mapping);
+				item_attributes = AttributeData.Read(args[8], item_mapping);
 				((IItemAttributeAwareRecommender)recommender).ItemAttributes = item_attributes;
 			}
 		}
@@ -93,6 +103,11 @@ class OnlineEvaluator
 		output_scores.WriteLine("idx\tuser\titem\trecall@1\trecall@5\trecall@10\trecall@20\tmap\tauc\tndcg\trec_time");
 		output_times = new StreamWriter("update_times" + method + args[3].Substring(args[3].LastIndexOf("/")+1) + String.Format("{0:yyMMddHHmmss}", dt) + ".log");
 		output_times.WriteLine("idx\tuser\titem\tretrain_time");
+		output_recs = new StreamWriter("recs" + method + args[3].Substring(args[3].LastIndexOf("/")+1) + String.Format("{0:yyMMddHHmmss}", dt) + ".log");
+
+		output_recs_buffer = new string[output_interval];
+		output_measure_buffer = new string[output_interval];
+		output_times_buffer = new string[output_interval];
 
 	}
 
@@ -115,13 +130,13 @@ class OnlineEvaluator
 
 		recommender.Feedback = train_data;
 
-		Console.WriteLine(recommender.ToString());
+		output_recs.WriteLine(recommender.ToString());
 
 		DateTime start_train = DateTime.Now;
 		recommender.Train();
 		TimeSpan train_time = DateTime.Now - start_train;
 
-		Console.WriteLine("Train time: " + train_time.TotalMilliseconds);
+		output_recs.WriteLine("Train time: " + train_time.TotalMilliseconds);
 
 		DateTime rec_start, rec_end, retrain_start, retrain_end;
 
@@ -129,7 +144,8 @@ class OnlineEvaluator
 		{
 			tu = test_data.Users[i];
 			ti = test_data.Items[i];
-			Console.WriteLine("\n" + tu + " " + ti);
+			//Console.WriteLine("\n" + tu + " " + ti);
+			output_recs_buffer[output_recs_buffer_count] += "\n" + tu + " " + ti + "\n";
 			if (train_data.AllUsers.Contains(tu))
 			{
 				recommend = true;
@@ -148,9 +164,10 @@ class OnlineEvaluator
 					rec_list = new List<int>();
 					foreach (var rec in rec_list_score)
 					{
-						Console.WriteLine(rec.Item1);
+						output_recs_buffer[output_recs_buffer_count] += rec.Item1 + "\t" + rec.Item2 + "\n";
 						rec_list.Add(rec.Item1);
 					}
+					output_recs_buffer_count++;
 
 					til = new List<int>(){ ti };
 
@@ -163,10 +180,6 @@ class OnlineEvaluator
 					auc = MyMediaLite.Eval.Measures.AUC.Compute(rec_list, til, num_dropped);
 					ndcg = MyMediaLite.Eval.Measures.NDCG.Compute(rec_list, til);
 					rec_time = (rec_end - rec_start).TotalMilliseconds;
-					output_scores.WriteLine(i + "\t" + user_mapping.ToOriginalID(tu) + "\t" + 
-						item_mapping.ToOriginalID(ti) + "\t" + recall1 + "\t" +
-						recall5 + "\t" + recall10 + "\t" + recall20 + "\t" + map + "\t" +
-						auc + "\t" + ndcg + "\t" + rec_time);
 					measures["recall@1"].Add(recall1);
 					measures["recall@5"].Add(recall5);
 					measures["recall@10"].Add(recall10);
@@ -175,6 +188,10 @@ class OnlineEvaluator
 					measures["AUC"].Add(auc);
 					measures["NDCG"].Add(ndcg);
 					measures["rec_time"].Add(rec_time);
+					output_measure_buffer[output_measure_buffer_count++] = i + "\t" + user_mapping.ToOriginalID(tu) + "\t" + 
+						item_mapping.ToOriginalID(ti) + "\t" + recall1 + "\t" +
+						recall5 + "\t" + recall10 + "\t" + recall20 + "\t" + map + "\t" +
+						auc + "\t" + ndcg + "\t" + rec_time;
 				}
 			}
 			// update recommender
@@ -183,14 +200,36 @@ class OnlineEvaluator
 			recommender.AddFeedback(new Tuple<int, int>[]{ tuple });
 			retrain_end = DateTime.Now;
 			measures["retrain_times"].Add((retrain_end - retrain_start).TotalMilliseconds);
-			output_times.WriteLine(i + "\t" + user_mapping.ToOriginalID(tu) + "\t" + 
-				item_mapping.ToOriginalID(ti) + "\t" + (retrain_end - retrain_start).TotalMilliseconds);
+			output_times_buffer[output_times_buffer_count++] = i + "\t" + user_mapping.ToOriginalID(tu) + "\t" + 
+				item_mapping.ToOriginalID(ti) + "\t" + (retrain_end - retrain_start).TotalMilliseconds;
+			WriteOutputBuffer();
 			if(i % 5000 == 0)
 				System.GC.Collect();
 		}
 
 		Terminate();
 
+	}
+
+	private void WriteOutputBuffer(bool final = false) {
+		if (output_times_buffer_count == output_interval || final)
+		{
+			for (int i = 0; i < output_times_buffer_count; i++)
+				output_times.Write(output_times_buffer[i]);
+			output_times_buffer_count = 0;
+		}
+		if (output_recs_buffer_count == output_interval || final)
+		{
+			for (int i = 0; i < output_recs_buffer_count; i++)
+				output_recs.Write(output_recs_buffer[i]);
+			output_recs_buffer_count = 0;
+		}
+		if (output_measure_buffer_count == output_interval || final)
+		{
+			for (int i = 0; i < output_measure_buffer_count; i++)
+				output_scores.Write(output_measure_buffer[i]);
+			output_measure_buffer_count = 0;
+		}
 	}
 
 	private void SetupRecommender(string parameters)
@@ -209,17 +248,20 @@ class OnlineEvaluator
 
 	private void Terminate()
 	{
+
+		WriteOutputBuffer(true);
 		//Compute and print averages
-		Console.WriteLine();
+		output_recs.WriteLine();
 		foreach (var measure in measures)
 		{
 			double score = Math.Round(measure.Value.Average(), 5);
-			Console.WriteLine(measure.Key + ":\t" + score);
+			output_recs.WriteLine(measure.Key + ":\t" + score);
 	
 		}
-			
+
 		output_scores.Close();
 		output_times.Close();
+		output_recs.Close();
 	}
 
 }
