@@ -30,12 +30,12 @@ namespace MyMediaLite.ItemRecommendation
 	public class NaiveSVDSigmoid : NaiveSVD
 	{
 
-		protected virtual double SigmoidFunc(double x)
+		protected double SigmoidFunc(double x)
 		{
-			return 1 / (1 + Math.Exp(-x));
+			return (1 / (1 + Math.Exp(-x)));
 		}
 
-		protected virtual double SigmoidFuncDerivative(double x)
+		protected double SigmoidFuncDerivative(double x)
 		{
 			double res = SigmoidFunc(x);
 			return res * (1 - res);
@@ -57,7 +57,7 @@ namespace MyMediaLite.ItemRecommendation
 		/// </summary>
 		/// <param name="user_id">User_id.</param>
 		/// <param name="item_id">Item_id.</param>
-		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
+		protected override void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
 		{
 			//Console.WriteLine(float.MinValue);
 			float score = Predict(user_id, item_id, false);
