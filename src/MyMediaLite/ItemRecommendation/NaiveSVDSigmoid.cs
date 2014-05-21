@@ -35,14 +35,8 @@ namespace MyMediaLite.ItemRecommendation
 			return (1 / (1 + Math.Exp(-x)));
 		}
 
-		protected double SigmoidFuncDerivative(double x)
-		{
-			double res = SigmoidFunc(x);
-			return res * (1 - res);
-		}
-			
 		///
-		protected override float Predict(int user_id, int item_id, bool bound)
+		public override float Predict(int user_id, int item_id)
 		{
 			if (user_id >= user_factors.dim1 || item_id >= item_factors.dim1)
 				return float.MinValue;
@@ -60,7 +54,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected override void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
 		{
 			//Console.WriteLine(float.MinValue);
-			float score = Predict(user_id, item_id, false);
+			float score = Predict(user_id, item_id);
 			float gradient = (float) Math.Pow((1 - score), 2) * score;
 
 			// adjust factors
