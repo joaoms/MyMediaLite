@@ -253,6 +253,7 @@
     <Compile Include="ItemRecommendation\NaiveSVDZI.cs" />
     <Compile Include="DataType\ListMatrix.cs" />
     <Compile Include="ItemRecommendation\NaiveSVDSigmoid.cs" />
+    <Compile Include="ItemRecommendation\NaiveSVDSigmoidZI.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <ItemGroup>
