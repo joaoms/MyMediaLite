@@ -140,7 +140,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item, float base_val = 1)
 		{
 			//Console.WriteLine(float.MinValue);
-			float score = Predict(user_id, item_id, false);
+			float score = Predict(user_id, item_id);
 			float err = base_val - score;
 			float gradient = (float) (err * score * (1 - score));
 
