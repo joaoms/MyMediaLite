@@ -248,8 +248,11 @@ class BatchEvaluator
 		output_recs.WriteLine();
 		foreach (var measure in measures)
 		{
-			double score = Math.Round(measure.Value.Average(), 5);
-			output_recs.WriteLine(measure.Key + ":\t" + score);
+			if(measure.Value.Count > 0)
+			{
+				double score = Math.Round(measure.Value.Average(), 5);
+				output_recs.WriteLine(measure.Key + ":\t" + score);
+			}
 
 		}
 
