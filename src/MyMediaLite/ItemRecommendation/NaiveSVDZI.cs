@@ -34,6 +34,8 @@ namespace MyMediaLite.ItemRecommendation
 		public bool ForgetItemsInUsers { get; set; }
 		public bool ForgetUsersInItems { get; set; }
 		public bool ForgetItemsInItems { get; set; }
+		public int ForgetHorizon { get { return forget_horizon; } set { forget_horizon = value; } }
+		int forget_horizon = 1;
 
 		private bool forget_users;
 		private bool forget_items;
@@ -74,42 +76,55 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			foreach (var entry in feedback)
 			{
-				int qu = -1;
-				int qi = -1;
+				int[] qu = Enumerable.Repeat(-1,forget_horizon).ToArray();
+				int[] qi = Enumerable.Repeat(-1,forget_horizon).ToArray();
 				if (forget_users)
 				{
-					do 
-						qu = user_queue.RemoveFirst();
-					while (qu == entry.Item1);
+					for (uint i = 0; i < qu.Length; )
+					{
+						qu[i] = user_queue.RemoveFirst();
+						if (qu[i] != entry.Item1) i++;
+					}
 				}
 				if (forget_items)
 				{
-					do 
-						qi = item_queue.RemoveFirst();
-					while (qi == entry.Item2);
+					for (uint i = 0; i < qi.Length; )
+					{
+						qi[i] = item_queue.RemoveFirst();
+						if (qi[i] != entry.Item2) i++;
+					}
 				}
 				//Console.WriteLine("Forgetting item "+qi);
+				if (forget_users)
+					foreach (var usr in qu.Reverse())
+						if (usr >= 0) 
+							for (uint i = 0; i < IncrIter; i++)
+								UpdateFactors(usr, entry.Item2, ForgetUsersInUsers, ForgetUsersInItems, 0);
+				if (forget_items)
+					foreach (var itm in qi.Reverse())
+						if (itm >= 0)
+							for (uint i = 0; i < IncrIter; i++)
+								UpdateFactors(entry.Item1, itm, ForgetItemsInUsers, ForgetItemsInItems, 0);
 				for (uint i = 0; i < IncrIter; i++)
-				{
-					if (forget_users && qu >= 0)
-						UpdateFactors(qu, entry.Item2, ForgetUsersInUsers, ForgetUsersInItems, 0);
-					if (forget_items && qi >= 0)
-						UpdateFactors(entry.Item1, qi, ForgetItemsInUsers, ForgetItemsInItems, 0);
 					UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
-				}
+
 				if (forget_items)
 				{
 					item_queue.Remove(entry.Item2);
 					item_queue.InsertLast(entry.Item2);
-					if (qi >= 0)
-						item_queue.InsertLast(qi);
+
+					foreach (var itm in qi.Reverse())
+						if (itm >= 0)
+							item_queue.InsertLast(itm);
 				}
 				if (forget_users)
 				{
 					user_queue.Remove(entry.Item1);
 					user_queue.InsertLast(entry.Item1);
-					if (qu >= 0)
-						user_queue.InsertLast(qu);
+
+					foreach (var usr in qu.Reverse())
+						if (usr >= 0)
+							user_queue.InsertLast(usr);
 				}
 			}
 		}
@@ -169,8 +184,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"NaiveSVDZI num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay);
+				"NaiveSVDZI num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}, forget_horizon={6}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, ForgetHorizon);
 		}
 
 
