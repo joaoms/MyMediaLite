@@ -114,7 +114,7 @@ namespace MyMediaLite.ItemRecommendation
 					item_queue.InsertLast(entry.Item2);
 
 					foreach (var itm in qi.Reverse())
-						if (itm >= 0)
+						if (itm >= 0 && itm != entry.Item2)
 							item_queue.InsertLast(itm);
 				}
 				if (forget_users)
@@ -123,7 +123,7 @@ namespace MyMediaLite.ItemRecommendation
 					user_queue.InsertLast(entry.Item1);
 
 					foreach (var usr in qu.Reverse())
-						if (usr >= 0)
+						if (usr >= 0 && usr != entry.Item1)
 							user_queue.InsertLast(usr);
 				}
 			}
