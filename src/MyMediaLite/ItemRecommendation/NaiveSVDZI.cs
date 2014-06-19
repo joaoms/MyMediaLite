@@ -80,7 +80,7 @@ namespace MyMediaLite.ItemRecommendation
 				int[] qi = Enumerable.Repeat(-1,forget_horizon).ToArray();
 				if (forget_users)
 				{
-					for (uint i = 0; i < qu.Length; )
+					for (uint i = 0; i < qu.Length && i < user_queue.Count - 1; )
 					{
 						qu[i] = user_queue.RemoveFirst();
 						if (qu[i] != entry.Item1) i++;
@@ -88,7 +88,7 @@ namespace MyMediaLite.ItemRecommendation
 				}
 				if (forget_items)
 				{
-					for (uint i = 0; i < qi.Length; )
+					for (uint i = 0; i < qi.Length && i < item_queue.Count - 1; )
 					{
 						qi[i] = item_queue.RemoveFirst();
 						if (qi[i] != entry.Item2) i++;
