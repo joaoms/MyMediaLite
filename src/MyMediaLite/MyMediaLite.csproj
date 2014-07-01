@@ -244,16 +244,16 @@
     <Compile Include="ItemRecommendation\ExternalItemRecommender.cs" />
     <Compile Include="RatingPrediction\GSVDPlusPlus.cs" />
     <Compile Include="Eval\RatingBasedRankingCrossValidation.cs" />
-    <Compile Include="ItemRecommendation\NaiveSVD.cs" />
     <Compile Include="ItemRecommendation\SimilarityWeightedMF.cs" />
     <Compile Include="ItemRecommendation\ItemSimMF.cs" />
-    <Compile Include="ItemRecommendation\BiasedNSVD.cs" />
     <Compile Include="ItemRecommendation\ItemAtributeCMF.cs" />
-    <Compile Include="ItemRecommendation\NaiveSVDRank.cs" />
-    <Compile Include="ItemRecommendation\NaiveSVDZI.cs" />
     <Compile Include="DataType\ListMatrix.cs" />
-    <Compile Include="ItemRecommendation\NaiveSVDSigmoid.cs" />
-    <Compile Include="ItemRecommendation\NaiveSVDSigmoidZI.cs" />
+    <Compile Include="ItemRecommendation\SimpleSGD.cs" />
+    <Compile Include="ItemRecommendation\SimpleSGDRank.cs" />
+    <Compile Include="ItemRecommendation\BiasedSGD.cs" />
+    <Compile Include="ItemRecommendation\SimpleSGDSigmoidZI.cs" />
+    <Compile Include="ItemRecommendation\SimpleSGDSigmoid.cs" />
+    <Compile Include="ItemRecommendation\SimpleSGDZI.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <ItemGroup>

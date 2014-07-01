@@ -27,28 +27,23 @@ using MyMediaLite.Data;
 
 namespace MyMediaLite.ItemRecommendation
 {
-	public class NaiveSVDRank : NaiveSVD
+	public class SimpleSGDSigmoid : SimpleSGD
 	{
-		/// <summary>Maximum list size</summary>
-		public int MaxListSize { get { return max_list_size; } set { max_list_size = value; } }
-		int max_list_size = -1;
+
+		protected double SigmoidFunc(double x)
+		{
+			return (1 / (1 + Math.Exp(-x)));
+		}
 
 		///
-		protected override float Predict(int user_id, int item_id, bool bound)
+		public override float Predict(int user_id, int item_id)
 		{
 			if (user_id >= user_factors.dim1 || item_id >= item_factors.dim1)
 				return float.MinValue;
 
 			float result = DataType.MatrixExtensions.RowScalarProduct(user_factors, user_id, item_factors, item_id);
-			
-			if (bound)
-			{
-				if (result > 1)
-					return 1;
-				if (result < 0)
-					return 0;
-			}
-			return result;
+
+			return (float) SigmoidFunc(result);
 		}
 		
 		/// <summary>
@@ -58,41 +53,31 @@ namespace MyMediaLite.ItemRecommendation
 		/// <param name="item_id">Item_id.</param>
 		protected override void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
 		{
-			var ignore_items = new System.Collections.Generic.HashSet<int>(Feedback.UserMatrix[user_id]);
-			ignore_items.Remove(item_id);
-			var reclist = Recommend(user_id, MaxListSize, ignore_items);
-			float rel_position = 1;
-			if (reclist.Count > 0)
-			{
-				int i = 0;
-				while (reclist[i].Item1 != item_id && i < reclist.Count-1) i++;
-				rel_position = (float) i / reclist.Count;
-			}
-			
-			//Console.WriteLine(rel_position);
-			float err = rel_position;
+			//Console.WriteLine(float.MinValue);
+			float score = Predict(user_id, item_id);
+			float gradient = (float) Math.Pow((1 - score), 2) * score;
 
 			// adjust factors
 			for (int f = 0; f < NumFactors; f++)
 			{
 				float u_f = user_factors[user_id, f];
 				float i_f = item_factors[item_id, f];
-
+				
 				// if necessary, compute and apply updates
 				if (update_user)
 				{
-					double delta_u = err * i_f - Regularization * u_f;
+					double delta_u = gradient * i_f - Regularization * u_f;
 					user_factors.Inc(user_id, f, current_learnrate * delta_u);
 				}
 				if (update_item)
 				{
-					double delta_i = err * u_f - Regularization * i_f;
+					double delta_i = gradient * u_f - Regularization * i_f;
 					item_factors.Inc(item_id, f, current_learnrate * delta_i);
 				}
 			}
 
 		}
-			
+
 
 		///
 		public override System.Collections.Generic.IList<Tuple<int, float>> Recommend(
@@ -115,47 +100,47 @@ namespace MyMediaLite.ItemRecommendation
 					Parallel.ForEach(candidate_items, item_id => {
 						if (!ignore_items.Contains(item_id))
 						{
-							float error = Math.Abs(Predict(user_id, item_id));
-							if (error > float.MaxValue)
-								error = float.MaxValue;
+							float score = Predict(user_id, item_id);
+							if (score < float.MinValue)
+								score = float.MinValue;
 							lock(scored_items)
-								scored_items.Add(Tuple.Create(item_id, error));
+								scored_items.Add(Tuple.Create(item_id, score));
 						}
 					});
 				} else {
 					foreach (int item_id in candidate_items)
 						if (!ignore_items.Contains(item_id))
 						{
-							float error = Math.Abs(Predict(user_id, item_id));
-							if (error > float.MaxValue)
-								error = float.MaxValue;
-							scored_items.Add(Tuple.Create(item_id, error));
+							float score = Predict(user_id, item_id);
+							if (score < float.MinValue)
+								score = float.MinValue;
+							scored_items.Add(Tuple.Create(item_id, score));
 						}
 				}
 
-				ordered_items = scored_items.OrderBy(x => x.Item2).ToArray();
+				ordered_items = scored_items.OrderByDescending(x => x.Item2).ToArray();
 			}
 			else
 			{
 				var comparer = new DelegateComparer<Tuple<int, float>>( (a, b) => a.Item2.CompareTo(b.Item2) );
 				var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
-				float max_error = float.MaxValue;
+				float min_score = float.MinValue;
 
 				if (UseMulticore)
 				{
 					Parallel.ForEach(candidate_items, item_id => {
 						if (!ignore_items.Contains(item_id))
 						{
-							float error = Math.Abs(Predict(user_id, item_id));
-							if (error < max_error)
+							float score = Predict(user_id, item_id);
+							if (score > min_score)
 							{
 								lock (heap)
 								{
-									heap.Add(Tuple.Create(item_id, error));
+									heap.Add(Tuple.Create(item_id, score));
 									if (heap.Count > n)
 									{
-										heap.DeleteMax();
-										max_error = heap.FindMax().Item2;
+										heap.DeleteMin();
+										min_score = heap.FindMin().Item2;
 									}
 								}
 							}
@@ -165,14 +150,14 @@ namespace MyMediaLite.ItemRecommendation
 					foreach (int item_id in candidate_items)
 						if (!ignore_items.Contains(item_id))
 						{
-							float error = Math.Abs(Predict(user_id, item_id));
-							if (error < max_error)
+							float score = Predict(user_id, item_id);
+							if (score > min_score)
 							{
-								heap.Add(Tuple.Create(item_id, error));
+								heap.Add(Tuple.Create(item_id, score));
 								if (heap.Count > n)
 								{
-									heap.DeleteMax();
-									max_error = heap.FindMax().Item2;
+									heap.DeleteMin();
+									min_score = heap.FindMin().Item2;
 								}
 							}
 						}
@@ -180,7 +165,7 @@ namespace MyMediaLite.ItemRecommendation
 
 				ordered_items = new Tuple<int, float>[heap.Count];
 				for (int i = 0; i < ordered_items.Count; i++)
-					ordered_items[i] = heap.DeleteMin();
+					ordered_items[i] = heap.DeleteMax();
 			}
 
 			return ordered_items;
@@ -192,7 +177,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"NaiveSVDRank num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}",
+				"NaiveSVDSigmoid num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}",
 				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay);
 		}
 

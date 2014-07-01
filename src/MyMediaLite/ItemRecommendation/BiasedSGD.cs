@@ -25,7 +25,7 @@ using MyMediaLite.Data;
 
 namespace MyMediaLite.ItemRecommendation
 {
-	public class BiasedNSVD : NaiveSVD
+	public class BiasedSGD : SimpleSGD
 	{
 		/// <summary>The bias (global average)</summary>
 		protected float global_bias;
@@ -36,7 +36,7 @@ namespace MyMediaLite.ItemRecommendation
 		/// <summary>rating biases of the items</summary>
 		protected internal float[] item_bias;
 
-		public BiasedNSVD ()
+		public BiasedSGD ()
 		{
 		}
 

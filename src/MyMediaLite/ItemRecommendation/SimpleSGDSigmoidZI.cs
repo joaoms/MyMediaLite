@@ -27,15 +27,13 @@ using MyMediaLite.Data;
 
 namespace MyMediaLite.ItemRecommendation
 {
-	public class NaiveSVDZI : NaiveSVD
+	public class SimpleSGDSigmoidZI : SimpleSGDSigmoid
 	{
 
 		public bool ForgetUsersInUsers { get; set; }
 		public bool ForgetItemsInUsers { get; set; }
 		public bool ForgetUsersInItems { get; set; }
 		public bool ForgetItemsInItems { get; set; }
-		public int ForgetHorizon { get { return forget_horizon; } set { forget_horizon = value; } }
-		int forget_horizon = 1;
 
 		private bool forget_users;
 		private bool forget_items;
@@ -45,7 +43,7 @@ namespace MyMediaLite.ItemRecommendation
 
 		// float max_score = 1.0f;
 
-		public NaiveSVDZI()
+		public SimpleSGDSigmoidZI()
 		{
 			ForgetUsersInUsers = false;
 			ForgetUsersInItems = false;
@@ -76,55 +74,42 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			foreach (var entry in feedback)
 			{
-				int[] qu = Enumerable.Repeat(-1,forget_horizon).ToArray();
-				int[] qi = Enumerable.Repeat(-1,forget_horizon).ToArray();
+				int qu = -1;
+				int qi = -1;
 				if (forget_users)
 				{
-					for (uint i = 0; i < qu.Length && i < user_queue.Count - 1; )
-					{
-						qu[i] = user_queue.RemoveFirst();
-						if (qu[i] != entry.Item1) i++;
-					}
+					do 
+						qu = user_queue.RemoveFirst();
+					while (qu == entry.Item1);
 				}
 				if (forget_items)
 				{
-					for (uint i = 0; i < qi.Length && i < item_queue.Count - 1; )
-					{
-						qi[i] = item_queue.RemoveFirst();
-						if (qi[i] != entry.Item2) i++;
-					}
+					do 
+						qi = item_queue.RemoveFirst();
+					while (qi == entry.Item2);
 				}
 				//Console.WriteLine("Forgetting item "+qi);
-				if (forget_users)
-					foreach (var usr in qu.Reverse())
-						if (usr >= 0) 
-							for (uint i = 0; i < IncrIter; i++)
-								UpdateFactors(usr, entry.Item2, ForgetUsersInUsers, ForgetUsersInItems, 0);
-				if (forget_items)
-					foreach (var itm in qi.Reverse())
-						if (itm >= 0)
-							for (uint i = 0; i < IncrIter; i++)
-								UpdateFactors(entry.Item1, itm, ForgetItemsInUsers, ForgetItemsInItems, 0);
 				for (uint i = 0; i < IncrIter; i++)
+				{
+					if (forget_users && qu >= 0)
+						UpdateFactors(qu, entry.Item2, ForgetUsersInUsers, ForgetUsersInItems, 0);
+					if (forget_items && qi >= 0)
+						UpdateFactors(entry.Item1, qi, ForgetItemsInUsers, ForgetItemsInItems, 0);
 					UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
-
+				}
 				if (forget_items)
 				{
 					item_queue.Remove(entry.Item2);
 					item_queue.InsertLast(entry.Item2);
-
-					foreach (var itm in qi.Reverse())
-						if (itm >= 0 && itm != entry.Item2)
-							item_queue.InsertLast(itm);
+					if (qi >= 0)
+						item_queue.InsertLast(qi);
 				}
 				if (forget_users)
 				{
 					user_queue.Remove(entry.Item1);
 					user_queue.InsertLast(entry.Item1);
-
-					foreach (var usr in qu.Reverse())
-						if (usr >= 0 && usr != entry.Item1)
-							user_queue.InsertLast(usr);
+					if (qu >= 0)
+						user_queue.InsertLast(qu);
 				}
 			}
 		}
@@ -155,7 +140,9 @@ namespace MyMediaLite.ItemRecommendation
 		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item, float base_val = 1)
 		{
 			//Console.WriteLine(float.MinValue);
-			float err = base_val - Predict(user_id, item_id, false);
+			float score = Predict(user_id, item_id);
+			float err = base_val - score;
+			float gradient = (float) (err * score * (1 - score));
 
 			// adjust factors
 			for (int f = 0; f < NumFactors; f++)
@@ -166,12 +153,12 @@ namespace MyMediaLite.ItemRecommendation
 				// if necessary, compute and apply updates
 				if (update_user)
 				{
-					double delta_u = err * i_f - Regularization * u_f;
+					double delta_u = gradient * i_f - Regularization * u_f;
 					user_factors.Inc(user_id, f, current_learnrate * delta_u);
 				}
 				if (update_item)
 				{
-					double delta_i = err * u_f - Regularization * i_f;
+					double delta_i = gradient * u_f - Regularization * i_f;
 					item_factors.Inc(item_id, f, current_learnrate * delta_i);
 				}
 			}
@@ -184,8 +171,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"NaiveSVDZI num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}, forget_horizon={6}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, ForgetHorizon);
+				"NaiveSVDSigmoidZI num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay);
 		}
 
 

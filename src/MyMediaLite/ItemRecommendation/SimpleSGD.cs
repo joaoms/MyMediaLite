@@ -27,7 +27,7 @@ using MyMediaLite.Data;
 
 namespace MyMediaLite.ItemRecommendation
 {
-	public class NaiveSVD : MF
+	public class SimpleSGD : MF
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
@@ -54,7 +54,7 @@ namespace MyMediaLite.ItemRecommendation
 
 		// float max_score = 1.0f;
 
-		public NaiveSVD ()
+		public SimpleSGD ()
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
