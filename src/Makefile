@@ -17,6 +17,8 @@ all: ../lib/mymedialite
 	cp -r Programs/BatchEvaluator/bin/Debug/*.mdb ../lib/mymedialite
 	cp -r Programs/ForgettingProfile/bin/Debug/*.exe ../lib/mymedialite
 	cp -r Programs/ForgettingProfile/bin/Debug/*.mdb ../lib/mymedialite
+	cp -r Programs/OnlineLearner/bin/Debug/*.exe ../lib/mymedialite
+	cp -r Programs/OnlineLearner/bin/Debug/*.mdb ../lib/mymedialite
 
 ../lib/mymedialite:
 	mkdir ../lib/mymedialite

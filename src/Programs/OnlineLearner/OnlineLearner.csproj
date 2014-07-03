@@ -5,50 +5,42 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{7180F796-4365-498D-87AA-4A6F8DE42A1D}</ProjectGuid>
+    <ProjectGuid>{0ED9B6E7-37C6-4A2A-B588-FA54B0EC7824}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>RatingBasedRanking</RootNamespace>
-    <AssemblyName>rating_based_ranking</AssemblyName>
+    <RootNamespace>OnlineLearner</RootNamespace>
+    <AssemblyName>OnlineLearner</AssemblyName>
     <ReleaseVersion>3.06</ReleaseVersion>
+    <StartupObject>OnlineLearner</StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>True</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>False</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Debug</OutputPath>
     <DefineConstants>DEBUG;</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Externalconsole>True</Externalconsole>
+    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>none</DebugType>
-    <Optimize>False</Optimize>
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Release</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Externalconsole>True</Externalconsole>
+    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="System" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="RatingBasedRanking.cs" />
-  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\RatingPrediction\RatingPrediction.csproj">
-      <Project>{7DCAB3F3-B687-4589-80F6-76F8BECBC6F8}</Project>
-      <Name>RatingPrediction</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\MyMediaLite\MyMediaLite.csproj">
       <Project>{73424F09-BEEA-4992-B116-5F123496F5D3}</Project>
       <Name>MyMediaLite</Name>
     </ProjectReference>
-    <ProjectReference Include="..\CommandLineProgram\CommandLineProgram.csproj">
-      <Project>{CF099BD4-46D6-4FB0-B42B-641A1F829241}</Project>
-      <Name>CommandLineProgram</Name>
-    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="OnlineLearner.cs" />
   </ItemGroup>
 </Project>
