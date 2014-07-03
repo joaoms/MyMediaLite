@@ -80,6 +80,7 @@ class OnlineLearner
 		Tuple<int,int> tuple;
 		List<TimeSpan> update_times = new List<TimeSpan>(1000);
 
+		recommender.Feedback = new PosOnlyFeedback<SparseBooleanMatrix>();
 		recommender.Feedback.Add(train_data.Users[0],train_data.Items[0]);
 
 		Console.WriteLine(recommender.ToString());
