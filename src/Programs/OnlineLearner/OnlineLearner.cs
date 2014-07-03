@@ -31,8 +31,6 @@ class OnlineLearner
 {
 	string method = "SimpleSGD";
 	int random_seed = 10;
-	int n_recs = 10;
-	bool repeated_items = false;
 	IncrementalItemRecommender recommender;
 	IMapping user_mapping = new Mapping();
 	IMapping item_mapping = new Mapping();
