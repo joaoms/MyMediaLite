@@ -102,6 +102,7 @@ class OnlineLearner
 			if(i % 1000 == 0)
 			{
 				Console.WriteLine(update_times.Average(x => x.TotalMilliseconds));
+				update_times.Clear();
 				if(i % 5000 == 0)
 					System.GC.Collect();
 			}
