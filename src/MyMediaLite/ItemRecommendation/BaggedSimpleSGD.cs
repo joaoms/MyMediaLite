@@ -90,6 +90,7 @@ namespace MyMediaLite.ItemRecommendation
 
 		public override void Train()
 		{
+			InitModel();
 			Parallel.ForEach(recommender_nodes, rnode => { rnode.Train(); });
 		}
 
