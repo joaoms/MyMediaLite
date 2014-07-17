@@ -104,6 +104,11 @@ namespace MyMediaLite.ItemRecommendation
 			
 		}
 
+		public override float Predict(int user_id, int item_id)
+		{
+			return Predict(user_id, item_id, false);
+		}
+
 		///
 		protected virtual float Predict(int user_id, int item_id, bool bound)
 		{
@@ -132,8 +137,13 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		public override void AddFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
+			AddFeedback(feedback,true);
+		}
+
+		public virtual void AddFeedback(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, bool retrain)
+		{
 			base.AddFeedback(feedback);
-			Retrain(feedback);
+			if (retrain) Retrain(feedback);
 		}
 		
 		///
