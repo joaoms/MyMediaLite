@@ -79,7 +79,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			recommender_nodes = new List<SimpleSGD>(num_nodes);
 			SimpleSGD recommender_node;
-			for (uint i = 0; i < num_nodes; i++) {
+			for (int i = 0; i < num_nodes; i++) {
 				recommender_node = new SimpleSGD();
 				recommender_node.UpdateUsers = true;
 				recommender_node.UpdateItems = true;
