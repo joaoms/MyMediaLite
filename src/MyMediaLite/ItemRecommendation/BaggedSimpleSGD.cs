@@ -61,20 +61,6 @@ namespace MyMediaLite.ItemRecommendation
 
 		// float max_score = 1.0f;
 
-		/// <summary>the feedback data to be used for training</summary>
-		public override IPosOnlyFeedback Feedback
-		{
-			get { return this.feedback; }
-			set {
-				this.feedback = value;
-				MaxUserID = Math.Max(feedback.MaxUserID, MaxUserID);
-				MaxItemID = Math.Max(feedback.MaxItemID, MaxItemID);
-				foreach(var rnode in recommender_nodes)
-					rnode.Feedback = this.feedback;
-			}
-		}
-		IPosOnlyFeedback feedback;
-
 		public BaggedSimpleSGD ()
 		{
 			UpdateUsers = true;
@@ -97,6 +83,7 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.NumIter = this.NumIter;
 				recommender_node.Decay = this.Decay;
 				recommender_node.UseMulticore = false;
+				recommender_node.Feedback = this.Feedback;
 				recommender_nodes.Add(recommender_node);
 			}
 		}
