@@ -77,6 +77,13 @@ namespace MyMediaLite.ItemRecommendation
 
 		public BaggedSimpleSGD ()
 		{
+			UpdateUsers = true;
+			UpdateItems = true;
+			rand = MyMediaLite.Random.GetInstance();
+		}
+
+		protected override void InitModel()
+		{
 			recommender_nodes = new List<SimpleSGD>(num_nodes);
 			SimpleSGD recommender_node;
 			for (int i = 0; i < num_nodes; i++) {
@@ -92,11 +99,6 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.UseMulticore = false;
 				recommender_nodes.Add(recommender_node);
 			}
-			rand = MyMediaLite.Random.GetInstance();
-		}
-
-		protected override void InitModel()
-		{
 		}
 
 		public override void Train()
