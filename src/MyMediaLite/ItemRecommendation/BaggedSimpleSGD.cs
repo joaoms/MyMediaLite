@@ -82,7 +82,6 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.IncrIter = this.IncrIter;
 				recommender_node.NumIter = this.NumIter;
 				recommender_node.Decay = this.Decay;
-				recommender_node.UseMulticore = false;
 				recommender_node.Feedback = this.Feedback;
 				recommender_nodes.Add(recommender_node);
 			}

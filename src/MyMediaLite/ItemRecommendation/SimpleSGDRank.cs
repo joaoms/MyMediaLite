@@ -110,28 +110,14 @@ namespace MyMediaLite.ItemRecommendation
 			if (n == -1)
 			{
 				var scored_items = new List<Tuple<int, float>>();
-				if (UseMulticore)
-				{
-					Parallel.ForEach(candidate_items, item_id => {
-						if (!ignore_items.Contains(item_id))
-						{
-							float error = Math.Abs(Predict(user_id, item_id));
-							if (error > float.MaxValue)
-								error = float.MaxValue;
-							lock(scored_items)
-								scored_items.Add(Tuple.Create(item_id, error));
-						}
-					});
-				} else {
-					foreach (int item_id in candidate_items)
-						if (!ignore_items.Contains(item_id))
-						{
-							float error = Math.Abs(Predict(user_id, item_id));
-							if (error > float.MaxValue)
-								error = float.MaxValue;
-							scored_items.Add(Tuple.Create(item_id, error));
-						}
-				}
+				foreach (int item_id in candidate_items)
+					if (!ignore_items.Contains(item_id))
+					{
+						float error = Math.Abs(Predict(user_id, item_id));
+						if (error > float.MaxValue)
+							error = float.MaxValue;
+						scored_items.Add(Tuple.Create(item_id, error));
+					}
 
 				ordered_items = scored_items.OrderBy(x => x.Item2).ToArray();
 			}
@@ -141,42 +127,20 @@ namespace MyMediaLite.ItemRecommendation
 				var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
 				float max_error = float.MaxValue;
 
-				if (UseMulticore)
-				{
-					Parallel.ForEach(candidate_items, item_id => {
-						if (!ignore_items.Contains(item_id))
+				foreach (int item_id in candidate_items)
+					if (!ignore_items.Contains(item_id))
+					{
+						float error = Math.Abs(Predict(user_id, item_id));
+						if (error < max_error)
 						{
-							float error = Math.Abs(Predict(user_id, item_id));
-							if (error < max_error)
+							heap.Add(Tuple.Create(item_id, error));
+							if (heap.Count > n)
 							{
-								lock (heap)
-								{
-									heap.Add(Tuple.Create(item_id, error));
-									if (heap.Count > n)
-									{
-										heap.DeleteMax();
-										max_error = heap.FindMax().Item2;
-									}
-								}
+								heap.DeleteMax();
+								max_error = heap.FindMax().Item2;
 							}
 						}
-					});
-				} else {
-					foreach (int item_id in candidate_items)
-						if (!ignore_items.Contains(item_id))
-						{
-							float error = Math.Abs(Predict(user_id, item_id));
-							if (error < max_error)
-							{
-								heap.Add(Tuple.Create(item_id, error));
-								if (heap.Count > n)
-								{
-									heap.DeleteMax();
-									max_error = heap.FindMax().Item2;
-								}
-							}
-						}
-				}
+					}
 
 				ordered_items = new Tuple<int, float>[heap.Count];
 				for (int i = 0; i < ordered_items.Count; i++)
@@ -192,7 +156,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"NaiveSVDRank num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}",
+				"SimpleSGDRank num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}",
 				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay);
 		}
 

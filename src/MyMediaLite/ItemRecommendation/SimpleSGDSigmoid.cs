@@ -95,28 +95,14 @@ namespace MyMediaLite.ItemRecommendation
 			if (n == -1)
 			{
 				var scored_items = new List<Tuple<int, float>>();
-				if (UseMulticore)
-				{
-					Parallel.ForEach(candidate_items, item_id => {
-						if (!ignore_items.Contains(item_id))
-						{
-							float score = Predict(user_id, item_id);
-							if (score < float.MinValue)
-								score = float.MinValue;
-							lock(scored_items)
-								scored_items.Add(Tuple.Create(item_id, score));
-						}
-					});
-				} else {
-					foreach (int item_id in candidate_items)
-						if (!ignore_items.Contains(item_id))
-						{
-							float score = Predict(user_id, item_id);
-							if (score < float.MinValue)
-								score = float.MinValue;
-							scored_items.Add(Tuple.Create(item_id, score));
-						}
-				}
+				foreach (int item_id in candidate_items)
+					if (!ignore_items.Contains(item_id))
+					{
+						float score = Predict(user_id, item_id);
+						if (score < float.MinValue)
+							score = float.MinValue;
+						scored_items.Add(Tuple.Create(item_id, score));
+					}
 
 				ordered_items = scored_items.OrderByDescending(x => x.Item2).ToArray();
 			}
@@ -126,42 +112,20 @@ namespace MyMediaLite.ItemRecommendation
 				var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
 				float min_score = float.MinValue;
 
-				if (UseMulticore)
-				{
-					Parallel.ForEach(candidate_items, item_id => {
-						if (!ignore_items.Contains(item_id))
+				foreach (int item_id in candidate_items)
+					if (!ignore_items.Contains(item_id))
+					{
+						float score = Predict(user_id, item_id);
+						if (score > min_score)
 						{
-							float score = Predict(user_id, item_id);
-							if (score > min_score)
+							heap.Add(Tuple.Create(item_id, score));
+							if (heap.Count > n)
 							{
-								lock (heap)
-								{
-									heap.Add(Tuple.Create(item_id, score));
-									if (heap.Count > n)
-									{
-										heap.DeleteMin();
-										min_score = heap.FindMin().Item2;
-									}
-								}
+								heap.DeleteMin();
+								min_score = heap.FindMin().Item2;
 							}
 						}
-					});
-				} else {
-					foreach (int item_id in candidate_items)
-						if (!ignore_items.Contains(item_id))
-						{
-							float score = Predict(user_id, item_id);
-							if (score > min_score)
-							{
-								heap.Add(Tuple.Create(item_id, score));
-								if (heap.Count > n)
-								{
-									heap.DeleteMin();
-									min_score = heap.FindMin().Item2;
-								}
-							}
-						}
-				}
+					}
 
 				ordered_items = new Tuple<int, float>[heap.Count];
 				for (int i = 0; i < ordered_items.Count; i++)
@@ -177,7 +141,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"NaiveSVDSigmoid num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}",
+				"SimpleSGDSigmoid num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}",
 				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay);
 		}
 

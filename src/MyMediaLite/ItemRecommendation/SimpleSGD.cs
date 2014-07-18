@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Zeno Gantner
+// Copyright (C) 2014 João Vinagre, Zeno Gantner
 //
 // This file is part of MyMediaLite.
 //
@@ -20,13 +20,31 @@ using C5;
 using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using MathNet.Numerics.LinearAlgebra.Double;
 using MyMediaLite.DataType;
 using MyMediaLite.Data;
 
 namespace MyMediaLite.ItemRecommendation
 {
+	/// <summary>
+	///   Simple Stochastic Gradient Descent (SGD) algorithm for item prediction.
+	/// </summary>
+	/// <remarks>
+	///   <para>
+	///     Literature:
+	/// 	<list type="bullet">
+	///       <item><description>
+	///         João Vinagre, Alípio Mário Jorge, João Gama:
+	///         Fast incremental matrix factorization for recommendation with positive-only feedback.
+	///         UMAP 2014.
+	///         https://www.researchgate.net/profile/Joao_Vinagre2/publication/263416416_Fast_Incremental_Matrix_Factorization_for_Recommendation_with_Positive-Only_Feedback/file/60b7d53ac3b980d4e2.pdf
+	///       </description></item>
+	///     </list>
+	///   </para> 
+	///   <para>
+	///     This algorithm supports (and encourages) incremental updates. 
+	///   </para>
+	/// </remarks>
 	public class SimpleSGD : MF
 	{
 		/// <summary>Regularization parameter</summary>
@@ -45,21 +63,21 @@ namespace MyMediaLite.ItemRecommendation
 		/// <summary>Incremental iteration number</summary>
 		public uint IncrIter { get; set; }
 
-		/// <summary>Incremental iteration number</summary>
-		public bool UseMulticore { get { return use_multicore; } set { use_multicore = value; } }
-		bool use_multicore = true;
-
 		/// <summary>The learn rate used for the current epoch</summary>
 		protected internal float current_learnrate;
 
 		// float max_score = 1.0f;
 
+		/// <summary>
+		/// Default constructor
+		/// </summary>
 		public SimpleSGD ()
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
 		}
 
+		///
 		protected override void InitModel()
 		{
 			base.InitModel();
@@ -73,24 +91,17 @@ namespace MyMediaLite.ItemRecommendation
 			Iterate(UpdateUsers, UpdateItems);
 		}
 
+		///
 		public override float ComputeObjective()
 		{
 			return -1;
 		}
 
 		/// <summary>Iterate once over feedback data and adjust corresponding factors (stochastic gradient descent)</summary>
-		/// <param name="rating_indices">a list of indices pointing to the feedback to iterate over</param>
 		/// <param name="update_user">true if user factors to be updated</param>
 		/// <param name="update_item">true if item factors to be updated</param>
 		protected virtual void Iterate(bool update_user, bool update_item)
 		{
-			//TODO: respeitar sequencia original
-			// ou não: o objetivo é ter uma sequência diferente por cada iteração.
-			// só se aplica ao treino inicial
-			/*
-			 * var indexes = Feedback.RandomIndex;
-			 * foreach (int index in indexes)
-			 */
 			for (int index = 0; index < Feedback.Count; index++)
 			{
 				int u = Feedback.Users[index];
@@ -104,6 +115,7 @@ namespace MyMediaLite.ItemRecommendation
 			
 		}
 
+		/// 
 		public override float Predict(int user_id, int item_id)
 		{
 			return Predict(user_id, item_id, false);
@@ -140,6 +152,7 @@ namespace MyMediaLite.ItemRecommendation
 			AddFeedback(feedback,true);
 		}
 
+		/// 
 		public virtual void AddFeedback(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, bool retrain)
 		{
 			base.AddFeedback(feedback);
@@ -153,6 +166,7 @@ namespace MyMediaLite.ItemRecommendation
 			Retrain(feedback);
 		}
 		
+		/// 
 		protected virtual void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			for (uint i = 0; i < IncrIter; i++)
@@ -202,6 +216,8 @@ namespace MyMediaLite.ItemRecommendation
 		/// </summary>
 		/// <param name="user_id">User_id.</param>
 		/// <param name="item_id">Item_id.</param>
+		/// <param name="update_user">true to update user factors.</param>
+		/// <param name="update_item">true to update item factors.</param> 
 		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
 		{
 			//Console.WriteLine(float.MinValue);
@@ -245,28 +261,14 @@ namespace MyMediaLite.ItemRecommendation
 			if (n == -1)
 			{
 				var scored_items = new List<Tuple<int, float>>();
-				if (UseMulticore)
-				{
-					Parallel.ForEach(candidate_items, item_id => {
-						if (!ignore_items.Contains(item_id))
-						{
-							float error = Math.Abs(1 - Predict(user_id, item_id));
-							if (error > float.MaxValue)
-								error = float.MaxValue;
-							lock(scored_items)
-								scored_items.Add(Tuple.Create(item_id, error));
-						}
-					});
-				} else {
-					foreach (int item_id in candidate_items)
-						if (!ignore_items.Contains(item_id))
-						{
-							float error = Math.Abs(1 - Predict(user_id, item_id));
-							if (error > float.MaxValue)
-								error = float.MaxValue;
-							scored_items.Add(Tuple.Create(item_id, error));
-						}
-				}
+				foreach (int item_id in candidate_items)
+					if (!ignore_items.Contains(item_id))
+					{
+						float error = Math.Abs(1 - Predict(user_id, item_id));
+						if (error > float.MaxValue)
+							error = float.MaxValue;
+						scored_items.Add(Tuple.Create(item_id, error));
+					}
 
 				ordered_items = scored_items.OrderBy(x => x.Item2).ToArray();
 			}
@@ -276,42 +278,20 @@ namespace MyMediaLite.ItemRecommendation
 				var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
 				float max_error = float.MaxValue;
 
-				if (UseMulticore)
-				{
-					Parallel.ForEach(candidate_items, item_id => {
-						if (!ignore_items.Contains(item_id))
+				foreach (int item_id in candidate_items)
+					if (!ignore_items.Contains(item_id))
+					{
+						float error = Math.Abs(1 - Predict(user_id, item_id));
+						if (error < max_error)
 						{
-							float error = Math.Abs(1 - Predict(user_id, item_id));
-							if (error < max_error)
+							heap.Add(Tuple.Create(item_id, error));
+							if (heap.Count > n)
 							{
-								lock (heap)
-								{
-									heap.Add(Tuple.Create(item_id, error));
-									if (heap.Count > n)
-									{
-										heap.DeleteMax();
-										max_error = heap.FindMax().Item2;
-									}
-								}
+								heap.DeleteMax();
+								max_error = heap.FindMax().Item2;
 							}
 						}
-					});
-				} else {
-					foreach (int item_id in candidate_items)
-						if (!ignore_items.Contains(item_id))
-						{
-							float error = Math.Abs(1 - Predict(user_id, item_id));
-							if (error < max_error)
-							{
-								heap.Add(Tuple.Create(item_id, error));
-								if (heap.Count > n)
-								{
-									heap.DeleteMax();
-									max_error = heap.FindMax().Item2;
-								}
-							}
-						}
-				}
+					}
 
 				ordered_items = new Tuple<int, float>[heap.Count];
 				for (int i = 0; i < ordered_items.Count; i++)
@@ -327,7 +307,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"NaiveSVD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}",
+				"SimpleSGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}",
 				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay);
 		}
 

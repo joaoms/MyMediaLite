@@ -60,7 +60,7 @@ namespace MyMediaLite.ItemRecommendation
 
 
 		///
-		protected float Predict(int user_id, int item_id, bool bound)
+		protected override float Predict(int user_id, int item_id, bool bound)
 		{
 			float result = global_bias;
 
