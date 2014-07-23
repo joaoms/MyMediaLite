@@ -59,6 +59,8 @@ namespace MyMediaLite.ItemRecommendation
 
 		protected List<SimpleSGD> recommender_nodes;
 
+		readonly float BAG_PROB = 1 - 1 / Math.E;
+
 		// float max_score = 1.0f;
 
 		public BaggedSimpleSGD ()
@@ -135,9 +137,10 @@ namespace MyMediaLite.ItemRecommendation
 		public override void AddFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			base.AddFeedback(feedback);
-			int retrain = rand.Next(num_nodes - 1);
-			for(int i = 0; i < num_nodes; i++)
-				recommender_nodes[i].AddFeedback(feedback, retrain == i);
+			recommender_nodes.Shuffle();
+			Parallel.For(0, num_nodes, i => {
+				recommender_nodes[i].AddFeedback(feedback, i <= num_nodes * BAG_PROB);
+			});
 		}
 
 		///
