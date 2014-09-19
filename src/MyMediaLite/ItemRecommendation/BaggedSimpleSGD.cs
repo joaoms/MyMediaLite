@@ -59,7 +59,7 @@ namespace MyMediaLite.ItemRecommendation
 
 		protected List<SimpleSGD> recommender_nodes;
 
-		readonly float BAG_PROB = 1 - 1 / Math.E;
+		readonly double BAG_PROB = 1 - 1 / Math.E;
 
 		// float max_score = 1.0f;
 
