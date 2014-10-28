@@ -483,7 +483,7 @@ namespace MyMediaLite.ItemRecommendation
 			if (alpha <= 0) throw new Exception("only order-preserving scaling is allowed");
 			for (int i = 0; i < _count; i++)
 			{
-				_data[i].Lambda *= alpha;
+				_data[i].Lambda *= (1 - alpha);
 			}
 		}
 
