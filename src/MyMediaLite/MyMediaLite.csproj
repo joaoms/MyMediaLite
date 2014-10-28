@@ -267,5 +267,9 @@
       <Project>{309290E3-E52B-4E67-9F6E-2A67B5D54320}</Project>
       <Name>SVM</Name>
     </ProjectReference>
+    <ProjectReference Include="..\HeapPriorityQueue\HeapPriorityQueue.csproj">
+      <Project>{C9B34AB2-F7C5-439C-A5E7-FCD919D205AF}</Project>
+      <Name>HeapPriorityQueue</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

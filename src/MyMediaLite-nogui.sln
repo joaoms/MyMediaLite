@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForgettingProfile", "Progra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineLearner", "Programs\OnlineLearner\OnlineLearner.csproj", "{0ED9B6E7-37C6-4A2A-B588-FA54B0EC7824}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeapPriorityQueue", "HeapPriorityQueue\HeapPriorityQueue.csproj", "{C9B34AB2-F7C5-439C-A5E7-FCD919D205AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -104,6 +106,12 @@ Global
 		{91401B81-FAA0-48E0-87B0-711182679BA6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AD1EB4BB-DE14-418B-B704-67D76E468FF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AD1EB4BB-DE14-418B-B704-67D76E468FF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9B34AB2-F7C5-439C-A5E7-FCD919D205AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9B34AB2-F7C5-439C-A5E7-FCD919D205AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9B34AB2-F7C5-439C-A5E7-FCD919D205AF}.Default|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9B34AB2-F7C5-439C-A5E7-FCD919D205AF}.Default|Any CPU.Build.0 = Debug|Any CPU
+		{C9B34AB2-F7C5-439C-A5E7-FCD919D205AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9B34AB2-F7C5-439C-A5E7-FCD919D205AF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CF099BD4-46D6-4FB0-B42B-641A1F829241}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CF099BD4-46D6-4FB0-B42B-641A1F829241}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CF099BD4-46D6-4FB0-B42B-641A1F829241}.Default|Any CPU.ActiveCfg = Debug|Any CPU
