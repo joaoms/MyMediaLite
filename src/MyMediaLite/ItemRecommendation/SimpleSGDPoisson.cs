@@ -75,15 +75,17 @@ namespace MyMediaLite.ItemRecommendation
 				item_queue = new HeapPriorityQueue<int>(Feedback.Items.Count);
 				foreach (int item in Feedback.Items)
 				{
-					Console.WriteLine("Adding item "+item);
+					//Console.WriteLine("Adding item "+item);
 					item_queue.AddOrUpdate(item, Alpha);
 				}
 				//DEBUG stuff
+				/*
 				int cnt;
 				Console.WriteLine("Heap has "+ (cnt = item_queue.Count) +" elements");
 
 				for (int i = 0; i < cnt; i++)
 					Console.WriteLine("Prio: "+item_queue.PeekPriority()+" item "+item_queue.Dequeue());
+				*/
 			}
 		}
 
