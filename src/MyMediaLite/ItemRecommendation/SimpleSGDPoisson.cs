@@ -307,8 +307,9 @@ namespace MyMediaLite.ItemRecommendation
 		public void AddOrUpdate(int idx, float alpha)
 		{
 			double z0 = 0;
-			if (Contains(idx))
-				z0 = Remove(idx).Lambda;
+			var removed = Remove(idx);
+			if (removed != null)
+				z0 = removed.Lambda;
 			Scale(alpha);
 			Add(new BHNode(idx, ((1-alpha)*z0) + alpha));
 		}
@@ -326,7 +327,7 @@ namespace MyMediaLite.ItemRecommendation
 			BHNode v = _data[0];
 			_count--;
 			_data[0] = _data[_count];
-			_data[_count] = default(BHNode); //Clears the Last Node
+			_data[_count] = null; //Clears the Last Node
 			DownHeap();
 			return v;
 		}
@@ -472,7 +473,7 @@ namespace MyMediaLite.ItemRecommendation
 			if (i < 0) return null;
 			BHNode removed = _data[i];
 			Array.Copy(_data, i + 1, _data, i, _count - i);
-			_data[_count] = default(BHNode);
+			_data[_count] = null;
 			_count--;
 			return removed;
 		}
