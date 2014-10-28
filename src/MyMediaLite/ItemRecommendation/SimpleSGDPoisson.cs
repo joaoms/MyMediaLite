@@ -215,7 +215,7 @@ namespace MyMediaLite.ItemRecommendation
 
 		public int CompareTo(BHNode other)
 		{
-			return Math.Sign(this.Lambda - other.Lambda);
+			return this.Idx - other.Idx;
 		}
 
 	}
@@ -338,7 +338,7 @@ namespace MyMediaLite.ItemRecommendation
 			int p = _count;
 			BHNode item = _data[p];
 			int par = Parent(p);
-			while (par > -1 && item.CompareTo(_data[par]) < 0)
+			while (par > -1 && item.Lambda < _data[par].Lambda)
 			{
 				_data[p] = _data[par]; //Swap nodes
 				p = par;
@@ -364,9 +364,9 @@ namespace MyMediaLite.ItemRecommendation
 				}
 				else
 				{
-					n = _data[ch1].CompareTo(_data[ch2]) < 0 ? ch1 : ch2;
+					n = _data[ch1].Lambda < _data[ch2].Lambda ? ch1 : ch2;
 				}
-				if (item.CompareTo(_data[n]) > 0)
+				if (item.Lambda > _data[n].Lambda)
 				{
 					_data[p] = _data[n]; //Swap nodes
 					p = n;
@@ -434,8 +434,7 @@ namespace MyMediaLite.ItemRecommendation
 		public bool Contains(BHNode item)
 		{
 			EnsureSort();
-			var comparer = new DelegateComparer<BHNode>( (a,b) => a.Idx - b.Idx );
-			return Array.BinarySearch<BHNode>(_data, 0, _count, item, comparer) >= 0;
+			return Array.BinarySearch<BHNode>(_data, 0, _count, item) >= 0;
 		}
 
 		public bool Contains(int idx)
@@ -468,8 +467,7 @@ namespace MyMediaLite.ItemRecommendation
 		public BHNode Remove(BHNode item)
 		{
 			EnsureSort();
-			var comparer = new DelegateComparer<BHNode>( (a,b) => a.Idx - b.Idx );
-			int i = Array.BinarySearch<BHNode>(_data, 0, _count, item, comparer);
+			int i = Array.BinarySearch<BHNode>(_data, 0, _count, item);
 			if (i < 0) return null;
 			BHNode removed = _data[i];
 			Array.Copy(_data, i + 1, _data, i, _count - i);
