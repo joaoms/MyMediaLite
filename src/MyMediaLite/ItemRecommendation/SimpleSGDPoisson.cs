@@ -89,10 +89,20 @@ namespace MyMediaLite.ItemRecommendation
 
 		protected override void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
-			int[] qu = new int[Math.Min(ForgetHorizon, user_queue.Count - 1)];
-			double[] qu_prio = new double[Math.Min(ForgetHorizon, user_queue.Count - 1)];
-			int[] qi = new int[Math.Min(ForgetHorizon, item_queue.Count - 1)];
-			double[] qi_prio = new double[Math.Min(ForgetHorizon, item_queue.Count - 1)];
+			int user_horizon = ForgetHorizon;
+			int item_horizon = ForgetHorizon;
+
+			if (forget_users)
+				user_horizon = Math.Min(user_horizon, user_queue.Count - 1);
+			int[] qu = new int[user_horizon];
+			double[] qu_prio = new double[user_horizon];
+
+			if (forget_items)
+				item_horizon = Math.Min(item_horizon, item_queue.Count - 1);
+
+			int[] qi = new int[item_horizon];
+			double[] qi_prio = new double[item_horizon];
+
 			foreach (var entry in feedback)
 			{
 				if (forget_users)
