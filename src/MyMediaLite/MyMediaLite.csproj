@@ -256,6 +256,7 @@
     <Compile Include="ItemRecommendation\SimpleSGDZI.cs" />
     <Compile Include="ItemRecommendation\BaggedSimpleSGD.cs" />
     <Compile Include="ItemRecommendation\SimpleSGDPoisson.cs" />
+    <Compile Include="ItemRecommendation\SimpleSGDJointZI.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <ItemGroup>
