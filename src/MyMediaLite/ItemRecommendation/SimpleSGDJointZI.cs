@@ -72,7 +72,7 @@ namespace MyMediaLite.ItemRecommendation
 					if (qi[i] != entry.Item2) i++;
 				}
 
-				for (int i = Math.Min(Math.Min(forget_horizon,item_queue.Count),user_queue.Count) - 1; i >= 0; i--)
+				for (int i = Math.Min(Math.Min(forget_horizon,item_queue.Count - 1),user_queue.Count - 1) - 1; i >= 0; i--)
 					for (uint j = 0; j < IncrIter; j++)
 						UpdateFactors(qu[i], qi[i], ForgetInUsers, ForgetInItems, 0);
 
