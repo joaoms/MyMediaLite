@@ -176,7 +176,7 @@ namespace MyMediaLite.ItemRecommendation
 			{
 				prio = item_queue.PeekPriority();
 				item = item_queue.Dequeue();
-				Console.WriteLine(prio + "" + item);
+				Console.WriteLine(prio + "\t" + item);
 				newHeap.Enqueue(item, prio);
 			}
 			item_queue = newHeap;
