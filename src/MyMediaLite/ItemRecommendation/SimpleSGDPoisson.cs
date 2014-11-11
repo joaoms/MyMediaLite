@@ -167,6 +167,7 @@ namespace MyMediaLite.ItemRecommendation
 
 		private void dumpItemQueue()
 		{
+			Console.WriteLine("\nupdate " + Feedback.Count);
 			double prio;
 			int item;
 			int cnt = item_queue.Count;
