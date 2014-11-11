@@ -39,6 +39,7 @@ namespace MyMediaLite.ItemRecommendation
 		public float Alpha { get { return alpha; } set { alpha = value; } }
 		int forget_horizon = 1;
 		float alpha = 0.001f;
+		MyMediaLite.Random rand = MyMediaLite.Random.GetInstance();
 
 		private bool forget_users;
 		private bool forget_items;
@@ -160,6 +161,25 @@ namespace MyMediaLite.ItemRecommendation
 						}
 				}
 			}
+			if(rand.NextDouble <= 0.001)
+				dumpItemQueue();
+		}
+
+		private void dumpItemQueue()
+		{
+			double prio;
+			int item;
+			int cnt = item_queue.Count;
+			Tuple<double, int>[] ret = new Tuple<double, int>[cnt];
+			HeapPriorityQueue<int> newHeap = new HeapPriorityQueue<int>(cnt);
+			for (int i = 0; i < cnt; i++)
+			{
+				prio = item_queue.PeekPriority();
+				item = item_queue.Dequeue();
+				Console.WriteLine(prio + "" + item);
+				newHeap.Enqueue(item, prio);
+			}
+			item_queue = newHeap;
 		}
 
 		///
