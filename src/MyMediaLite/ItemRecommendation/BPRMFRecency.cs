@@ -62,7 +62,8 @@ namespace MyMediaLite.ItemRecommendation
 			{
 				if (UpdateItems)
 					RetrainItem(item_id);
-				item_queue.UpdateOrAdd(item_id);
+				item_queue.Remove(item_id);
+				item_queue.InsertLast(item_id);
 			}
 		}
 
