@@ -161,17 +161,17 @@ namespace MyMediaLite.ItemRecommendation
 						}
 				}
 			}
-			if(rand.NextDouble() <= 0.001)
+			if(Feedback.Count % 1000 == 0)
 				dumpItemQueue();
 		}
 
 		private void dumpItemQueue()
 		{
-			Console.WriteLine("\nupdate " + Feedback.Count);
 			double prio;
 			int item;
 			int cnt = item_queue.Count;
 			HeapPriorityQueue<int> newHeap = new HeapPriorityQueue<int>(cnt);
+			Console.WriteLine("u" + Feedback.Count + "\t" + item_queue.Count);
 			for (int i = 0; i < cnt; i++)
 			{
 				prio = item_queue.PeekPriority();
