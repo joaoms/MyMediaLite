@@ -161,7 +161,7 @@ namespace MyMediaLite.ItemRecommendation
 						}
 				}
 			}
-			if(rand.NextDouble <= 0.001)
+			if(rand.NextDouble() <= 0.001)
 				dumpItemQueue();
 		}
 
@@ -171,7 +171,6 @@ namespace MyMediaLite.ItemRecommendation
 			double prio;
 			int item;
 			int cnt = item_queue.Count;
-			Tuple<double, int>[] ret = new Tuple<double, int>[cnt];
 			HeapPriorityQueue<int> newHeap = new HeapPriorityQueue<int>(cnt);
 			for (int i = 0; i < cnt; i++)
 			{
