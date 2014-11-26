@@ -49,7 +49,7 @@ namespace MyMediaLite.ItemRecommendation
 			while (user_items.Contains(other_item_id));
 		}
 
-		void Retrain(ICollection<Tuple<int, int>> feedback)
+		protected override void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			var users = from t in feedback select t.Item1;
 			var items = from t in feedback select t.Item2;

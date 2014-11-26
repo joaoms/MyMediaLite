@@ -393,7 +393,7 @@ namespace MyMediaLite.ItemRecommendation
 			Retrain(feedback);
 		}
 
-		void Retrain(ICollection<Tuple<int, int>> feedback)
+		protected virtual void Retrain(ICollection<Tuple<int, int>> feedback)
 		{
 			var users = from t in feedback select t.Item1;
 			var items = from t in feedback select t.Item2;
