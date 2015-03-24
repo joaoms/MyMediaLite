@@ -158,7 +158,15 @@ namespace MyMediaLite.ItemRecommendation
 			base.AddFeedback(feedback);
 			if (retrain) Retrain(feedback);
 		}
-		
+
+		/// 
+		public virtual void AddFeedbackRetrainN(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, int n_retrain)
+		{
+			base.AddFeedback(feedback);
+			for(int i = 0; i < n_retrain; i++)
+				Retrain(feedback);
+		}
+
 		///
 		public override void RemoveFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
@@ -167,7 +175,7 @@ namespace MyMediaLite.ItemRecommendation
 		}
 		
 		/// 
-		public virtual void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
+		protected virtual void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			for (uint i = 0; i < IncrIter; i++)
 				foreach (var entry in feedback)
