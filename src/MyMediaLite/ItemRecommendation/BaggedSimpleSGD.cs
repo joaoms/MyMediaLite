@@ -24,6 +24,7 @@ using System.Threading.Tasks;
 using MathNet.Numerics.LinearAlgebra.Double;
 using MyMediaLite.DataType;
 using MyMediaLite.Data;
+using MathNet.Numerics.Distributions;
 
 namespace MyMediaLite.ItemRecommendation
 {
@@ -59,7 +60,8 @@ namespace MyMediaLite.ItemRecommendation
 
 		protected List<SimpleSGD> recommender_nodes;
 
-		readonly double BAG_PROB = 1 - 1 / Math.E;
+		//readonly double BAG_PROB = 1 - 1 / Math.E;
+
 
 		// float max_score = 1.0f;
 
@@ -139,7 +141,10 @@ namespace MyMediaLite.ItemRecommendation
 			base.AddFeedback(feedback);
 			recommender_nodes.Shuffle();
 			Parallel.For(0, num_nodes, i => {
-				recommender_nodes[i].AddFeedback(feedback, i <= num_nodes * BAG_PROB);
+				int npoisson = Poisson.Sample(rand,1);
+				recommender_nodes[i].AddFeedback(feedback, false);
+				for(int j = 0; j < npoisson; j++)
+					recommender_nodes[i].Retrain(feedback);
 			});
 		}
 
