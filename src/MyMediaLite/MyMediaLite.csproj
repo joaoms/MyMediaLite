@@ -34,11 +34,11 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Core" />
-    <Reference Include="MathNet.Numerics, Version=2011.4.17.0, Culture=neutral, PublicKeyToken=cd8b63ad3d691a37">
-      <HintPath>..\..\lib\MathNet\MathNet.Numerics.dll</HintPath>
-    </Reference>
     <Reference Include="C5, Version=1.1.1.0, Culture=neutral, PublicKeyToken=06a1b38866503b69">
       <HintPath>..\..\lib\C5\C5.dll</HintPath>
+    </Reference>
+    <Reference Include="MathNet.Numerics, Version=2011.4.17.0, Culture=neutral, PublicKeyToken=cd8b63ad3d691a37">
+      <HintPath>..\..\lib\MathNet\MathNet.Numerics.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -258,6 +258,7 @@
     <Compile Include="ItemRecommendation\SimpleSGDPoisson.cs" />
     <Compile Include="ItemRecommendation\SimpleSGDJointZI.cs" />
     <Compile Include="ItemRecommendation\BPRMFRecency.cs" />
+    <Compile Include="ItemRecommendation\RAISGDGlobal.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <ItemGroup>

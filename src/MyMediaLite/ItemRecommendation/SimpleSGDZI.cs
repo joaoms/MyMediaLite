@@ -34,8 +34,8 @@ namespace MyMediaLite.ItemRecommendation
 		public bool ForgetItemsInUsers { get; set; }
 		public bool ForgetUsersInItems { get; set; }
 		public bool ForgetItemsInItems { get; set; }
-		public int ForgetHorizon { get { return forget_horizon; } set { forget_horizon = value; } }
-		int forget_horizon = 1;
+		public int Horizon { get { return horizon; } set { horizon = value; } }
+		protected int horizon = 1;
 
 		private bool forget_users;
 		private bool forget_items;
@@ -76,8 +76,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			foreach (var entry in feedback)
 			{
-				int[] qu = Enumerable.Repeat(-1,forget_horizon).ToArray();
-				int[] qi = Enumerable.Repeat(-1,forget_horizon).ToArray();
+				int[] qu = Enumerable.Repeat(-1,horizon).ToArray();
+				int[] qi = Enumerable.Repeat(-1,horizon).ToArray();
 				if (forget_users)
 				{
 					for (uint i = 0; i < qu.Length && i < user_queue.Count - 1; )
@@ -184,8 +184,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"NaiveSVDZI num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}, forget_horizon={6}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, ForgetHorizon);
+				"NaiveSVDZI num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}, horizon={6}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, Horizon);
 		}
 
 
