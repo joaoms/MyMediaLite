@@ -42,11 +42,18 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.InitModel();
 
-			user_delta_m = new List<double>(new double[MaxUserID]);
-			user_delta_s = new List<double>(new double[MaxUserID]);
-			user_horizon = new List<int>(new int[MaxUserID]);
+			user_delta_m = new List<double>(new double[MaxUserID + 1]);
+			user_delta_s = new List<double>(new double[MaxUserID + 1]);
+			user_horizon = new List<int>(new int[MaxUserID + 1]);
 		}
 
+		protected override void AddUser(int userid)
+		{
+			base.AddUser(userid);
+			user_delta_m.Add(0);
+			user_delta_s.Add(0);
+			user_horizon.Add(0);
+		}
 
 		private void UpdateUserStats(int u, double val)
 		{
@@ -94,7 +101,7 @@ namespace MyMediaLite.ItemRecommendation
 			UpdateUserHorizon(u, delta);
 			UpdateUserStats(u, delta);
 		}
-
+			
 	}
 }
 
