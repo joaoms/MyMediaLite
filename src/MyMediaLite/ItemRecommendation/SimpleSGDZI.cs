@@ -76,56 +76,61 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			foreach (var entry in feedback)
 			{
-				int[] qu = Enumerable.Repeat(-1,horizon).ToArray();
-				int[] qi = Enumerable.Repeat(-1,horizon).ToArray();
-				if (forget_users)
-				{
-					for (uint i = 0; i < qu.Length && i < user_queue.Count - 1; )
-					{
-						qu[i] = user_queue.RemoveFirst();
-						if (qu[i] != entry.Item1) i++;
-					}
-				}
-				if (forget_items)
-				{
-					for (uint i = 0; i < qi.Length && i < item_queue.Count - 1; )
-					{
-						qi[i] = item_queue.RemoveFirst();
-						if (qi[i] != entry.Item2) i++;
-					}
-				}
-				//Console.WriteLine("Forgetting item "+qi);
-				if (forget_users)
-					foreach (var usr in qu.Reverse())
-						if (usr >= 0) 
-							for (uint i = 0; i < IncrIter; i++)
-								UpdateFactors(usr, entry.Item2, ForgetUsersInUsers, ForgetUsersInItems, 0);
-				if (forget_items)
-					foreach (var itm in qi.Reverse())
-						if (itm >= 0)
-							for (uint i = 0; i < IncrIter; i++)
-								UpdateFactors(entry.Item1, itm, ForgetItemsInUsers, ForgetItemsInItems, 0);
-				for (uint i = 0; i < IncrIter; i++)
-					UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
+				RetrainEntry(entry);
+			}
+		}
 
-				if (forget_items)
+		protected virtual void RetrainEntry(Tuple<int,int> entry)
+		{
+			int[] qu = Enumerable.Repeat(-1,horizon).ToArray();
+			int[] qi = Enumerable.Repeat(-1,horizon).ToArray();
+			if (forget_users)
+			{
+				for (uint i = 0; i < qu.Length && i < user_queue.Count - 1; )
 				{
-					item_queue.Remove(entry.Item2);
-					item_queue.InsertLast(entry.Item2);
-
-					foreach (var itm in qi.Reverse())
-						if (itm >= 0 && itm != entry.Item2)
-							item_queue.InsertLast(itm);
+					qu[i] = user_queue.RemoveFirst();
+					if (qu[i] != entry.Item1) i++;
 				}
-				if (forget_users)
+			}
+			if (forget_items)
+			{
+				for (uint i = 0; i < qi.Length && i < item_queue.Count - 1; )
 				{
-					user_queue.Remove(entry.Item1);
-					user_queue.InsertLast(entry.Item1);
-
-					foreach (var usr in qu.Reverse())
-						if (usr >= 0 && usr != entry.Item1)
-							user_queue.InsertLast(usr);
+					qi[i] = item_queue.RemoveFirst();
+					if (qi[i] != entry.Item2) i++;
 				}
+			}
+			//Console.WriteLine("Forgetting item "+qi);
+			if (forget_users)
+				foreach (var usr in qu.Reverse())
+					if (usr >= 0) 
+						for (uint i = 0; i < IncrIter; i++)
+							UpdateFactors(usr, entry.Item2, ForgetUsersInUsers, ForgetUsersInItems, 0);
+			if (forget_items)
+				foreach (var itm in qi.Reverse())
+					if (itm >= 0)
+						for (uint i = 0; i < IncrIter; i++)
+							UpdateFactors(entry.Item1, itm, ForgetItemsInUsers, ForgetItemsInItems, 0);
+			for (uint i = 0; i < IncrIter; i++)
+				UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
+
+			if (forget_items)
+			{
+				item_queue.Remove(entry.Item2);
+				item_queue.InsertLast(entry.Item2);
+
+				foreach (var itm in qi.Reverse())
+					if (itm >= 0 && itm != entry.Item2)
+						item_queue.InsertLast(itm);
+			}
+			if (forget_users)
+			{
+				user_queue.Remove(entry.Item1);
+				user_queue.InsertLast(entry.Item1);
+
+				foreach (var usr in qu.Reverse())
+					if (usr >= 0 && usr != entry.Item1)
+						user_queue.InsertLast(usr);
 			}
 		}
 
