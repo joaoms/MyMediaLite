@@ -82,9 +82,9 @@ namespace MyMediaLite.ItemRecommendation
 
 		protected virtual void RetrainEntry(Tuple<int,int> entry)
 		{
+			InsertNegFeedback(entry);
 			for (uint i = 0; i < IncrIter; i++)
 				UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
-			InsertNegFeedback(entry);
 		}
 
 		protected virtual void InsertNegFeedback(Tuple<int,int> entry)

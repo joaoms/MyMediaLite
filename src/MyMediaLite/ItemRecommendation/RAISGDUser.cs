@@ -91,15 +91,18 @@ namespace MyMediaLite.ItemRecommendation
 
 		protected override void RetrainEntry(Tuple<int, int> entry)
 		{
+			double delta = 0;
 			var u = entry.Item1;
 			var old_user_factors = user_factors.GetRow(u);
-			horizon = user_horizon[u];
-			base.RetrainEntry(entry);
-			double delta = 0;
+			for (int i = 0; i < IncrIter; i++)
+				UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
 			for (int i = 0; i < num_factors; i++)
 				delta += Math.Pow(user_factors[u, i] - old_user_factors[i], 2);
 			UpdateUserHorizon(u, delta);
 			UpdateUserStats(u, delta);
+			horizon = user_horizon[u];
+			user_factors.SetRow(u, old_user_factors);
+			base.RetrainEntry(entry);
 		}
 			
 	}
