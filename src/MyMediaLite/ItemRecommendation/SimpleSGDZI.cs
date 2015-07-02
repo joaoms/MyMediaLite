@@ -82,6 +82,13 @@ namespace MyMediaLite.ItemRecommendation
 
 		protected virtual void RetrainEntry(Tuple<int,int> entry)
 		{
+			for (uint i = 0; i < IncrIter; i++)
+				UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
+			InsertNegFeedback(entry);
+		}
+
+		protected virtual void InsertNegFeedback(Tuple<int,int> entry)
+		{
 			int[] qu = Enumerable.Repeat(-1,horizon).ToArray();
 			int[] qi = Enumerable.Repeat(-1,horizon).ToArray();
 			if (forget_users)
@@ -111,8 +118,6 @@ namespace MyMediaLite.ItemRecommendation
 					if (itm >= 0)
 						for (uint i = 0; i < IncrIter; i++)
 							UpdateFactors(entry.Item1, itm, ForgetItemsInUsers, ForgetItemsInItems, 0);
-			for (uint i = 0; i < IncrIter; i++)
-				UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
 
 			if (forget_items)
 			{
