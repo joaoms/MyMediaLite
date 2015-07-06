@@ -260,6 +260,7 @@
     <Compile Include="ItemRecommendation\BPRMFRecency.cs" />
     <Compile Include="ItemRecommendation\RAISGDGlobal.cs" />
     <Compile Include="ItemRecommendation\RAISGDUser.cs" />
+    <Compile Include="ItemRecommendation\RAISGDGlobalStdev.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <ItemGroup>
