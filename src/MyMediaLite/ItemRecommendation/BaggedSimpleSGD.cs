@@ -140,10 +140,17 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.AddFeedback(feedback);
 			recommender_nodes.Shuffle();
+			foreach (var rnode in recommender_nodes)
+			{
+				int npoisson = Poisson.Sample(rand,1);
+				rnode.AddFeedbackRetrainN(feedback, npoisson);
+			}
+			/*
 			Parallel.For(0, num_nodes, i => {
 				int npoisson = Poisson.Sample(rand,1);
 				recommender_nodes[i].AddFeedbackRetrainN(feedback, npoisson);
 			});
+			*/
 		}
 
 		///
