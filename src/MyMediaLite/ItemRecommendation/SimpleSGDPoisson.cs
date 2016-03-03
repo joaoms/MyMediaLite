@@ -161,8 +161,10 @@ namespace MyMediaLite.ItemRecommendation
 						}
 				}
 			}
+			/*
 			if(Feedback.Count % 1000 == 0)
 				dumpItemQueue();
+			*/
 		}
 
 		private void dumpItemQueue()
