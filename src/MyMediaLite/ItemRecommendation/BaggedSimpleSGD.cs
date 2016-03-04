@@ -167,11 +167,12 @@ namespace MyMediaLite.ItemRecommendation
 			System.Collections.Generic.ICollection<int> ignore_items = null,
 			System.Collections.Generic.ICollection<int> candidate_items = null)
 		{
+			var resultsLock = new Object();
 			var results = new List<System.Collections.Generic.IList<Tuple<int,float>>>(num_nodes);
 
 			Parallel.ForEach(recommender_nodes, rnode => {
 				var res = rnode.Recommend(user_id, n, ignore_items, candidate_items);
-				lock(results) results.Add(res);
+				lock(resultsLock) results.Add(res);
 			});
 
 			switch(aggregation_strategy) {
