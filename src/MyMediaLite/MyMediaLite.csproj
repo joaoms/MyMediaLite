@@ -261,6 +261,7 @@
     <Compile Include="ItemRecommendation\RAISGDGlobal.cs" />
     <Compile Include="ItemRecommendation\RAISGDUser.cs" />
     <Compile Include="ItemRecommendation\RAISGDGlobalStdev.cs" />
+    <Compile Include="ItemRecommendation\BaggSimpleSGD.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <ItemGroup>
