@@ -116,11 +116,11 @@ namespace MyMediaLite.ItemRecommendation
 			if (user_id > recommender_nodes[0].MaxUserID || item_id >= recommender_nodes[0].MaxItemID)
 				return float.MinValue;
 
-			List<float> results = new List<float>(num_nodes);
+			float result = 0f;
 			foreach (var rnode in recommender_nodes)
-				results.Add(rnode.Predict(user_id, item_id));
+				result += rnode.Predict(user_id, item_id);
 			
-			float result = results.Average();
+			result /= num_nodes;
 
 			if (bound)
 			{
