@@ -393,6 +393,14 @@ namespace MyMediaLite.ItemRecommendation
 			Retrain(feedback);
 		}
 
+		///
+		public virtual void AddFeedbackRetrainN(ICollection<Tuple<int, int>> feedback, int n)
+		{
+			base.AddFeedback(feedback);
+			for (int i = 0; i < n; i++)
+				Retrain(feedback);
+		}
+
 		protected virtual void Retrain(ICollection<Tuple<int, int>> feedback)
 		{
 			var users = from t in feedback select t.Item1;
