@@ -186,6 +186,8 @@ namespace MyMediaLite.ItemRecommendation
 			switch(aggregation_strategy) {
 			case "average":
 				return AvgResults(results);
+			case "rank_average":
+				return RankAvgResults(results);
 			case "cooccurrence":
 				return CooResults(results);
 			default:	
@@ -206,6 +208,43 @@ namespace MyMediaLite.ItemRecommendation
 						items[tup.Item1] += tup.Item2;
 					else
 						items.Add(tup.Item1,tup.Item2);
+				}
+			}
+
+			var comparer = new DelegateComparer<Tuple<int, float>>( (a, b) => a.Item2.CompareTo(b.Item2) );
+			var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
+			float min_score = float.MinValue;
+
+			foreach (var item in items)
+				if (item.Value/num_nodes > min_score)
+				{
+					heap.Add(Tuple.Create(item.Key, item.Value/num_nodes));
+					if (heap.Count > n)
+					{
+						heap.DeleteMin();
+						min_score = heap.FindMin().Item2;
+					}
+				}
+
+			System.Collections.Generic.IList<Tuple<int, float>> ordered_items = new Tuple<int, float>[heap.Count];
+			for (int i = 0; i < ordered_items.Count; i++)
+				ordered_items[i] = heap.DeleteMax();
+			return ordered_items;
+		}
+
+		System.Collections.Generic.IList<Tuple<int, float>> RankAvgResults(System.Collections.Generic.IList<System.Collections.Generic.IList<Tuple<int, float>>> results)
+		{
+			int n = results[0].Count;
+			var items = new Dictionary<int,float>();
+			foreach (var recs in results)
+			{
+				for (int i = 0; i < recs.Count; i++)
+				{
+					var tup = recs[i];
+					if(items.ContainsKey(tup.Item1))
+						items[tup.Item1] -= i;
+					else
+						items.Add(tup.Item1,-i);
 				}
 			}
 

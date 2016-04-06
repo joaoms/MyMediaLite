@@ -127,6 +127,7 @@ namespace MyMediaLite.ItemRecommendation
 			UniformUserSampling = true;
 			UpdateUsers = true;
 			UpdateItems = false;
+			random = MyMediaLite.Random.GetInstance();
 		}
 
 		///
