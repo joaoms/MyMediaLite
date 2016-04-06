@@ -242,9 +242,9 @@ namespace MyMediaLite.ItemRecommendation
 				{
 					var tup = recs[i];
 					if(items.ContainsKey(tup.Item1))
-						items[tup.Item1] -= i;
+						items[tup.Item1] += (n-i);
 					else
-						items.Add(tup.Item1,-i);
+						items.Add(tup.Item1, n-i);
 				}
 			}
 
@@ -253,9 +253,9 @@ namespace MyMediaLite.ItemRecommendation
 			float min_score = float.MinValue;
 
 			foreach (var item in items)
-				if (item.Value/num_nodes > min_score)
+				if (item.Value > min_score)
 				{
-					heap.Add(Tuple.Create(item.Key, item.Value/num_nodes));
+					heap.Add(Tuple.Create(item.Key, item.Value));
 					if (heap.Count > n)
 					{
 						heap.DeleteMin();
