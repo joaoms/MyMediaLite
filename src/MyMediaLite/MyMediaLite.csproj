@@ -248,21 +248,10 @@
     <Compile Include="ItemRecommendation\ItemSimMF.cs" />
     <Compile Include="ItemRecommendation\ItemAtributeCMF.cs" />
     <Compile Include="DataType\ListMatrix.cs" />
-    <Compile Include="ItemRecommendation\SimpleSGD.cs" />
-    <Compile Include="ItemRecommendation\SimpleSGDRank.cs" />
-    <Compile Include="ItemRecommendation\BiasedSGD.cs" />
-    <Compile Include="ItemRecommendation\SimpleSGDSigmoidZI.cs" />
-    <Compile Include="ItemRecommendation\SimpleSGDSigmoid.cs" />
-    <Compile Include="ItemRecommendation\SimpleSGDZI.cs" />
     <Compile Include="ItemRecommendation\BaggedSimpleSGD.cs" />
-    <Compile Include="ItemRecommendation\SimpleSGDPoisson.cs" />
-    <Compile Include="ItemRecommendation\SimpleSGDJointZI.cs" />
     <Compile Include="ItemRecommendation\BPRMFRecency.cs" />
-    <Compile Include="ItemRecommendation\RAISGDGlobal.cs" />
-    <Compile Include="ItemRecommendation\RAISGDUser.cs" />
-    <Compile Include="ItemRecommendation\RAISGDGlobalStdev.cs" />
-    <Compile Include="ItemRecommendation\BaggSimpleSGD.cs" />
-    <Compile Include="ItemRecommendation\BaggedBPRMF.cs" />
+    <Compile Include="ItemRecommendation\ISGD.cs" />
+    <Compile Include="ItemRecommendation\RAISGD.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <ItemGroup>

@@ -27,7 +27,7 @@ using MyMediaLite.Data;
 namespace MyMediaLite.ItemRecommendation
 {
 	/// <summary>
-	///   Simple Stochastic Gradient Descent (SGD) algorithm for item prediction.
+	///   Inremental Stochastic Gradient Descent (SGD) algorithm for item prediction.
 	/// </summary>
 	/// <remarks>
 	///   <para>
@@ -45,7 +45,7 @@ namespace MyMediaLite.ItemRecommendation
 	///     This algorithm supports (and encourages) incremental updates. 
 	///   </para>
 	/// </remarks>
-	public class SimpleSGD : MF
+	public class ISGD : MF
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
@@ -71,7 +71,7 @@ namespace MyMediaLite.ItemRecommendation
 		/// <summary>
 		/// Default constructor
 		/// </summary>
-		public SimpleSGD ()
+		public ISGD ()
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
@@ -315,7 +315,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"SimpleSGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}",
+				"ISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}",
 				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay);
 		}
 
