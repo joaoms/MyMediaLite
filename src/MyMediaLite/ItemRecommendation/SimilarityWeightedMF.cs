@@ -27,7 +27,7 @@ namespace MyMediaLite.ItemRecommendation
 	/// <summary>
 	/// Similarity weighted M.
 	/// </summary>
-	public class SimilarityWeightedMF: SimpleSGD
+	public class SimilarityWeightedMF: ISGD
 	{
 		/// <summary>Alpha parameter for BidirectionalConditionalProbability</summary>
 		public float Alpha { get; set; }
