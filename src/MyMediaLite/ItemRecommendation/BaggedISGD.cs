@@ -28,7 +28,7 @@ using MathNet.Numerics.Distributions;
 
 namespace MyMediaLite.ItemRecommendation
 {
-	public class BaggedSimpleSGD : MF
+	public class BaggedISGD : MF
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
@@ -58,14 +58,14 @@ namespace MyMediaLite.ItemRecommendation
 
 		protected MyMediaLite.Random rand;
 
-		protected List<SimpleSGD> recommender_nodes;
+		protected List<ISGD> recommender_nodes;
 
 		//readonly double BAG_PROB = 1 - 1 / Math.E;
 
 
 		// float max_score = 1.0f;
 
-		public BaggedSimpleSGD ()
+		public BaggedISGD ()
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
@@ -74,10 +74,10 @@ namespace MyMediaLite.ItemRecommendation
 
 		protected override void InitModel()
 		{
-			recommender_nodes = new List<SimpleSGD>(num_nodes);
-			SimpleSGD recommender_node;
+			recommender_nodes = new List<ISGD>(num_nodes);
+			ISGD recommender_node;
 			for (int i = 0; i < num_nodes; i++) {
-				recommender_node = new SimpleSGD();
+				recommender_node = new ISGD();
 				recommender_node.UpdateUsers = true;
 				recommender_node.UpdateItems = true;
 				recommender_node.Regularization = this.Regularization;
@@ -303,6 +303,15 @@ namespace MyMediaLite.ItemRecommendation
 			return ordered_items;
 		}
 
+		/// 
+		protected override void RetrainUser(int user_id)
+		{
+		}
+
+		///
+		protected override void RetrainItem(int item_id)
+		{
+		}
 
 		///
 		public override string ToString()
