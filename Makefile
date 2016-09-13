@@ -3,7 +3,7 @@ EDITOR=editor
 GENDARME_OPTIONS=--quiet --severity critical+
 SRC_DIR=src
 PREFIX=/usr/local
-VERSION=3.07
+VERSION=3.11
 HOMEPAGE=../mymedialite.net/public_html
 HOMEPAGE_SRC=../mymedialite.net/src
 HOMEPAGE_INC=../mymedialite.net/lib
@@ -15,7 +15,7 @@ RATING_RANK_DIR=${SRC_DIR}/Programs/RatingBasedRanking
 ACK=ack-grep
 export IRONPYTHONPATH := ${MYMEDIA_ASSEMBLY_DIR}
 
-.PHONY: all clean veryclean mymedialite install uninstall todo gendarme monodoc doxygen view-doxygen flyer edit-flyer test release download-movielens copy-packages-website example-python example-ruby unittests
+.PHONY: all clean veryclean mymedialite install uninstall todo gendarme monodoc doxygen view-doxygen flyer edit-flyer test release download-movielens copy-packages-website example-fsharp example-csharp unittests
 
 all: mymedialite
 
@@ -46,10 +46,13 @@ install:
 uninstall:
 	cd ${SRC_DIR} && make uninstall PREFIX=${PREFIX}
 
+fix_csproj:
+	./scripts/fix_csproj.sh
+
 MyMediaLite-${VERSION}.tar.gz:
 	mkdir MyMediaLite-${VERSION}
 	mkdir MyMediaLite-${VERSION}/doc/
-	cp doc/Authors doc/Changes doc/ComponentLicenses doc/GPL-3 doc/Installation doc/TODO MyMediaLite-${VERSION}/doc
+	cp doc/Authors doc/Changes doc/ComponentLicenses doc/GPL-3 doc/Installation MyMediaLite-${VERSION}/doc
 	cp -r bin examples scripts MyMediaLite-${VERSION}
 	cp README MyMediaLite-${VERSION}
 	mkdir MyMediaLite-${VERSION}/lib/
@@ -106,29 +109,19 @@ example-fsharp: data/ml-100k/u.data
 	cd data/ml-100k && mono ../../examples/fsharp/rating_prediction.exe
 	cd data/ml-100k && mono ../../examples/fsharp/item_recommendation.exe
 
-
-example-python: data/ml-100k/u.data
-	cd data/ml-100k && ipy ../../examples/python/rating_prediction.py
-	cd data/ml-100k && ipy ../../examples/python/item_recommendation.py
-
-example-ruby: data/ml-100k/u.data
-	cd data/ml-100k && ir -I${MYMEDIA_ASSEMBLY_DIR} ../../examples/ruby/rating_prediction.rb
-	cd data/ml-100k && ir -I${MYMEDIA_ASSEMBLY_DIR} ../../examples/ruby/item_recommendation.rb
-
 data:
 	mkdir data/
 
-data/ml-100k/u.data:
-	scripts/download_movielens.sh
+data/ml-100k/u.data: data
+	scripts/download_ml-100k.sh
 
-download-movielens: data
+download-movielens: data/ml-100k/u.data
 	scripts/download_movielens.sh
 
 download-imdb: data
 	scripts/download_imdb.sh
 
 todo:
-	${ACK} --type=csharp TODO                    ${SRC_DIR}; echo
 	${ACK} --type=csharp FIXME                   ${SRC_DIR}; echo
 	${ACK} --type=csharp HACK                    ${SRC_DIR}; echo
 	${ACK} --type=csharp NotImplementedException ${SRC_DIR}; echo
@@ -165,5 +158,5 @@ edit-flyer:
 view-flyer:
 	${PDF_VIEWER} doc/flyer/mymedialite-flyer.pdf &
 
-copy-packages-website:
+copy-packages-website: MyMediaLite-${VERSION}.tar.gz MyMediaLite-${VERSION}.src.tar.gz MyMediaLite-${VERSION}.doc.tar.gz
 	cp MyMediaLite-${VERSION}.tar.gz MyMediaLite-${VERSION}.src.tar.gz MyMediaLite-${VERSION}.doc.tar.gz ${HOMEPAGE}/download

@@ -36,17 +36,12 @@ class RatingBasedRanking : RatingPrediction
 	bool in_test_items;
 	bool all_items;
 
+	protected override ICollection<string> Measures { get { return Items.Measures; } }
+	protected override string ProgramName { get { return "Rating-based Item Ranking"; } }
+
 	public RatingBasedRanking()
 	{
 		eval_measures = new string[] { "AUC", "prec@5" };
-	}
-
-	protected override void ShowVersion()
-	{
-		ShowVersion(
-			"Rating-based Item Ranking",
-			"Copyright (C) 2011, 2012, 2013 Zeno Gantner\nCopyright (C) 2010 Zeno Gantner, Steffen Rendle"
-		);
 	}
 
 	protected override void SetupOptions()
@@ -112,7 +107,7 @@ class RatingBasedRanking : RatingPrediction
 
 	protected override EvaluationResults DoCrossValidation()
 	{
-		var candidate_items = new List<int>(test_data.AllItems.Union(training_data.AllItems));
+		var candidate_items = new List<int>(training_data.AllItems);
 		return recommender.DoRatingBasedRankingCrossValidation(cross_validation, candidate_items, CandidateItems.UNION);
 	}
 

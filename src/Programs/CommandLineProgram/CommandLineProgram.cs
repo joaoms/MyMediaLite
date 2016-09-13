@@ -51,6 +51,7 @@ public abstract class CommandLineProgram<T> where T:IRecommender
 	protected string prediction_file;
 	protected bool compute_fit = false;
 	protected bool no_id_mapping = false;
+	protected bool online_eval;
 	protected int random_seed = -1;
 	protected uint cross_validation;
 	protected double test_ratio = 0;
@@ -60,8 +61,9 @@ public abstract class CommandLineProgram<T> where T:IRecommender
 	protected string recommender_options = string.Empty;
 
 	// help/version
-	protected bool show_help    = false;
-	protected bool show_version = false;
+	protected bool show_help     = false;
+	protected bool show_measures = false;
+	protected bool show_version  = false;
 
 	// arguments for iteration search
 	protected uint find_iter = 0;
@@ -85,6 +87,10 @@ public abstract class CommandLineProgram<T> where T:IRecommender
 	protected List<double> fit_time_stats      = new List<double>();
 	protected List<double> eval_time_stats     = new List<double>();
 
+	protected abstract ICollection<string> Measures { get; }
+
+	protected abstract string ProgramName { get; }
+
 	protected virtual void Usage(string message)
 	{
 		Console.WriteLine(message);
@@ -96,13 +102,21 @@ public abstract class CommandLineProgram<T> where T:IRecommender
 
 	protected abstract void SetupOptions();
 
-	protected abstract void ShowVersion();
+	protected void ShowMeasures()
+	{
+		Console.WriteLine("--measures=\"LIST\"");
+		Console.WriteLine();
+		Console.WriteLine("LIST is comma- or space-separated list that may contain the following elements:");
+		foreach (var measure in Measures)
+			Console.WriteLine("  " + measure);
+		Environment.Exit(0);
+	}
 
-	protected void ShowVersion(string program_name, string copyright)
+	protected void ShowVersion()
 	{
 		var version = Assembly.GetEntryAssembly().GetName().Version;
-		Console.WriteLine("MyMediaLite {0} {1}.{2:00}", program_name, version.Major, version.Minor);
-		Console.WriteLine(copyright);
+		Console.WriteLine("MyMediaLite {0} {1}.{2:00}", ProgramName, version.Major, version.Minor);
+		Console.WriteLine("Copyright (C) 2011, 2012, 2013, 2015, 2016 The MyMediaLite contributors.");
 		Console.WriteLine("This is free software; see the source for copying conditions.  There is NO");
 		Console.WriteLine("warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.");
 		Environment.Exit(0);
@@ -117,7 +131,7 @@ public abstract class CommandLineProgram<T> where T:IRecommender
 			Abort(string.Format("Could not load model from file {0}.", load_model_file));
 
 		recommender.Configure(recommender_options, (string msg) => { Console.Error.WriteLine(msg); Environment.Exit(-1); });
-		
+
 		if (recommender is INeedsMappings)
 		{
 			((INeedsMappings) recommender).UserMapping = user_mapping;
@@ -153,6 +167,12 @@ public abstract class CommandLineProgram<T> where T:IRecommender
 
 		if (recommender is IItemRelationAwareRecommender && user_relations_file == null)
 			Abort("Recommender expects --item-relations=FILE.");
+
+		if (online_eval && test_file == null && test_ratio == 0 && cross_validation == 0)
+			Abort("--online-evaluation needs either --test-file=FILE, --test-ratio=NUM, or cross-validation=K");
+
+		if (online_eval && find_iter != 0)
+			Abort("--online-evaluation cannot be combined with --find-iter=NUM");
 
 		if (no_id_mapping)
 		{
@@ -206,8 +226,10 @@ public abstract class CommandLineProgram<T> where T:IRecommender
 			{ "test-ratio=",          (double v)     => test_ratio           = v },
 			// boolean options
 			{ "compute-fit",          v => compute_fit       = v != null },
+			{ "online-evaluation",    v => online_eval       = v != null },
 			{ "no-id-mapping",        v => no_id_mapping     = v != null },
 			{ "help",                 v => show_help         = v != null },
+			{ "help-measures",        v => show_measures     = v != null },
 			{ "version",              v => show_version      = v != null },
 		};
 		SetupOptions();
@@ -215,6 +237,8 @@ public abstract class CommandLineProgram<T> where T:IRecommender
 		IList<string> extra_args = options.Parse(args);
 		if (show_version)
 			ShowVersion();
+		if (show_measures)
+			ShowMeasures();
 		if (show_help)
 			Usage(0);
 
