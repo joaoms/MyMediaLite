@@ -261,6 +261,8 @@
     <Compile Include="ItemRecommendation\BaggSimpleSGD.cs" />
     <Compile Include="ItemRecommendation\BaggedBPRMF.cs" />
     <Compile Include="IO\FileSystem.cs" />
+    <Compile Include="ItemRecommendation\ISGD.cs" />
+    <Compile Include="ItemRecommendation\RAISGD.cs" />
     <Compile Include="ItemRecommendation\BigramRules.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
