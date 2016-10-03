@@ -58,7 +58,7 @@ class KFoldOnlineEval
 		}
 
 		method = args[0];
-		if(method.CreateRecommender() == null)
+		if(method.CreateItemRecommender() == null)
 		{	
 			Console.WriteLine("Invalid method: " + method);
 			Environment.Exit(1);
@@ -73,14 +73,14 @@ class KFoldOnlineEval
 
 		if(args.Length > 5) fold_type = args[5];
 
-		if(args.Length > 6) random_seed = int.Parse(args[4]);
+		if(args.Length > 6) random_seed = int.Parse(args[6]);
 		MyMediaLite.Random.Seed = random_seed;
 		
-		if(args.Length > 7) n_recs = int.Parse(args[5]);
+		if(args.Length > 7) n_recs = int.Parse(args[7]);
 
-		if(args.Length > 8) repeated_items = bool.Parse(args[6]);
+		if(args.Length > 8) repeated_items = bool.Parse(args[8]);
 
-		if(args.Length > 9) output_interval = int.Parse(args[7]);
+		if(args.Length > 9) output_interval = int.Parse(args[9]);
 
 		measures = InitMeasures();
 
