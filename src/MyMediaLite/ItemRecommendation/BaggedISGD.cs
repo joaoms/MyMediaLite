@@ -21,9 +21,6 @@ using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MathNet.Numerics.LinearAlgebra.Double;
-using MyMediaLite.DataType;
-using MyMediaLite.Data;
 using MathNet.Numerics.Distributions;
 
 namespace MyMediaLite.ItemRecommendation

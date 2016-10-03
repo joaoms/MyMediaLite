@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BaggingEvaluator", "Program
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineCrossval", "Programs\OnlineCrossval\OnlineCrossval.csproj", "{243FFC4C-54AB-4D50-938C-3BA1106BD7D5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KFoldOnlineEval", "Programs\KFoldOnlineEval\KFoldOnlineEval.csproj", "{35B23D41-1F73-4A2F-ADAF-FC8C531DD4AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -138,6 +140,12 @@ Global
 		{243FFC4C-54AB-4D50-938C-3BA1106BD7D5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{243FFC4C-54AB-4D50-938C-3BA1106BD7D5}.Default|Any CPU.ActiveCfg = Debug|Any CPU
 		{243FFC4C-54AB-4D50-938C-3BA1106BD7D5}.Default|Any CPU.Build.0 = Debug|Any CPU
+		{35B23D41-1F73-4A2F-ADAF-FC8C531DD4AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35B23D41-1F73-4A2F-ADAF-FC8C531DD4AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35B23D41-1F73-4A2F-ADAF-FC8C531DD4AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35B23D41-1F73-4A2F-ADAF-FC8C531DD4AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35B23D41-1F73-4A2F-ADAF-FC8C531DD4AF}.Default|Any CPU.ActiveCfg = Debug|Any CPU
+		{35B23D41-1F73-4A2F-ADAF-FC8C531DD4AF}.Default|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E1ECFAE9-E3D8-4567-8FA9-536A50F1C531} = {233B7F1D-99AA-4D55-BDD9-770B3428A317}
@@ -150,6 +158,7 @@ Global
 		{24292AD7-1194-455C-B54E-2FEB39605B7F} = {233B7F1D-99AA-4D55-BDD9-770B3428A317}
 		{91401B81-FAA0-48E0-87B0-711182679BA6} = {233B7F1D-99AA-4D55-BDD9-770B3428A317}
 		{243FFC4C-54AB-4D50-938C-3BA1106BD7D5} = {233B7F1D-99AA-4D55-BDD9-770B3428A317}
+		{35B23D41-1F73-4A2F-ADAF-FC8C531DD4AF} = {233B7F1D-99AA-4D55-BDD9-770B3428A317}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = MyMediaLite\MyMediaLite.csproj
