@@ -335,8 +335,14 @@ class KFoldPrequentialEval
 	{
 		var res = new Dictionary<string, IList<double>[]>(metrics.Count());
 		foreach (var metric in metrics)
+		{
 			res.Add(metric, new List<double>[n_folds]);
+			for (int f = 0; f < n_folds; f++)
+				res[metric][f] = new List<double>();
+		}
 		res.Add("upd_time", new List<double>[n_folds]);
+		for (int f = 0; f < n_folds; f++)
+			res["upd_time"][f] = new List<double>();
 		return res;
 	}
 
