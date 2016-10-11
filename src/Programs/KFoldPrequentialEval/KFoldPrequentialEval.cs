@@ -280,6 +280,7 @@ class KFoldPrequentialEval
 				if(i % 5000 == 0)
 					GC.Collect();
 			}
+			WriteOutputBuffer(true);
 		});
 	}
 
@@ -290,7 +291,7 @@ class KFoldPrequentialEval
 			{
 				for (int i = 0; i < output_buffer_count[f]; i++)
 					output[f].WriteLine(output_buffer[f, i]);
-			output_buffer_count[f] = 0;
+				output_buffer_count[f] = 0;
 			}
 			if (output_buffer_count_time[f] == output_interval || final)
 			{
@@ -349,7 +350,6 @@ class KFoldPrequentialEval
 	private void Terminate()
 	{
 		double score_sum = 0;
-		WriteOutputBuffer(true);
 		//Compute and print averages
 		output_info.WriteLine();
 		output_info.Write("metric");
