@@ -276,29 +276,26 @@ class KFoldPrequentialEval
 				output_buffer_time[f, output_buffer_count_time[f]] += "\t" + results["upd_time"][f].Last();
 				output_buffer_count_time[f]++;
 
-				WriteOutputBuffer();
+				WriteOutputBuffer(f);
 				if(i % 5000 == 0)
 					GC.Collect();
 			}
-			WriteOutputBuffer(true);
+			WriteOutputBuffer(f,true);
 		});
 	}
 
-	private void WriteOutputBuffer(bool final = false) {
-		for (int f = 0; f < n_folds; f++)
+	private void WriteOutputBuffer(int fold, bool final = false) {
+		if (output_buffer_count[fold] == output_interval || final)
 		{
-			if (output_buffer_count[f] == output_interval || final)
-			{
-				for (int i = 0; i < output_buffer_count[f]; i++)
-					output[f].WriteLine(output_buffer[f, i]);
-				output_buffer_count[f] = 0;
+			for (int i = 0; i < output_buffer_count[fold]; i++)
+				output[fold].WriteLine(output_buffer[fold, i]);
+			output_buffer_count[fold] = 0;
 			}
-			if (output_buffer_count_time[f] == output_interval || final)
-			{
-				for (int i = 0; i < output_buffer_count_time[f]; i++)
-					output_time[f].WriteLine(output_buffer_time[f, i]);
-				output_buffer_count_time[f] = 0;
-			}
+		if (output_buffer_count_time[fold] == output_interval || final)
+		{
+			for (int i = 0; i < output_buffer_count_time[fold]; i++)
+				output_time[fold].WriteLine(output_buffer_time[fold, i]);
+			output_buffer_count_time[fold] = 0;
 		}
 	}
 
