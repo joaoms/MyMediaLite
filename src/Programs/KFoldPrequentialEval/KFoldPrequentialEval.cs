@@ -110,9 +110,9 @@ class KFoldPrequentialEval
 
 		for (int f = 0; f < n_folds; f++)
 		{
-			output[f] = new StreamWriter(dir + "/" + "fold" + i.ToString("D2") + method + 
+			output[f] = new StreamWriter(dir + "/" + "fold" + f.ToString("D2") + method + 
 			                             args[3].Substring(args[3].LastIndexOf("/", StringComparison.Ordinal)+1) + ".log");
-			output_time[f] = new StreamWriter(dir + "/" + "fold" + i.ToString("D2") + method + 
+			output_time[f] = new StreamWriter(dir + "/" + "fold" + f.ToString("D2") + method + 
 			                             args[3].Substring(args[3].LastIndexOf("/", StringComparison.Ordinal)+1) + ".log");
 			output[f].Write("idx\tuser\titem");
 			output_time[f].Write("idx\tuser\titem");
@@ -325,12 +325,12 @@ class KFoldPrequentialEval
 			output_info.WriteLine("Train time: " + train_time.TotalMilliseconds);
 	}
 
-	private IDictionary<string, IList<double>[]> InitMeasures()
+	private Dictionary<string, IList<double>[]> InitResults()
 	{
 		var res = new Dictionary<string, IList<double>[]>(metrics.Count());
 		foreach (var metric in metrics)
-			results.Add(metric, new List<double>[n_folds]);
-		results.Add("upd_time", new List<double>[n_folds]);
+			res.Add(metric, new List<double>[n_folds]);
+		res.Add("upd_time", new List<double>[n_folds]);
 		return res;
 	}
 
