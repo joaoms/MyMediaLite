@@ -152,13 +152,13 @@ class KFoldPrequentialEval
 			{
 				case "split": // split-validation
 				folds = Enumerable.Repeat(0, n_folds).ToArray();
-				k = rand.Next(0, n_folds - 1);
+				k = rand.Next(0, n_folds);
 				folds[k] = 1;
 				break;
 
 				case "cv": // cross-validation
 				folds = Enumerable.Repeat(1, n_folds).ToArray();
-				k = rand.Next(0, n_folds - 1);
+				k = rand.Next(0, n_folds);
 				folds[k] = 0;
 				break;
 
