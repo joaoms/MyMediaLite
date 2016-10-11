@@ -112,7 +112,7 @@ class KFoldPrequentialEval
 		{
 			output[f] = new StreamWriter(dir + "/" + "fold" + f.ToString("D2") + method + 
 			                             args[3].Substring(args[3].LastIndexOf("/", StringComparison.Ordinal)+1) + ".log");
-			output_time[f] = new StreamWriter(dir + "/" + "fold" + f.ToString("D2") + method + 
+			output_time[f] = new StreamWriter(dir + "/time" + "fold" + f.ToString("D2") + method + 
 			                             args[3].Substring(args[3].LastIndexOf("/", StringComparison.Ordinal)+1) + ".log");
 			output[f].Write("idx\tuser\titem");
 			output_time[f].Write("idx\tuser\titem");
