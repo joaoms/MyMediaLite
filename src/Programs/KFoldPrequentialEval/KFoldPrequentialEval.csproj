@@ -5,12 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{35B23D41-1F73-4A2F-ADAF-FC8C531DD4AF}</ProjectGuid>
+    <ProjectGuid>{81CC7CD5-4C08-469C-9F35-9601670827AB}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>KFoldOnlineEval</RootNamespace>
-    <AssemblyName>KFoldOnlineEval</AssemblyName>
+    <RootNamespace>KFoldPrequentialEval</RootNamespace>
+    <AssemblyName>KFoldPrequentialEval</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <ReleaseVersion>3.06</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -28,8 +27,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="KFoldOnlineEval.cs" />
+    <Compile Include="KFoldPrequentialEval.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\MyMediaLite\MyMediaLite.csproj">
@@ -38,9 +36,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
     <Reference Include="System.Data" />
+    <Reference Include="System" />
     <Reference Include="MathNet.Numerics">
       <HintPath>..\..\packages\MathNet.Numerics.3.13.1\lib\net40\MathNet.Numerics.dll</HintPath>
     </Reference>
