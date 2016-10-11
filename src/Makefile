@@ -21,7 +21,7 @@ all: ../lib/mymedialite
 	cp -r Programs/OnlineLearner/bin/Debug/*.mdb ../lib/mymedialite
 	cp -r Programs/KFoldOnlineEval/bin/Debug/*.exe ../lib/mymedialite
 	cp -r Programs/KFoldOnlineEval/bin/Debug/*.mdb ../lib/mymedialite
-	cp -r Programs/KFoldPreqeuntialEval/bin/Debug/*.exe ../lib/mymedialite
+	cp -r Programs/KFoldPrequentialEval/bin/Debug/*.exe ../lib/mymedialite
 	cp -r Programs/KFoldPrequentialEval/bin/Debug/*.mdb ../lib/mymedialite
 
 ../lib/mymedialite:
