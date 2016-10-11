@@ -176,6 +176,12 @@ class KFoldPrequentialEval
 		fold_train_data = new PosOnlyFeedback<SparseBooleanMatrix>[n_folds];
 		fold_test_data = new PosOnlyFeedback<SparseBooleanMatrix>[n_folds];
 
+		for (int f = 0; f < n_folds; f++)
+		{
+			fold_train_data[f] = new PosOnlyFeedback<SparseBooleanMatrix>();
+			fold_test_data[f] = new PosOnlyFeedback<SparseBooleanMatrix>();
+		}
+
 		for (int i = 0; i < all_train_data.Count; i++)
 		{
 			int user_id = all_train_data.Users[i];
