@@ -75,8 +75,6 @@ class KFoldPrequentialEval
 		all_train_data = ItemData.Read(args[2], user_mapping, item_mapping);
 		all_test_data = ItemData.Read(args[3], user_mapping, item_mapping);
 
-		SplitFoldData();
-
 		if(args.Length > 4) n_folds = int.Parse(args[4]);
 
 		if(args.Length > 5) fold_type = args[5];
@@ -132,7 +130,7 @@ class KFoldPrequentialEval
 
 	private void Run()
 	{
-
+		SplitFoldData();
 		SetupRecommenders(method, parameters);
 		InitRecommenders();
 		EvaluatePrequential();
