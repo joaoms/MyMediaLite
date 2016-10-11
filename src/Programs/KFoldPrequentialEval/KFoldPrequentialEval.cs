@@ -103,7 +103,7 @@ class KFoldPrequentialEval
 		output_buffer_count = Enumerable.Repeat(0, n_folds).ToArray();
 
 		output_buffer_time = new string[n_folds, output_interval];
-		output_buffer_count = Enumerable.Repeat(0, n_folds).ToArray();
+		output_buffer_count_time = Enumerable.Repeat(0, n_folds).ToArray();
 
 		output_info = new StreamWriter(dir + "/info" + method +
 		                               args[3].Substring(args[3].LastIndexOf("/", StringComparison.Ordinal)+1) + ".log");
