@@ -266,7 +266,7 @@ class KFoldPrequentialEval
 				train_start = DateTime.Now;
 
 				tuple = Tuple.Create(user, item);
-				recommenders[i].AddFeedback(new Tuple<int, int>[]{ tuple });
+				recommenders[f].AddFeedback(new Tuple<int, int>[]{ tuple });
 
 				train_end = DateTime.Now;
 				results["upd_time"][f].Add((train_end - train_start).TotalMilliseconds);
