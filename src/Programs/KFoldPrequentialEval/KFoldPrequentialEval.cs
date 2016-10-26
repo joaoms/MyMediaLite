@@ -56,10 +56,12 @@ class KFoldPrequentialEval
 	StreamWriter output_info;
 	StreamWriter[] output, output_time;
 
+	ParallelOptions parallel_opts = new ParallelOptions() { MaxDegreeOfParallelism = -1 };
+
 	public KFoldPrequentialEval(string[] args)
 	{
 		if(args.Length < 6) {
-			Console.WriteLine("Usage: kfold_online_eval <recommender> <\"recommender params\"> <training_file> <test_file> [<n_folds> [<fold_type> [<random_seed> [<n_recs> [<repeated_items> [<output_interval>]]]]]]");
+			Console.WriteLine("Usage: kfold_online_eval <recommender> <\"recommender params\"> <training_file> <test_file> [<n_folds> [<fold_type> [<random_seed> [<n_recs> [<repeated_items> [<output_interval> [<max_cores]]]]]]]");
 			Environment.Exit(1);
 		}
 
@@ -87,6 +89,8 @@ class KFoldPrequentialEval
 		if(args.Length > 8) repeated_items = bool.Parse(args[8]);
 
 		if(args.Length > 9) output_interval = int.Parse(args[9]);
+
+		if(args.Length > 10) parallel_opts.MaxDegreeOfParallelism = int.Parse(args[10]);
 
 		results = InitResults();
 
