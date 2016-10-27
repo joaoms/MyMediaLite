@@ -283,31 +283,23 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			if (candidate_items == null)
 				candidate_items = Enumerable.Range(0, MaxItemID - 1).ToList();
-			/*
 			if (ignore_items == null)
 				ignore_items = new int[0];
-			*/
-			if (ignore_items != null)
-				candidate_items = candidate_items.Except(ignore_items).ToList();
 
 			System.Collections.Generic.IList<Tuple<int, float>> ordered_items;
-			float error;
 
 			if (n == -1)
 			{
 				var scored_items = new List<Tuple<int, float>>();
 				foreach (int item_id in candidate_items)
-				{
-					/*
 					if (!ignore_items.Contains(item_id))
 					{
-					*/
-						error = Math.Abs(1 - Predict(user_id, item_id));
+						float error = Math.Abs(1 - Predict(user_id, item_id));
 						if (error > float.MaxValue)
 							error = float.MaxValue;
 						scored_items.Add(Tuple.Create(item_id, error));
-					//}
-				}
+					}
+
 				ordered_items = scored_items.OrderBy(x => x.Item2).ToArray();
 			}
 			else
@@ -317,12 +309,9 @@ namespace MyMediaLite.ItemRecommendation
 				float max_error = float.MaxValue;
 
 				foreach (int item_id in candidate_items)
-				{
-					/*
 					if (!ignore_items.Contains(item_id))
 					{
-					*/
-						error = Math.Abs(1 - Predict(user_id, item_id));
+						float error = Math.Abs(1 - Predict(user_id, item_id));
 						if (error < max_error)
 						{
 							heap.Add(Tuple.Create(item_id, error));
@@ -332,8 +321,8 @@ namespace MyMediaLite.ItemRecommendation
 								max_error = heap.FindMax().Item2;
 							}
 						}
-					//}
-				}
+					}
+
 				ordered_items = new Tuple<int, float>[heap.Count];
 				for (int i = 0; i < ordered_items.Count; i++)
 					ordered_items[i] = heap.DeleteMin();
