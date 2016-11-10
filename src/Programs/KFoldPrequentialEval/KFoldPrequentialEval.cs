@@ -110,6 +110,8 @@ class KFoldPrequentialEval
 		output_info = new StreamWriter(dir + "/info" + method +
 		                               args[3].Substring(args[3].LastIndexOf("/", StringComparison.Ordinal)+1) + ".log");
 
+		output_info.WriteLine(string.Join(" ", args));
+
 		for (int f = 0; f < n_folds; f++)
 		{
 			output[f] = new StreamWriter(dir + "/" + "fold" + f.ToString("D2") + method + 
