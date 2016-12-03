@@ -54,8 +54,8 @@ namespace MyMediaLite.ItemRecommendation
 		public bool NegItemsInItems { get; set; }
 
 		/// <summary>Number of negative examples for each positive example.</summary>
-		public int NegFeedbackAmount { get { return neg_feedback_amount; } set { neg_feedback_amount = value; } }
-		int neg_feedback_amount = 1;
+		public int NegFeedback { get { return neg_feedback; } set { neg_feedback = value; } }
+		int neg_feedback = 1;
 
 		bool negate_users;
 		bool negate_items;
@@ -122,8 +122,8 @@ namespace MyMediaLite.ItemRecommendation
 		/// <param name="entry">The user-item pair</param>
 		protected virtual void InsertNegFeedback(Tuple<int,int> entry)
 		{
-			int[] qu = Enumerable.Repeat(-1, neg_feedback_amount).ToArray();
-			int[] qi = Enumerable.Repeat(-1, neg_feedback_amount).ToArray();
+			int[] qu = Enumerable.Repeat(-1, neg_feedback).ToArray();
+			int[] qi = Enumerable.Repeat(-1, neg_feedback).ToArray();
 			if (negate_users)
 			{
 				for (uint i = 0; i < qu.Length && i < user_queue.Count - 1; )
@@ -230,8 +230,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"RAISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}, neg_feedback_amount={6}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NegFeedbackAmount);
+				"RAISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}, neg_feedback={6}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NegFeedback);
 		}
 
 
