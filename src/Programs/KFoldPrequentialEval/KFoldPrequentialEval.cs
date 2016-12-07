@@ -33,6 +33,7 @@ class KFoldPrequentialEval
 	string method = "ISGD";
 	string parameters = "";
 	int random_seed = 10;
+	int random_seed_split = 10;
 	int n_recs = 10;
 	int n_folds = 10;
 	string fold_type = "bootstrap";
@@ -61,7 +62,7 @@ class KFoldPrequentialEval
 	public KFoldPrequentialEval(string[] args)
 	{
 		if(args.Length < 6) {
-			Console.WriteLine("Usage: kfold_online_eval <recommender> <\"recommender params\"> <training_file> <test_file> [<n_folds> [<fold_type> [<random_seed> [<n_recs> [<repeated_items> [<output_interval> [<max_cores]]]]]]]");
+			Console.WriteLine("Usage: kfold_online_eval <recommender> <\"recommender params\"> <training_file> <test_file> [<n_folds> [<fold_type> [<random_seed> [<random_seed_split> [<n_recs> [<repeated_items> [<output_interval> [<max_cores]]]]]]]]");
 			Environment.Exit(1);
 		}
 
@@ -84,13 +85,16 @@ class KFoldPrequentialEval
 		if(args.Length > 6) random_seed = int.Parse(args[6]);
 		MyMediaLite.Random.Seed = random_seed;
 
-		if(args.Length > 7) n_recs = int.Parse(args[7]);
+		if(args.Length > 7) random_seed_split = int.Parse(args[7]);
+		else random_seed_split = random_seed;
+	
+		if(args.Length > 8) n_recs = int.Parse(args[8]);
 
-		if(args.Length > 8) repeated_items = bool.Parse(args[8]);
+		if(args.Length > 9) repeated_items = bool.Parse(args[9]);
 
-		if(args.Length > 9) output_interval = int.Parse(args[9]);
+		if(args.Length > 10) output_interval = int.Parse(args[10]);
 
-		if(args.Length > 10) parallel_opts.MaxDegreeOfParallelism = int.Parse(args[10]);
+		if(args.Length > 11) parallel_opts.MaxDegreeOfParallelism = int.Parse(args[11]);
 
 		results = InitResults();
 
@@ -149,7 +153,7 @@ class KFoldPrequentialEval
 	{
 		var all_users = new HashSet<int>(all_train_data.AllUsers.Union(all_test_data.AllUsers));
 		user_folds = new Dictionary<int, int[]>(all_users.Count);
-		var rand = new System.Random(random_seed);
+		var rand = new System.Random(random_seed_split);
 		int[] folds;
 		int k;
 		foreach (int user in all_users)
