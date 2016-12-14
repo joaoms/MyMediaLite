@@ -399,7 +399,7 @@ class KFoldPrequentialEval
 
 	private void Terminate()
 	{
-		double score_sum = 0;
+		double score_sum;
 		//Compute and print averages
 		output_info.WriteLine();
 		output_info.Write("metric");
@@ -413,6 +413,7 @@ class KFoldPrequentialEval
 		foreach (var result in results)
 		{
 			output_info.Write(result.Key);
+			score_sum = 0;
 			for (int f = 0; f < n_folds; f++)
 			{
 				double score = result.Value[f].Average();
