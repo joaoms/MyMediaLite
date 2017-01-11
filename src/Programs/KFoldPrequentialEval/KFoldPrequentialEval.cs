@@ -48,12 +48,7 @@ class KFoldPrequentialEval
 	IDictionary<int, int[]> user_folds;
 	Dictionary<string, IList<double>[]> results;
 	readonly string [] metrics = { "recall_1", "recall_5", "recall_10", "recall_20", "map", "auc", "ndcg", "rec_time" };
-	int output_interval = 1000;
 
-	string[,] output_buffer;
-	int[] output_buffer_count;
-	string[,] output_buffer_time;
-	int[] output_buffer_count_time;
 	StreamWriter output_info;
 	StreamWriter[] output, output_time;
 
@@ -62,7 +57,7 @@ class KFoldPrequentialEval
 	public KFoldPrequentialEval(string[] args)
 	{
 		if(args.Length < 6) {
-			Console.WriteLine("Usage: kfold_online_eval <recommender> <\"recommender params\"> <training_file> <test_file> [<n_folds> [<fold_type> [<random_seed> [<random_seed_split> [<n_recs> [<repeated_items> [<output_interval> [<max_cores]]]]]]]]");
+			Console.WriteLine("Usage: kfold_online_eval <recommender> <\"recommender params\"> <training_file> <test_file> [<n_folds> [<fold_type> [<random_seed> [<random_seed_split> [<n_recs> [<repeated_items> [<max_cores]]]]]]]");
 			Environment.Exit(1);
 		}
 
@@ -92,9 +87,7 @@ class KFoldPrequentialEval
 
 		if(args.Length > 9) repeated_items = bool.Parse(args[9]);
 
-		if(args.Length > 10) output_interval = int.Parse(args[10]);
-
-		if(args.Length > 11) parallel_opts.MaxDegreeOfParallelism = int.Parse(args[11]);
+		if(args.Length > 10) parallel_opts.MaxDegreeOfParallelism = int.Parse(args[11]);
 
 		results = InitResults();
 
@@ -104,12 +97,6 @@ class KFoldPrequentialEval
 		Directory.CreateDirectory(dir);
 		output = new StreamWriter[n_folds];
 		output_time = new StreamWriter[n_folds];
-
-		output_buffer = new string[n_folds, output_interval];
-		output_buffer_count = Enumerable.Repeat(0, n_folds).ToArray();
-
-		output_buffer_time = new string[n_folds, output_interval];
-		output_buffer_count_time = Enumerable.Repeat(0, n_folds).ToArray();
 
 		output_info = new StreamWriter(dir + "/info" + method +
 		                               args[3].Substring(args[3].LastIndexOf("/", StringComparison.Ordinal)+1) + ".log");
@@ -225,29 +212,22 @@ class KFoldPrequentialEval
 			List<int> rec_list,til;
 			ISet<int> ignore_items;
 			Tuple<int,int> tuple;
-			//DateTime ts;
-			//double[] tsums = Enumerable.Repeat(0D,14).ToArray();
+			string res;
 
 			for (int i = 0; i < fold_test_data[f].Count; i++)
 			{
-				//ts = DateTime.Now;
 				int user = fold_test_data[f].Users[i];
 				int item = fold_test_data[f].Items[i];
-				//tsums[0] += (DateTime.Now - ts).TotalMilliseconds;
-				//ts = DateTime.Now;
 
 				recommend = false;
 				if (fold_train_data[f].Users.Contains(user))
 				{
-					//tsums[13] += (DateTime.Now - ts).TotalMilliseconds;
 					recommend = true;
 					if (!repeated_items) {
 					   	int tmp;
 						recommend &= !fold_train_data[f].TryGetIndex(user, item, out tmp);
 					}
 				}
-				//tsums[1] += (DateTime.Now - ts).TotalMilliseconds;
-				//ts = DateTime.Now;
 		
 				if(recommend)
 				{
@@ -255,47 +235,33 @@ class KFoldPrequentialEval
 						ignore_items = new HashSet<int>();
 					else
 						ignore_items = new HashSet<int>(fold_train_data[f].UserMatrix[user]);
-					//tsums[2] += (DateTime.Now - ts).TotalMilliseconds;
-					//ts = DateTime.Now;
 
 					var rec_start = DateTime.Now;
 					rec_list_score = recommenders[f].Recommend(user, n_recs, ignore_items, candidate_items);
 					var rec_end = DateTime.Now;
-					//tsums[3] += (rec_end - rec_start).TotalMilliseconds;
-					//ts = DateTime.Now;
 
 					rec_list = new List<int>();
 					foreach (var rec in rec_list_score)
 						rec_list.Add(rec.Item1);
 					
 					til = new List<int>(){ item };
-					//tsums[4] += (DateTime.Now - ts).TotalMilliseconds;
-					//ts = DateTime.Now;					
 
 					results["recall_1"][f].Add(PrecisionAndRecall.RecallAt(rec_list, til, 1));
-					//tsums[5] += (DateTime.Now - ts).TotalMilliseconds;
-					//ts = DateTime.Now;
 
 					results["recall_5"][f].Add(PrecisionAndRecall.RecallAt(rec_list, til, 5));
 					results["recall_10"][f].Add(PrecisionAndRecall.RecallAt(rec_list, til, 10));
 					results["recall_20"][f].Add(PrecisionAndRecall.RecallAt(rec_list, til, 20));
-					//tsums[6] += (DateTime.Now - ts).TotalMilliseconds;
-					//ts = DateTime.Now;
 
 					results["map"][f].Add(PrecisionAndRecall.AP(rec_list, til));
 					var num_dropped = candidate_items.Count - ignore_items.Count - n_recs;
 					results["auc"][f].Add(AUC.Compute(rec_list, til, num_dropped));
 					results["ndcg"][f].Add(NDCG.Compute(rec_list, til));
 					results["rec_time"][f].Add((rec_end - rec_start).TotalMilliseconds);
-					//tsums[7] += (DateTime.Now - ts).TotalMilliseconds;
-					//ts = DateTime.Now;
 				
-					output_buffer[f, output_buffer_count[f]] = i + "\t" + user_mapping.ToOriginalID(user) + "\t" + item_mapping.ToOriginalID(item);
+					res = i + "\t" + user_mapping.ToOriginalID(user) + "\t" + item_mapping.ToOriginalID(item);
 					for (int k = 0; k < metrics.Count(); k++)
-						output_buffer[f, output_buffer_count[f]] += "\t" + results[metrics[k]][f].Last();
-					output_buffer_count[f]++;
-					//tsums[8] += (DateTime.Now - ts).TotalMilliseconds;
-					//ts = DateTime.Now;
+						res += "\t" + results[metrics[k]][f].Last();
+					output[f].WriteLine(res);
 				}
 
 				// update recommenders
@@ -306,50 +272,16 @@ class KFoldPrequentialEval
 
 				train_end = DateTime.Now;
 				results["upd_time"][f].Add((train_end - train_start).TotalMilliseconds);
-				//tsums[9] += results["upd_time"][f].Last();
-				//ts = DateTime.Now;
 
-				output_buffer_time[f, output_buffer_count_time[f]] = i + "\t" + user_mapping.ToOriginalID(user) + "\t" 
-				                                                                            + item_mapping.ToOriginalID(item);
-				output_buffer_time[f, output_buffer_count_time[f]] += "\t" + results["upd_time"][f].Last();
-				output_buffer_count_time[f]++;
-				//tsums[10] += (DateTime.Now - ts).TotalMilliseconds;
-				//ts = DateTime.Now;
-
-				WriteOutputBuffer(f);
-				//tsums[11] += (DateTime.Now - ts).TotalMilliseconds;
-				//ts = DateTime.Now;
+				output_time[f].WriteLine(i + 
+				                         "\t" + user_mapping.ToOriginalID(user) + 
+				                         "\t" + item_mapping.ToOriginalID(item) +
+				                         "\t" + results["upd_time"][f].Last());
 
 				if(i % 5000 == 0)
 					GC.Collect();
-				/*
-				tsums[12] += (DateTime.Now - ts).TotalMilliseconds;
-				ts = DateTime.Now;
-				if(i % 1000 == 0){
-				     Console.Write("Fold " + f + ":\t");
-				     for(int k = 0; k < tsums.Length; k++)
-				     	     Console.Write(Math.Round(tsums[k],0) + "\t");
-				     Console.WriteLine();
-				}
-				*/
 			}
-			WriteOutputBuffer(f,true);
 		});
-	}
-
-	private void WriteOutputBuffer(int fold, bool final = false) {
-		if (output_buffer_count[fold] == output_interval || final)
-		{
-			for (int i = 0; i < output_buffer_count[fold]; i++)
-				output[fold].WriteLine(output_buffer[fold, i]);
-			output_buffer_count[fold] = 0;
-			}
-		if (output_buffer_count_time[fold] == output_interval || final)
-		{
-			for (int i = 0; i < output_buffer_count_time[fold]; i++)
-				output_time[fold].WriteLine(output_buffer_time[fold, i]);
-			output_buffer_count_time[fold] = 0;
-		}
 	}
 
 	private void SetupRecommenders(string alg, string parameters)
@@ -423,9 +355,6 @@ class KFoldPrequentialEval
 			output_info.WriteLine("\t" + Math.Round(score_sum/n_folds, 5));
 		}
 
-		for (int i = 0; i < metrics.Count(); i++)
-			output[i].Close();
-		output_info.Close();
 	}
 
 }
