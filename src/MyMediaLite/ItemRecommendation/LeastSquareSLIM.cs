@@ -65,9 +65,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected double reg_l2 = 0.001;
 
 		/// <summary>How many neighbors to use in the kNN feature selection</summary>
-		public uint K { get { return neighbors; } set { neighbors = value; } }
-		/// <summary>How many neighbors to use in the kNN feature selection</summary>
-		protected uint neighbors = 50;
+		public uint K { get; set; } = 50;
 
 		/// <summary>Default constructor</summary>
 		public LeastSquareSLIM() : base() { }
@@ -130,9 +128,7 @@ namespace MyMediaLite.ItemRecommendation
 			}
 		}
 
-		/// <summary>
-		/// Iterate this instance.
-		/// </summary>
+		///
 		public override void Iterate()
 		{
 			Parallel.For(0, MaxItemID + 1, item_id => {
@@ -183,15 +179,9 @@ namespace MyMediaLite.ItemRecommendation
 		/// into consideration. This is needed for the coordinate descent update rule (equation 5 from
 		/// Friedman et al. (2010)).
 		/// </summary>
-		/// <param name='user_id'>
-		/// User_id.
-		/// </param>
-		/// <param name='item_id'>
-		/// Item_id.
-		/// </param>
-		/// <param name='exclude_item_id'>
-		/// Current item ID which shouldn't .
-		/// </param>
+		/// <param name='user_id'>the user ID</param>
+		/// <param name='item_id'>the item ID</param>
+		/// <param name='exclude_item_id'>Current item ID which should not be considered</param>
 		public float Predict(int user_id, int item_id, int exclude_item_id)
 		{
 			var user_items = Feedback.UserMatrix.GetEntriesByRow(user_id);
@@ -279,13 +269,6 @@ namespace MyMediaLite.ItemRecommendation
 			}
 
 			return prediction;
-		}
-
-		/// <summary>Compute the regularized loss (regularized squared error on training data)</summary>
-		/// <returns>the objective</returns>
-		public override float ComputeObjective()
-		{
-			return 0;
 		}
 
 		///

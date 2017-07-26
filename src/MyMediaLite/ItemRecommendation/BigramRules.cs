@@ -1,4 +1,5 @@
 ﻿// Copyright (C) 2015 Dimitris Paraschakis
+// Copyright (C) 2016 Zeno Gantner
 //
 // This file is part of MyMediaLite.
 //
@@ -16,13 +17,16 @@
 //  along with MyMediaLite.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using MyMediaLite.IO;
 
 namespace MyMediaLite.ItemRecommendation
 {
 	/// <summary> Recommender based on bigram association rules (item1 -&gt; item2)</summary>
 	public class BigramRules : ItemRecommender
 	{
-		List<Dictionary<int, int>> rulesList = new List<Dictionary<int, int>>();
+		List<Dictionary<int, int>> rules_list = new List<Dictionary<int, int>>();
 
 		///<summary>Default constructor</summary>
 		public BigramRules() {}
@@ -30,28 +34,28 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		public override void Train()
 		{
-			for (int item1 = 0; item1 < MaxItemID + 1; item1++)
+			for (int item1 = 0; item1 <= MaxItemID; item1++)
 			{
-				HashSet<int> item1Vector = (HashSet<int>)Feedback.ItemMatrix[item1];
-				HashSet<int> correlatedItems = new HashSet<int>();
+				var item1_vector = Feedback.ItemMatrix[item1];
+				var correlated_items = new HashSet<int>();
 
-				foreach (int user in item1Vector)
-					correlatedItems.UnionWith(Feedback.UserMatrix[user]);
-				correlatedItems.Remove(item1);
+				foreach (int user in item1_vector)
+					correlated_items.UnionWith(Feedback.UserMatrix[user]);
+				correlated_items.Remove(item1);
 
-				Dictionary<int, int> bigramScore = new Dictionary<int, int>();
-				foreach (int item2 in correlatedItems)
+				var bigram_score = new Dictionary<int, int>();
+				foreach (int item2 in correlated_items)
 				{
 					int intersection = 0;
-					HashSet<int> item2Vector = (HashSet<int>)Feedback.ItemMatrix[item2];
-					foreach (int user in item1Vector)
+					var item2_vector = Feedback.ItemMatrix[item2];
+					foreach (int user in item1_vector)
 					{
-						if (item2Vector.Contains(user))
+						if (item2_vector.Contains(user))
 							intersection++;
 					}
-					bigramScore.Add(item2, intersection);
+					bigram_score.Add(item2, intersection);
 				}
-				rulesList.Add(bigramScore);
+				rules_list.Add(bigram_score);
 			}
 		}
 
@@ -68,15 +72,57 @@ namespace MyMediaLite.ItemRecommendation
 				int itemTransactions = 0;
 				float confidence = 0;
 				float support = 0;
-				if (rulesList[item].ContainsKey(item_id))
+				if (rules_list[item].ContainsKey(item_id))
 				{
 					itemTransactions = Feedback.ItemMatrix[item].Count;
-					confidence = rulesList[item][item_id] / (float)itemTransactions;
-					support = rulesList[item][item_id] / (float)Feedback.Count;
+					confidence = rules_list[item][item_id] / (float)itemTransactions;
+					support = rules_list[item][item_id] / (float)Feedback.Count;
 					score += support * confidence;
 				}
 			}
 			return score;
+		}
+
+		///
+		public override void SaveModel(string file)
+		{
+			using (StreamWriter writer = Model.GetWriter(file, this.GetType(), "3.12"))
+			{
+				writer.WriteLine(MaxUserID + " " + MaxItemID);
+				foreach (var dict in rules_list)
+				{
+					string line = string.Join(" ", dict.OrderByDescending(x => x.Value).Select(x => x.Key + ":" + x.Value).ToArray());
+					writer.WriteLine(line);
+				}
+			}
+		}
+
+		///
+		public override void LoadModel(string file)
+		{
+			List<Dictionary<int, int>> rules_list = new List<Dictionary<int, int>>();
+			using (StreamReader reader = Model.GetReader(file, this.GetType()))
+			{
+				string[] fields = reader.ReadLine().Split(' ');
+				int max_user_id = int.Parse(fields[0]);
+				int max_item_id = int.Parse(fields[1]);
+
+				string line;
+				while ((line = reader.ReadLine()) != null)
+				{
+					var dict = new Dictionary<int, int>();
+					foreach (var pair in line.Split(' '))
+					{
+						string[] key_value = pair.Split(':');
+						dict[int.Parse(key_value[0])] = int.Parse(key_value[1]);
+					}
+					rules_list.Add(dict);
+				}
+
+				MaxUserID = max_user_id;
+				MaxItemID = max_item_id;
+			}
+			this.rules_list = rules_list;
 		}
 	}
 }

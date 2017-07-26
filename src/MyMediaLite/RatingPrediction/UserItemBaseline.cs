@@ -65,13 +65,13 @@ namespace MyMediaLite.RatingPrediction
 	public class UserItemBaseline : IncrementalRatingPredictor, IIterativeModel
 	{
 		/// <summary>Regularization parameter for the user biases</summary>
-		public float RegU { get; set; }
+		public float RegU { get; set; } = 15;
 
 		/// <summary>Regularization parameter for the item biases</summary>
-		public float RegI { get; set; }
+		public float RegI { get; set; } = 10;
 
 		///
-		public uint NumIter { get; set; }
+		public uint NumIter { get; set; } = 10;
 
 		/// <summary>the global rating average</summary>
 		protected float global_average;
@@ -81,14 +81,6 @@ namespace MyMediaLite.RatingPrediction
 
 		/// <summary>the item biases</summary>
 		protected float[] item_biases;
-
-		/// <summary>Default constructor</summary>
-		public UserItemBaseline() : base()
-		{
-			RegU = 15;
-			RegI = 10;
-			NumIter = 10;
-		}
 
 		///
 		public override void Train()
@@ -247,15 +239,6 @@ namespace MyMediaLite.RatingPrediction
 				this.user_biases = user_biases.ToArray();
 				this.item_biases = item_biases.ToArray();
 			}
-		}
-
-		///
-		public float ComputeObjective()
-		{
-			return (float) (
-				Eval.Measures.RMSE.ComputeSquaredErrorSum(this, ratings)
-				+ RegU * Math.Pow(user_biases.EuclideanNorm(), 2)
-				+ RegI * Math.Pow(item_biases.EuclideanNorm(), 2));
 		}
 
 		///
