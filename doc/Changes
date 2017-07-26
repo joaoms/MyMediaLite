@@ -1,12 +1,30 @@
-3.12	2016-
+3.13	2017-??-??:
+        recommenders:
+         - IIterativeModel: get rid of ComputeObjective() -- not used
+         - remove LatentFeatureLogLinearModel -- implementation was never complete
+	hyperparameter search:
+         - do not explore negative values of hyperparameters
+
+3.12	2016-12-30
 	recommenders:
 	 - #457: add bigram association rules recommender (Dimitris Paraschakis)
+         - SoftMarginBPRMF: speed up -- only update if there is a ranking violation
+         - remove the recommenders that were marked as obsolete 1 year ago
+        command-line tools:
+         - more robust specification of evaluation metrics (Julien Verplanken)
 	evaluation:
 	 - #464: fix fit computation in cross-validation (Dominik Imrich)
 	 - #465: fix randomization in cross-validation for rating prediction (NEBabylon)
-	misc
+	documentation
+         - improved documentation, e.g. updated literature pointers
+         - API documentation with properly rendered diamond inheritance
+        misc
 	 - We now use Travis CI for continuous integration.
+         - test item recommenders a bit more thoroughly
 	 - split up MovieLens download scripts
+	 - #469: fix ignore_first_line bug in ItemData.cs (Jordan Silva)
+         - remove SequentialDiversification
+         - upgrade to C5 2.4 and MathNet.Numerics 3.15
 
 3.11	2015-12-31
 	recommenders

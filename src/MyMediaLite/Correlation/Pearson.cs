@@ -31,7 +31,7 @@ namespace MyMediaLite.Correlation
 	///     Otherwise, we would give too much weight to similarities estimated from just a few examples.
 	///   </para>
 	///   <para>
-	///     http://en.wikipedia.org/wiki/Pearson_correlation
+	///     <a href="http://en.wikipedia.org/wiki/Pearson_correlation">Wikipedia: Pearson correlation</a>
 	///   </para>
 	///   <para>
 	///     We apply shrinkage as in formula (5.16) of chapter 5 of the Recommender Systems Handbook.
@@ -43,14 +43,14 @@ namespace MyMediaLite.Correlation
 	///     Literature:
 	///     <list type="bullet">
 	///       <item><description>
-	///         Yehuda Koren: Factor in the Neighbors: Scalable and Accurate Collaborative Filtering,
-	///         Transactions on Knowledge Discovery from Data (TKDD), 2009.
-	///         http://public.research.att.com/~volinsky/netflix/factorizedNeighborhood.pdf
+	///         Yehuda Koren:
+	///         <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.476.4158&rep=rep1&type=pdf">Factor in the Neighbors: Scalable and Accurate Collaborative Filtering</a>,
+	///         Transactions on Knowledge Discovery from Data (TKDD), 2010.
 	///       </description></item>
 	///       <item><description>
-	///         Yehuda Koren, Robert Bell: Advances in Collaborative Filtering,
+	///         Yehuda Koren, Robert Bell:
+	///         <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.269.6294&rep=rep1&type=pdf">Advances in Collaborative Filtering</a>,
 	///         Chapter 5 of the Recommender Systems Handbook, Springer, 2011.
-	///         http://research.yahoo.net/files/korenBellChapterSpringer.pdf
 	///       </description></item>
 	///     </list>
 	///   </para>
@@ -221,7 +221,7 @@ namespace MyMediaLite.Correlation
 						this[i, j] = ComputeCorrelation (i_sums[i, j], j_sums[i, j], ii_sums[i, j], jj_sums[i, j], ij_sums[i, j], freqs[i, j]);
 		}
 
-		protected virtual float ComputeCorrelation(double i_sum, double j_sum, double ii_sum, double jj_sum, double ij_sum, int n)
+		private float ComputeCorrelation(double i_sum, double j_sum, double ii_sum, double jj_sum, double ij_sum, int n)
 		{
 			double denominator = GetDenominator(i_sum, j_sum, ii_sum, jj_sum, n);
 			if (denominator == 0)
