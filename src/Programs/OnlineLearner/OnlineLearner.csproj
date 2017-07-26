@@ -9,7 +9,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>OnlineLearner</RootNamespace>
     <AssemblyName>OnlineLearner</AssemblyName>
-    <ReleaseVersion>3.11</ReleaseVersion>
+    <ReleaseVersion>3.12</ReleaseVersion>
     <StartupObject>OnlineLearner</StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
