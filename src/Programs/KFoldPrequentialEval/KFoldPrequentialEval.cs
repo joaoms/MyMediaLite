@@ -281,16 +281,18 @@ class KFoldPrequentialEval
 				if(i % 5000 == 0)
 					GC.Collect();
 			}
+			output[f].Flush();
+			output_time[f].Flush();
 		});
 	}
 
-	private void SetupRecommenders(string alg, string parameters)
+	private void SetupRecommenders(string alg, string pars)
 	{
 		recommenders = new IncrementalItemRecommender[n_folds];
 		for (int i = 0; i < n_folds; i++)
 		{
 			recommenders[i] = (IncrementalItemRecommender) alg.CreateItemRecommender();
-			recommenders[i].Configure(parameters);
+			recommenders[i].Configure(pars);
 		}
 	}
 
