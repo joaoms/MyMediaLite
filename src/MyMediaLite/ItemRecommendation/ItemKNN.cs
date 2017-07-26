@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using MyMediaLite.Correlation;
 using MyMediaLite.DataType;
 
@@ -33,6 +34,9 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		protected override IBooleanMatrix DataMatrix { get { return Feedback.ItemMatrix; } }
 
+		/// 
+		protected ParallelOptions parallel_opts = new ParallelOptions() { MaxDegreeOfParallelism = 4 };
+
 		///
 		public override void Train()
 		{
@@ -43,7 +47,7 @@ namespace MyMediaLite.ItemRecommendation
 			{
 				this.nearest_neighbors = new List<IList<int>>(num_items);
 				for (int i = 0; i < num_items; i++)
-					nearest_neighbors.Add(correlation_matrix.GetNearestNeighbors(i, k));
+					nearest_neighbors.Add(correlation.GetNearestNeighbors(i, k));
 			}
 		}
 
@@ -70,9 +74,9 @@ namespace MyMediaLite.ItemRecommendation
 				{
 					foreach (int neighbor in nearest_neighbors[item_id])
 					{
-						normalization += Math.Pow(correlation_matrix[item_id, neighbor], Q);
+						normalization += Math.Pow(correlation[item_id, neighbor], Q);
 						if (Feedback.ItemMatrix[neighbor, user_id])
-							sum += Math.Pow(correlation_matrix[item_id, neighbor], Q);
+							sum += Math.Pow(correlation[item_id, neighbor], Q);
 					}
 				}
 				if (sum == 0) return 0;
@@ -82,14 +86,14 @@ namespace MyMediaLite.ItemRecommendation
 			{
 				// roughly 10x faster
 				// TODO: implement normalization
-				return (float) correlation_matrix.SumUp(item_id, Feedback.UserMatrix[user_id], Q);
+				return (float) correlation.SumUp(item_id, Feedback.UserMatrix[user_id], Q);
 			}
 		}
 
 		///
 		public float GetItemSimilarity(int item_id1, int item_id2)
 		{
-			return correlation_matrix[item_id1, item_id2];
+			return correlation[item_id1, item_id2];
 		}
 
 		///
@@ -98,15 +102,16 @@ namespace MyMediaLite.ItemRecommendation
 			if (n <= k)
 				return nearest_neighbors[item_id].Take((int) n).ToArray();
 			else
-				return correlation_matrix.GetNearestNeighbors(item_id, n);
+				return correlation.GetNearestNeighbors(item_id, n);
 		}
-		
+
+
 		///
 		public override void AddFeedback(ICollection<Tuple<int, int>> feedback)
 		{
 			base.AddFeedback(feedback);
 			if (UpdateItems)
-				Update(feedback);
+				Update(feedback, true);
 		}
 
 		///
@@ -114,28 +119,76 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.RemoveFeedback(feedback);
 			if (UpdateItems)
-				Update(feedback);
+				Update(feedback, true);
 		}
 
-		/// <summary>Update the correlation matrix for the given feedback</summary>
-		/// <param name='feedback'>the feedback (user-item tuples)</param>
-		protected void Update(ICollection<Tuple<int, int>> feedback)
+		///
+		protected override void RecomputeNeighbors(ICollection<int> new_items)
 		{
-			var update_entities = new HashSet<int>();
-			foreach (var t in feedback)
-				update_entities.Add(t.Item2);
+			var retrain_items = new HashSet<int>(); 
 
-			foreach (int i in update_entities)
+			// Option 1 (complete): Update every neighbor list that may have changed
+			/*
+			float min;
+			foreach (int item in Feedback.AllItems.Except(new_items))
 			{
-				for (int j = 0; j < correlation_matrix.NumEntities; j++)
-				{
-					if (j < i && correlation_matrix.IsSymmetric && update_entities.Contains(j))
-						continue;
+				// Get the correlation of the least correlated neighbor
+				if (nearest_neighbors[item] == null)
+					min = 0;
+				else if (nearest_neighbors[item].Count < k)
+					min = 0;
+				else
+					min = correlation[item, nearest_neighbors[item].Last()];
 
-					correlation_matrix[i, j] = correlation_matrix.ComputeCorrelation(DataMatrix.GetEntriesByRow(i), DataMatrix.GetEntriesByRow(j));
-				}
+				// Check if any of the added items have a higher correlation
+				// (requires retraining if it is a new neighbor or an existing one)
+				foreach (int new_item in new_items)
+					if (correlation[item, new_item] > min)
+						retrain_items.Add(item);
 			}
-			RecomputeNeighbors(update_entities);
+			*/
+
+			// Option 2 (heuristic): Update only neighbors of added items
+			/*
+			foreach (int item in new_items)
+			{
+				if(nearest_neighbors[item] != null)
+					if(nearest_neighbors[item].Count > 0)
+						retrain_items.UnionWith(nearest_neighbors[item]);
+			}
+			*/
+
+			// Option 3: Only update neighbor lists of added users
+
+			// Recently added users also need retraining
+			retrain_items.UnionWith(new_items);
+			// Recalculate neighborhood of selected users
+			Parallel.ForEach(retrain_items, parallel_opts, r_item => {
+				var neighbors = correlation.GetNearestNeighbors(r_item, k);
+				lock(nearest_neighbors) {
+					nearest_neighbors[r_item] = neighbors;
+				}
+			});
 		}
+
+		/// <summary>
+		/// Selectively retrains items based on new items removed from feedback.
+		/// </summary>
+		/// <param name='removed_items'>
+		/// Removed items.
+		/// </param>
+		protected void RecomputeNeighborsRemoved(ICollection<int> removed_items)
+		{
+			var retrain_items = new HashSet<int>();
+			foreach (int item in Feedback.AllItems.Except(removed_items))
+				foreach (int r_item in removed_items)
+					if (nearest_neighbors[item] != null)
+						if (nearest_neighbors[item].Contains(r_item))
+							retrain_items.Add(item);
+			retrain_items.UnionWith(removed_items);
+			foreach (int r_item in retrain_items)
+				nearest_neighbors[r_item] = correlation.GetNearestNeighbors(r_item, k);
+		}
+				
 	}
 }

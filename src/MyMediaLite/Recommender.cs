@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using C5;
+using System.Threading.Tasks;
 
 namespace MyMediaLite
 {
@@ -71,6 +72,17 @@ namespace MyMediaLite
 						if (score > float.MinValue)
 							scored_items.Add(Tuple.Create(item_id, score));
 					}
+				/*
+				Parallel.ForEach(candidate_items, item_id => {
+					if (!ignore_items.Contains(item_id))
+					{
+						float score = Predict(user_id, item_id);
+						if (score > float.MinValue)
+							lock(scored_items)
+								scored_items.Add(Tuple.Create(item_id, score));
+					}
+				});
+				*/
 				ordered_items = scored_items.OrderByDescending(x => x.Item2).ToArray();
 			}
 			else
@@ -94,6 +106,26 @@ namespace MyMediaLite
 						}
 					}
 
+				/*
+				Parallel.ForEach(candidate_items, item_id => {
+					if (!ignore_items.Contains(item_id))
+					{
+						float score = Predict(user_id, item_id);
+						if (score > min_relevant_score)
+						{
+							lock (heap)
+							{
+								heap.Add(Tuple.Create(item_id, score));
+								if (heap.Count > n)
+								{
+									heap.DeleteMin();
+									min_relevant_score = heap.FindMin().Item2;
+								}
+							}
+						}
+					}
+				});
+				*/
 				ordered_items = new Tuple<int, float>[heap.Count];
 				for (int i = 0; i < ordered_items.Count; i++)
 					ordered_items[i] = heap.DeleteMax();

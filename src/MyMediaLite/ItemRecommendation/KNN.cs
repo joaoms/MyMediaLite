@@ -1,5 +1,5 @@
 // Copyright (C) 2013 João Vinagre, Zeno Gantner
-// Copyright (C) 2010, 2011, 2012, 2013 Zeno Gantner
+// Copyright (C) 2010, 2011, 2012 Zeno Gantner
 //
 // This file is part of MyMediaLite.
 //
@@ -68,7 +68,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected IList<IList<int>> nearest_neighbors;
 
 		/// <summary>Correlation matrix over some kind of entity, e.g. users or items</summary>
-		protected IBinaryDataCorrelationMatrix correlation_matrix;
+		protected IBinaryDataCorrelationMatrix correlation;
 
 		/// <summary>Default constructor</summary>
 		public KNN()
@@ -86,38 +86,63 @@ namespace MyMediaLite.ItemRecommendation
 			switch (Correlation)
 			{
 				case BinaryCorrelationType.Cosine:
-					correlation_matrix = new BinaryCosine(num_entities);
+					correlation = new BinaryCosine(num_entities);
 					break;
 				case BinaryCorrelationType.Jaccard:
-					correlation_matrix = new Jaccard(num_entities);
+					correlation = new Jaccard(num_entities);
 					break;
 				case BinaryCorrelationType.ConditionalProbability:
-					correlation_matrix = new ConditionalProbability(num_entities);
+					correlation = new ConditionalProbability(num_entities);
 					break;
 				case BinaryCorrelationType.BidirectionalConditionalProbability:
-					correlation_matrix = new BidirectionalConditionalProbability(num_entities, Alpha);
+					correlation = new BidirectionalConditionalProbability(num_entities, Alpha);
 					break;
 				case BinaryCorrelationType.Cooccurrence:
-					correlation_matrix = new Cooccurrence(num_entities);
+					correlation = new Cooccurrence(num_entities);
 					break;
 				default:
-					throw new NotImplementedException(string.Format("{0} does not support for {1}.", this.GetType().Name, Correlation));
+					throw new NotImplementedException(string.Format("Support for {0} is not implemented", Correlation));
 			}
-			correlation_matrix.Weighted = Weighted;
 		}
 
-		///
-		protected void RecomputeNeighbors(ICollection<int> update_entities)
+		/// <summary>Update the correlation matrix for the given feedback</summary>
+		/// <param name='feedback'>the feedback (user-item tuples)</param>
+		/// <param name='items'>true if item-based</param>
+		protected void Update(ICollection<Tuple<int, int>> feedback, bool items = false)
+		{
+			var update_entities = new HashSet<int>();
+			foreach (var t in feedback)
+			{
+				if(items)
+					update_entities.Add(t.Item2);
+				else
+					update_entities.Add(t.Item1);
+			}
+
+			foreach (int i in update_entities)
+			{
+				for (int j = 0; j < correlation.NumEntities; j++)
+				{
+					if (j < i && correlation.IsSymmetric && update_entities.Contains(j))
+						continue;
+
+					correlation[i, j] = correlation.ComputeCorrelation(DataMatrix.GetEntriesByRow(i), DataMatrix.GetEntriesByRow(j));
+				}
+			}
+			RecomputeNeighbors(update_entities);
+		}
+
+		protected virtual void RecomputeNeighbors(ICollection<int> update_entities)
 		{
 			foreach (int entity_id in update_entities)
-				nearest_neighbors[entity_id] = correlation_matrix.GetNearestNeighbors(entity_id, k);
+				nearest_neighbors[entity_id] = correlation.GetNearestNeighbors(entity_id, k);
 		}
 
 		///
 		public override void Train()
 		{
 			InitModel();
-			correlation_matrix.ComputeCorrelations(DataMatrix);
+			correlation.ComputeCorrelations(DataMatrix);
 		}
 
 		///
@@ -130,7 +155,7 @@ namespace MyMediaLite.ItemRecommendation
 				foreach (IList<int> nn in nearest_neighbors)
 					writer.WriteLine(String.Join(" ", nn));
 
-				correlation_matrix.Write(writer);
+				correlation.Write(writer);
 			}
 		}
 
@@ -153,12 +178,12 @@ namespace MyMediaLite.ItemRecommendation
 				}
 
 				InitModel();
-				if (correlation_matrix is SymmetricCorrelationMatrix)
-					((SymmetricCorrelationMatrix) correlation_matrix).ReadSymmetricCorrelationMatrix(reader);
-				else if (correlation_matrix is AsymmetricCorrelationMatrix)
-					((AsymmetricCorrelationMatrix) correlation_matrix).ReadAsymmetricCorrelationMatrix(reader);
+				if (correlation is SymmetricCorrelationMatrix)
+					((SymmetricCorrelationMatrix) correlation).ReadSymmetricCorrelationMatrix(reader);
+				else if (correlation is AsymmetricCorrelationMatrix)
+					((AsymmetricCorrelationMatrix) correlation).ReadAsymmetricCorrelationMatrix(reader);
 				else
-					throw new NotSupportedException("Unknown correlation type: " + correlation_matrix.GetType());
+					throw new NotSupportedException("Unknown correlation type: " + correlation.GetType());
 
 				this.k = (uint) nearest_neighbors[0].Length;
 				this.nearest_neighbors = nearest_neighbors;

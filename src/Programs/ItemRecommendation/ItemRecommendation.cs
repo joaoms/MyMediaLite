@@ -310,7 +310,7 @@ class ItemRecommendation : CommandLineProgram<IRecommender>
 
 				if (online_eval)
 					time_span = Wrap.MeasureTime( delegate() {
-						var results = recommender.EvaluateOnline(test_data, training_data, test_users, candidate_items, eval_item_mode);
+						var results = recommender.EvaluateOnline(test_data, training_data, test_users, candidate_items, eval_item_mode, predict_items_number);
 						Console.Write(Render(results));
 					});
 				else

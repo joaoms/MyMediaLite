@@ -7,6 +7,18 @@ all: ../lib/mymedialite
 	cp -r Programs/RatingPrediction/bin/Debug/*.exe ../lib/mymedialite
 	cp -r Programs/RatingBasedRanking/bin/Debug/*.mdb ../lib/mymedialite
 	cp -r Programs/RatingBasedRanking/bin/Debug/*.exe ../lib/mymedialite
+	cp -r Programs/OnlineEvaluator/bin/Debug/*.exe ../lib/mymedialite
+	cp -r Programs/OnlineEvaluator/bin/Debug/*.mdb ../lib/mymedialite
+	cp -r Programs/OnlineCrossval/bin/Debug/*.exe ../lib/mymedialite
+	cp -r Programs/OnlineCrossval/bin/Debug/*.mdb ../lib/mymedialite
+	cp -r Programs/BaggingEvaluator/bin/Debug/*.exe ../lib/mymedialite
+	cp -r Programs/BaggingEvaluator/bin/Debug/*.mdb ../lib/mymedialite
+	cp -r Programs/BatchEvaluator/bin/Debug/*.exe ../lib/mymedialite
+	cp -r Programs/BatchEvaluator/bin/Debug/*.mdb ../lib/mymedialite
+	cp -r Programs/ForgettingProfile/bin/Debug/*.exe ../lib/mymedialite
+	cp -r Programs/ForgettingProfile/bin/Debug/*.mdb ../lib/mymedialite
+	cp -r Programs/OnlineLearner/bin/Debug/*.exe ../lib/mymedialite
+	cp -r Programs/OnlineLearner/bin/Debug/*.mdb ../lib/mymedialite
 
 ../lib/mymedialite:
 	mkdir ../lib/mymedialite

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Zeno Gantner
+// Copyright (C) 2011, 2012 Zeno Gantner
 // Copyright (C) 2010 Zeno Gantner, Christoph Freudenthaler
 //
 // This file is part of MyMediaLite.
@@ -120,12 +120,14 @@ namespace MyMediaLite.ItemRecommendation
 		[ThreadStatic] // we need one random number generator per thread because synchronizing is slow
 		static protected System.Random random;
 
+
 		/// <summary>Default constructor</summary>
 		public BPRMF()
 		{
 			UniformUserSampling = true;
 			UpdateUsers = true;
 			UpdateItems = false;
+			random = MyMediaLite.Random.GetInstance();
 		}
 
 		///
@@ -162,6 +164,7 @@ namespace MyMediaLite.ItemRecommendation
 
 			for (int i = 0; i < NumIter; i++)
 				Iterate();
+
 		}
 
 		/// <summary>Perform one iteration of stochastic gradient ascent over the training data</summary>
@@ -295,11 +298,12 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		/// <summary>Sample a pair of items, given a user</summary>
-		/// <param name="user_items">the items accessed by the given user</param>
+		/// <param name="user_id">the user ID</param>
 		/// <param name="item_id">the ID of the first item</param>
 		/// <param name="other_item_id">the ID of the second item</param>
-		protected virtual void SampleItemPair(ICollection<int> user_items, out int item_id, out int other_item_id)
+		protected virtual void SampleItemPair(int user_id, out int item_id, out int other_item_id)
 		{
+			var user_items = Feedback.UserMatrix[user_id];
 			item_id = user_items.ElementAt(random.Next(user_items.Count));
 			do
 				other_item_id = random.Next(MaxItemID + 1);
@@ -327,8 +331,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected virtual void SampleTriple(out int user_id, out int item_id, out int other_item_id)
 		{
 			user_id = SampleUser();
-			var user_items = Feedback.UserMatrix[user_id];
-			SampleItemPair(user_items, out item_id, out other_item_id);
+			SampleItemPair(user_id, out item_id, out other_item_id);
 		}
 
 		/// <summary>Update latent factors according to the stochastic gradient descent update rule</summary>
@@ -385,21 +388,81 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		///
+		public override void AddFeedback(ICollection<Tuple<int, int>> feedback)
+		{
+			base.AddFeedback(feedback);
+			Retrain(feedback);
+		}
+
+		///
+		public virtual void AddFeedbackRetrainN(ICollection<Tuple<int, int>> feedback, int n)
+		{
+			base.AddFeedback(feedback);
+			for (int i = 0; i < n; i++)
+				Retrain(feedback);
+		}
+
+		protected virtual void Retrain(ICollection<Tuple<int, int>> feedback)
+		{
+			var users = from t in feedback select t.Item1;
+			var items = from t in feedback select t.Item2;
+
+			if (UpdateUsers)
+				foreach (int user_id in users)
+					RetrainUser(user_id);
+			if (UpdateItems)
+				foreach (int item_id in items)
+					RetrainItem(item_id);
+		}
+
+		///
+		public override void RemoveFeedback(ICollection<Tuple<int, int>> feedback)
+		{
+			base.RemoveFeedback(feedback);
+			Retrain(feedback);
+		}
+
+		///
+		protected override void AddUser(int user_id)
+		{
+			base.AddUser(user_id);
+
+			user_factors.AddRows(user_id + 1);
+			user_factors.RowInitNormal(user_id, InitMean, InitStdDev);
+		}
+
+		///
 		protected override void AddItem(int item_id)
 		{
 			base.AddItem(item_id);
+
+			item_factors.AddRows(item_id + 1);
+			item_factors.RowInitNormal(item_id, InitMean, InitStdDev);
+
 			Array.Resize(ref item_bias, MaxItemID + 1);
+		}
+
+		///
+		public override void RemoveUser(int user_id)
+		{
+			base.RemoveUser(user_id);
+
+			// set user latent factors to zero
+			user_factors.SetRowToOneValue(user_id, 0);
 		}
 
 		///
 		public override void RemoveItem(int item_id)
 		{
 			base.RemoveItem(item_id);
-			item_bias[item_id] = 0;
+
+			// set item latent factors to zero
+			item_factors.SetRowToOneValue(item_id, 0);
 		}
 
-		///
-		protected override void RetrainUser(int user_id)
+		/// <summary>Retrain the latent factors of a given user</summary>
+		/// <param name="user_id">the user ID</param>
+		protected virtual void RetrainUser(int user_id)
 		{
 			user_factors.RowInitNormal(user_id, InitMean, InitStdDev);
 
@@ -407,13 +470,14 @@ namespace MyMediaLite.ItemRecommendation
 			for (int i = 0; i < user_items.Count; i++)
 			{
 				int item_id_1, item_id_2;
-				SampleItemPair(user_items, out item_id_1, out item_id_2);
+				SampleItemPair(user_id, out item_id_1, out item_id_2);
 				UpdateFactors(user_id, item_id_1, item_id_2, true, false, false);
 			}
 		}
 
-		///
-		protected override void RetrainItem(int item_id)
+		/// <summary>Retrain the latent factors of a given item</summary>
+		/// <param name="item_id">the item ID</param>
+		protected virtual void RetrainItem(int item_id)
 		{
 			item_factors.RowInitNormal(item_id, InitMean, InitStdDev);
 
@@ -478,8 +542,6 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		public override void LoadModel(string file)
 		{
-			random = MyMediaLite.Random.GetInstance();
-
 			using ( StreamReader reader = Model.GetReader(file, this.GetType()) )
 			{
 				var user_factors = (Matrix<float>) reader.ReadMatrix(new Matrix<float>(0, 0));
@@ -545,18 +607,19 @@ namespace MyMediaLite.ItemRecommendation
 
 		void IterateUser(ISet<int> user_items, IList<float> user_factors)
 		{
+			int num_pos_events = user_items.Count;
+
+			int user_id, pos_item_id, neg_item_id;
+
 			if (WithReplacement) // case 1: item sampling with replacement
 			{
 				throw new NotImplementedException();
 			}
 			else // case 2: item sampling without replacement
 			{
-				int num_pos_events = user_items.Count;
-				int pos_item_id, neg_item_id;
-
 				for (int i = 0; i < num_pos_events; i++)
 				{
-					SampleItemPair(user_items, out pos_item_id, out neg_item_id);
+					SampleTriple(out user_id, out pos_item_id, out neg_item_id);
 					// TODO generalize and call UpdateFactors -- need to represent factors as arrays, not matrices for this
 					double x_uij = item_bias[pos_item_id] - item_bias[neg_item_id] + DataType.VectorExtensions.ScalarProduct(user_factors, DataType.MatrixExtensions.RowDifference(item_factors, pos_item_id, item_factors, neg_item_id));
 					double one_over_one_plus_ex = 1 / (1 + Math.Exp(x_uij));
@@ -583,5 +646,6 @@ namespace MyMediaLite.ItemRecommendation
 				"{0} num_factors={1} bias_reg={2} reg_u={3} reg_i={4} reg_j={5} num_iter={6} learn_rate={7} uniform_user_sampling={8} with_replacement={9} update_j={10}",
 				this.GetType().Name, num_factors, BiasReg, reg_u, reg_i, reg_j, NumIter, learn_rate, UniformUserSampling, WithReplacement, UpdateJ);
 		}
+
 	}
 }
