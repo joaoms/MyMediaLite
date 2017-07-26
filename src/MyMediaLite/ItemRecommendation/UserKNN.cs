@@ -18,7 +18,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using MyMediaLite.Correlation;
 using MyMediaLite.DataType;
 
@@ -33,9 +32,6 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		protected override IBooleanMatrix DataMatrix { get { return Feedback.UserMatrix; } }
 
-		/// 
-		protected ParallelOptions parallel_opts = new ParallelOptions() { MaxDegreeOfParallelism = 4 };
-
 		///
 		public override void Train()
 		{
@@ -44,7 +40,7 @@ namespace MyMediaLite.ItemRecommendation
 			int num_users = MaxUserID + 1;
 			this.nearest_neighbors = new List<IList<int>>(num_users);
 			for (int u = 0; u < num_users; u++)
-				nearest_neighbors.Add(correlation.GetNearestNeighbors(u, k));
+				nearest_neighbors.Add(correlation_matrix.GetNearestNeighbors(u, k));
 		}
 
 		///
@@ -61,9 +57,9 @@ namespace MyMediaLite.ItemRecommendation
 				{
 					foreach (int neighbor in nearest_neighbors[user_id])
 					{
-						normalization += Math.Pow(correlation[user_id, neighbor], Q);
+						normalization += Math.Pow(correlation_matrix[user_id, neighbor], Q);
 						if (Feedback.UserMatrix[neighbor, item_id])
-							sum += Math.Pow(correlation[user_id, neighbor], Q);
+							sum += Math.Pow(correlation_matrix[user_id, neighbor], Q);
 					}
 				}
 				if (sum == 0) return 0;
@@ -72,14 +68,14 @@ namespace MyMediaLite.ItemRecommendation
 			else
 			{
 				// roughly 10x faster
-				return (float) correlation.SumUp(user_id, Feedback.ItemMatrix[item_id], Q);
+				return (float) correlation_matrix.SumUp(user_id, Feedback.ItemMatrix[item_id], Q);
 			}
 		}
 
 		///
 		public float GetUserSimilarity(int user_id1, int user_id2)
 		{
-			return correlation[user_id1, user_id2];
+			return correlation_matrix[user_id1, user_id2];
 		}
 
 		///
@@ -88,7 +84,7 @@ namespace MyMediaLite.ItemRecommendation
 			if (n <= k)
 				return nearest_neighbors[user_id].Take((int) n).ToArray();
 			else
-				return correlation.GetNearestNeighbors(user_id, n);
+				return correlation_matrix.GetNearestNeighbors(user_id, n);
 		}
 
 		float Predict(IList<float> user_similarities, IList<int> nearest_neighbors, int item_id)
@@ -121,7 +117,7 @@ namespace MyMediaLite.ItemRecommendation
 			var user_similarities = new float[MaxUserID + 1];
 
 			for (int user_id = 0; user_id <= MaxUserID; user_id++)
-				user_similarities[user_id] = correlation.ComputeCorrelation(Feedback.UserMatrix[user_id], new HashSet<int>(items));
+				user_similarities[user_id] = correlation_matrix.ComputeCorrelation(Feedback.UserMatrix[user_id], new HashSet<int>(items));
 
 			return user_similarities;
 		}
@@ -176,81 +172,25 @@ namespace MyMediaLite.ItemRecommendation
 			ResizeNearestNeighbors(user_id + 1);
 		}
 
-		/// <summary>
-		/// Selectively retrains users based on new users added to feedback.
-		/// </summary>
-		/// <returns>
-		/// Number of updated neighbor lists.
-		/// </returns>
-		/// <param name='new_users'>
-		/// Recently added users.
-		/// </param>
-		protected override void RecomputeNeighbors(ICollection<int> new_users)
+		/// <summary>Update the correlation matrix for the given feedback</summary>
+		/// <param name='feedback'>the feedback (user-item tuples)</param>
+		protected void Update(ICollection<Tuple<int, int>> feedback)
 		{
-			var retrain_users = new HashSet<int>();
+			var update_entities = new HashSet<int>();
+			foreach (var t in feedback)
+				update_entities.Add(t.Item1);
 
-			// Option 1 (complete): Update every neighbor list that may have changed
-			/*
-			float min;
-			foreach (int user in Feedback.AllUsers.Except(new_users))
+			foreach (int i in update_entities)
 			{
-				// Get the correlation of the least correlated neighbor
-				if (nearest_neighbors[user] == null)
-					min = 0;
-				else if (nearest_neighbors[user].Count < k)
-					min = 0;
-				else
-					min = correlation[user, nearest_neighbors[user].Last()];
+				for (int j = 0; j < correlation_matrix.NumEntities; j++)
+				{
+					if (j < i && correlation_matrix.IsSymmetric && update_entities.Contains(j))
+						continue;
 
-				// Check if any of the added users have a higher correlation
-				// (requires retraining if it is a new neighbor or an existing one)
-				foreach (int new_user in new_users)
-					if (correlation[user, new_user] > min)
-						retrain_users.Add(user);
-			}
-			*/
-
-			// Option 2 (heuristic): Update only neighbors of added users
-			/*
-			foreach (int user in new_users)
-			{
-				if(nearest_neighbors[user] != null)
-					if(nearest_neighbors[user].Count > 0)
-						retrain_users.UnionWith(nearest_neighbors[user]);
-			}
-			*/
-
-			// Option 3: Only update neighbor lists of added users
-
-			// Recently added users also need retraining
-			retrain_users.UnionWith(new_users);
-			// Recalculate neighborhood of selected users
-			Parallel.ForEach(retrain_users, parallel_opts, r_user => {
-				var neighbors = correlation.GetNearestNeighbors(r_user, k);
-				lock(nearest_neighbors) {
-					nearest_neighbors[r_user] = neighbors;
+					correlation_matrix[i, j] = correlation_matrix.ComputeCorrelation(DataMatrix.GetEntriesByRow(i), DataMatrix.GetEntriesByRow(j));
 				}
-			});
+			}
+			RecomputeNeighbors(update_entities);
 		}
-
-		/// <summary>
-		/// Selectively retrains users based on removed feedback.
-		/// </summary>
-		/// <param name='removing_users'>
-		/// Users with removed feedback.
-		/// </param>
-		protected void RecomputeNeighborsRemoved(IEnumerable<int> removing_users)
-		{
-			var retrain_users = new HashSet<int>();
-			foreach (int user in Feedback.AllUsers.Except(removing_users))
-				foreach (int r_user in removing_users)
-					if (nearest_neighbors[user] != null)
-						if (nearest_neighbors[user].Contains(r_user))
-							retrain_users.Add(user);
-			retrain_users.UnionWith(removing_users);
-			foreach (int r_user in retrain_users)
-				nearest_neighbors[r_user] = correlation.GetNearestNeighbors(r_user, k);
-		}
-
 	}
 }

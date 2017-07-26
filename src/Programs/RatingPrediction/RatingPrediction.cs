@@ -38,6 +38,7 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
 	protected IRatings test_data;
 
 	bool search_hp             = false;
+	bool test_no_ratings       = false;
 	string prediction_line     = "{0}\t{1}\t{2}";
 	string prediction_header   = null;
 
@@ -46,9 +47,10 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
 	string chronological_split;
 	double chronological_split_ratio = -1;
 	DateTime chronological_split_time = DateTime.MinValue;
-	bool online_eval   = false;
 
 	protected virtual string DefaultMeasure { get { return "RMSE"; } }
+	protected override ICollection<string> Measures { get { return MyMediaLite.Eval.Ratings.Measures; } }
+	protected override string ProgramName { get { return "Rating Prediction"; } }
 
 	public RatingPrediction()
 	{
@@ -56,19 +58,11 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
 		cutoff = double.MaxValue;
 	}
 
-	protected override void ShowVersion()
-	{
-		ShowVersion(
-			"Rating Prediction",
-			"Copyright (C) 2011, 2012, 2013 Zeno Gantner\nCopyright (C) 2010 Zeno Gantner, Steffen Rendle"
-		);
-	}
-
 	// TODO generalize
 	protected override void Usage(int exit_code)
 	{
 		var version = Assembly.GetEntryAssembly().GetName().Version;
-		Console.WriteLine("MyMediaLite rating prediction {0}.{1:00}", version.Major, version.Minor);
+		Console.WriteLine("MyMediaLite {0} {1}.{2:00}", ProgramName, version.Major, version.Minor);
 		Console.WriteLine(@"
  usage:  rating_prediction --training-file=FILE --recommender=METHOD [OPTIONS]
 
@@ -91,6 +85,8 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
   files:
    --training-file=FILE                   read training data from FILE
    --test-file=FILE                       read test data from FILE
+   --test-no-ratings                      test data contains no rating column
+                                          (needs both --prediction-file=FILE and --test-file=FILE)
    --file-format=movielens_1m|kddcup_2011|ignore_first_line|default
    --data-dir=DIR                         load all files from DIR
    --user-attributes=FILE                 file with user attribute information, 1 tuple per line
@@ -119,7 +115,8 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
    --online-evaluation                 perform online evaluation (use every tested rating for incremental training)
    --search-hp                         search for good hyperparameter values (experimental feature)
    --compute-fit                       display fit on training data
-   --measures=RMSE,MAE,NMAE,CBD        comma- or space-separated list of evaluation measures to display (default is RMSE, MAE, CBD)
+   --measures=LIST                     comma- or space-separated list of evaluation measures to display (default is RMSE, MAE, CBD)
+                                       use --help-measures to get a list of all available measures
 
   options for finding the right number of iterations (iterative methods)
    --find-iter=N                  give out statistics every N iterations
@@ -145,8 +142,8 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
 			.Add("chronological-split=", v              => chronological_split  = v)
 			.Add("rating-type=",         (RatingType v) => rating_type          = v)
 			.Add("file-format=",         (RatingFileFormat v) => file_format    = v)
-			.Add("online-evaluation",    v => online_eval       = v != null)
-			.Add("search-hp",            v => search_hp         = v != null);
+			.Add("search-hp",            v => search_hp         = v != null)
+			.Add("test-no-ratings",      v => test_no_ratings   = v != null);
 	}
 
 	protected override void SetupRecommender()
@@ -170,9 +167,11 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
 		}
 		base.Run(args);
 
-		bool no_eval = true;
-		if (test_ratio > 0 || test_file != null || chronological_split != null)
-			no_eval = false;
+		bool do_eval = false;
+		if (test_ratio > 0 || chronological_split != null)
+			do_eval = true;
+		if (test_file != null && !test_no_ratings)
+			do_eval = true;
 
 		Console.Error.WriteLine(
 			string.Format(CultureInfo.InvariantCulture,
@@ -265,6 +264,8 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
 						}
 					}
 				} // for
+				if (max_iter % find_iter != 0)
+					recommender.WritePredictions(test_data, prediction_file, user_mapping, item_mapping, prediction_line, prediction_header);
 			}
 		}
 		else
@@ -280,7 +281,7 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
 					Console.WriteLine();
 					var results = DoCrossValidation();
 					Console.Write(Render(results));
-					no_eval = true;
+					do_eval = false;
 				}
 				else
 				{
@@ -295,7 +296,7 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
 				}
 			}
 
-			if (!no_eval)
+			if (do_eval)
 			{
 				if (online_eval)
 					seconds = Wrap.MeasureTime(delegate() { Console.Write(Render(recommender.EvaluateOnline(test_data))); });
@@ -312,15 +313,15 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
 					});
 					Console.Write(" fit_time " + seconds);
 				}
+			}
 
-				if (prediction_file != null)
-				{
-					Console.WriteLine();
-					seconds = Wrap.MeasureTime(delegate() {
-						recommender.WritePredictions(test_data, prediction_file, user_mapping, item_mapping, prediction_line, prediction_header);
-					});
-					Console.Error.WriteLine("prediction_time " + seconds);
-				}
+			if (prediction_file != null)
+			{
+				Console.WriteLine();
+				seconds = Wrap.MeasureTime(delegate() {
+					recommender.WritePredictions(test_data, prediction_file, user_mapping, item_mapping, prediction_line, prediction_header);
+				});
+				Console.Error.WriteLine("prediction_time " + seconds);
 			}
 
 			Console.WriteLine();
@@ -337,10 +338,19 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
 			Abort(string.Format("Recommender {0} does not support incremental updates, which are necessary for an online experiment.", recommender.GetType().Name));
 
 		if (training_file == null && load_model_file == null)
-			Usage("Please provide either --training-file=FILE or --load-model=FILE.");
+			Abort("Please provide either --training-file=FILE or --load-model=FILE.");
 
 		if (test_file == null && test_ratio == 0 && cross_validation == 0 && save_model_file == null && chronological_split == null)
-			Usage("Please provide either test-file=FILE, --test-ratio=NUM, --cross-validation=K, --chronological-split=NUM|DATETIME, or --save-model=FILE.");
+			Abort("Please provide either --test-file=FILE, --test-ratio=NUM, --cross-validation=K, --chronological-split=NUM|DATETIME, or --save-model=FILE.");
+
+		if (test_no_ratings && prediction_file == null)
+			Abort("--test-no-ratings needs both --prediction-file=FILE and --test-file=FILE.");
+
+		if (prediction_file != null && test_file == null)
+			Abort("--prediction-file=FILE needs --test-file=FILE");
+
+		if (find_iter != 0 && test_file == null && test_ratio == 0 && cross_validation == 0 && prediction_file == null && chronological_split == null && !compute_fit)
+			Abort("--find-iter=N must be combined with either --test-file=FILE, --test-ratio=NUM, --cross-validation=K, --chronological-split=NUM|DATETIME, --compute-fit, or --prediction-file=FILE.");
 
 		// handling of --chronological-split
 		if (chronological_split != null)
@@ -387,9 +397,9 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
 					training_data = static_data
 						? StaticRatingData.Read(training_file, user_mapping, item_mapping, rating_type)
 						: RatingData.Read(training_file, user_mapping, item_mapping);
-				else if(file_format == RatingFileFormat.IGNORE_FIRST_LINE)
+				else if (file_format == RatingFileFormat.IGNORE_FIRST_LINE)
 					training_data = static_data
-						? StaticRatingData.Read(training_file, user_mapping, item_mapping, rating_type, true)
+						? StaticRatingData.Read(training_file, user_mapping, item_mapping, rating_type, TestRatingFileFormat.WITH_RATINGS, true)
 						: RatingData.Read(training_file, user_mapping, item_mapping, true);
 				else if (file_format == RatingFileFormat.MOVIELENS_1M)
 					training_data = MovieLensRatingData.Read(training_file, user_mapping, item_mapping);
@@ -401,14 +411,15 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
 			// read test data
 			if (test_file != null)
 			{
+				TestRatingFileFormat test_format = test_no_ratings ? TestRatingFileFormat.WITHOUT_RATINGS : TestRatingFileFormat.WITH_RATINGS;
 				if (recommender is TimeAwareRatingPredictor && file_format != RatingFileFormat.MOVIELENS_1M)
-					test_data = TimedRatingData.Read(test_file, user_mapping, item_mapping);
+					test_data = TimedRatingData.Read(test_file, user_mapping, item_mapping, test_format);
 				else if (file_format == RatingFileFormat.MOVIELENS_1M)
-					test_data = MovieLensRatingData.Read(test_file, user_mapping, item_mapping);
+					test_data = MovieLensRatingData.Read(test_file, user_mapping, item_mapping, test_format);
 				else if (file_format == RatingFileFormat.KDDCUP_2011)
 					test_data = MyMediaLite.IO.KDDCup2011.Ratings.Read(test_file);
 				else
-					test_data = StaticRatingData.Read(test_file, user_mapping, item_mapping, rating_type, file_format == RatingFileFormat.IGNORE_FIRST_LINE);
+					test_data = StaticRatingData.Read(test_file, user_mapping, item_mapping, rating_type, test_format, file_format == RatingFileFormat.IGNORE_FIRST_LINE);
 
 				if (recommender is ITransductiveRatingPredictor)
 					((ITransductiveRatingPredictor) recommender).AdditionalFeedback = test_data;
@@ -423,7 +434,7 @@ public class RatingPrediction : CommandLineProgram<RatingPredictor>
 	{
 		return recommender.Evaluate(test_data, training_data);
 	}
-	
+
 	protected virtual EvaluationResults DoCrossValidation()
 	{
 		return recommender.DoCrossValidation(cross_validation, compute_fit, true);

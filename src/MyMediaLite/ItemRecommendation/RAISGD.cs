@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Zeno Gantner
+﻿// Copyright (C) 2013 Zeno Gantner
 //
 // This file is part of MyMediaLite.
 //
@@ -19,16 +19,12 @@ using System;
 using C5;
 using System.Linq;
 using System.Globalization;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using MathNet.Numerics.LinearAlgebra.Double;
 using MyMediaLite.DataType;
-using MyMediaLite.Data;
 
 namespace MyMediaLite.ItemRecommendation
 {
 	/// <summary>
-	///   Inremental Stochastic Gradient Descent with Recency-based negative feedback algorithm for item prediction.
+	///   Recency-Adjusted Incremental Stochastic Gradient Descent (RAISGD) algorithm for item prediction.
 	/// </summary>
 	/// <remarks>
 	///   <para>
@@ -36,61 +32,71 @@ namespace MyMediaLite.ItemRecommendation
 	/// 	<list type="bullet">
 	///       <item><description>
 	///         João Vinagre, Alípio Mário Jorge, João Gama:
-	///         Collaborative filtering with recency-based negative feedback
+	///         Collaborative filtering with recency-based negative feedback.
 	///         ACM SAC 2015.
-	///         https://www.researchgate.net/profile/Joao_Vinagre2/publication/277598048_Collaborative_filtering_with_recency-based_negative_feedback/links/556e3b9b08aeab777226a2db.pdf
+	///         http://dl.acm.org/citation.cfm?id=2695998
 	///       </description></item>
 	///     </list>
-	///   </para> 
+	///   </para>
 	///   <para>
-	///     This algorithm supports (and encourages) incremental updates. 
+	///     This algorithm extends ISGD to accept recency-based negative feedback in incremental updates.
 	///   </para>
 	/// </remarks>
 	public class RAISGD : ISGD
 	{
+		/// <summary>Apply user-based negative feedback in user factors</summary>
+		public bool NegUsersInUsers { get; set; }
+		/// <summary>Apply item-based negative feedback in user factors</summary>
+		public bool NegItemsInUsers { get; set; }
+		/// <summary>Apply user-based negative feedback in item factors</summary>
+		public bool NegUsersInItems { get; set; }
+		/// <summary>Apply item-based negative feedback in item factors</summary>
+		public bool NegItemsInItems { get; set; }
 
-		public bool ForgetUsersInUsers { get; set; }
-		public bool ForgetItemsInUsers { get; set; }
-		public bool ForgetUsersInItems { get; set; }
-		public bool ForgetItemsInItems { get; set; }
-		public int Horizon { get { return horizon; } set { horizon = value; } }
-		protected int horizon = 1;
+		/// <summary>Number of negative examples for each positive example.</summary>
+		public int NegFeedback { get { return neg_feedback; } set { neg_feedback = value; } }
+		int neg_feedback = 1;
 
-		private bool forget_users;
-		private bool forget_items;
+		bool negate_users;
+		bool negate_items;
 
+		/// <summary>Item queue for item-based negative feedback (contains items ordered by time of latest occurrence)</summary>
 		protected HashedLinkedList<int> item_queue;
+		/// <summary>Item queue for user-based negative feedback (contains users ordered by time of latest occurrence)</summary>
 		protected HashedLinkedList<int> user_queue;
 
-		// float max_score = 1.0f;
-
+		/// <summary>Default constructor.</summary>
 		public RAISGD()
 		{
-			ForgetUsersInUsers = false;
-			ForgetUsersInItems = false;
-			ForgetItemsInUsers = true;
-			ForgetItemsInItems = false;
+			NegUsersInUsers = false;
+			NegUsersInItems = false;
+			NegItemsInUsers = true;
+			NegItemsInItems = false;
 		}
 
+		/// <summary>
+		/// Initiates the base model and the user and/or item queue(s)
+		/// </summary>
 		protected override void InitModel()
 		{
 			base.InitModel();
 
-			forget_users = ForgetUsersInUsers || ForgetUsersInItems;
-			forget_items = ForgetItemsInUsers || ForgetItemsInItems;
+			negate_users = NegUsersInUsers || NegUsersInItems;
+			negate_items = NegItemsInUsers || NegItemsInItems;
 
-			if (forget_users)
+			if (negate_users)
 			{
 				user_queue = new HashedLinkedList<int>();
 				user_queue.AddAll(Feedback.Users);
 			}
-			if (forget_items)
+			if (negate_items)
 			{
 				item_queue = new HashedLinkedList<int>();
 				item_queue.AddAll(Feedback.Items);
 			}
 		}
 
+		///
 		protected override void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			foreach (var entry in feedback)
@@ -99,6 +105,10 @@ namespace MyMediaLite.ItemRecommendation
 			}
 		}
 
+		/// <summary>
+		/// Retrains a single user-item pair.
+		/// </summary>
+		/// <param name="entry">The user-item pair</param>
 		protected virtual void RetrainEntry(Tuple<int,int> entry)
 		{
 			InsertNegFeedback(entry);
@@ -106,11 +116,15 @@ namespace MyMediaLite.ItemRecommendation
 				UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
 		}
 
+		/// <summary>
+		/// Imputes a single negative feedback entry (a "negative" user-item pair).
+		/// </summary>
+		/// <param name="entry">The user-item pair</param>
 		protected virtual void InsertNegFeedback(Tuple<int,int> entry)
 		{
-			int[] qu = Enumerable.Repeat(-1,horizon).ToArray();
-			int[] qi = Enumerable.Repeat(-1,horizon).ToArray();
-			if (forget_users)
+			int[] qu = Enumerable.Repeat(-1, neg_feedback).ToArray();
+			int[] qi = Enumerable.Repeat(-1, neg_feedback).ToArray();
+			if (negate_users)
 			{
 				for (uint i = 0; i < qu.Length && i < user_queue.Count - 1; )
 				{
@@ -118,7 +132,7 @@ namespace MyMediaLite.ItemRecommendation
 					if (qu[i] != entry.Item1) i++;
 				}
 			}
-			if (forget_items)
+			if (negate_items)
 			{
 				for (uint i = 0; i < qi.Length && i < item_queue.Count - 1; )
 				{
@@ -127,18 +141,18 @@ namespace MyMediaLite.ItemRecommendation
 				}
 			}
 			//Console.WriteLine("Forgetting item "+qi);
-			if (forget_users)
+			if (negate_users)
 				foreach (var usr in qu.Reverse())
 					if (usr >= 0) 
 						for (uint i = 0; i < IncrIter; i++)
-							UpdateFactors(usr, entry.Item2, ForgetUsersInUsers, ForgetUsersInItems, 0);
-			if (forget_items)
+							UpdateFactors(usr, entry.Item2, NegUsersInUsers, NegUsersInItems, 0);
+			if (negate_items)
 				foreach (var itm in qi.Reverse())
 					if (itm >= 0)
 						for (uint i = 0; i < IncrIter; i++)
-							UpdateFactors(entry.Item1, itm, ForgetItemsInUsers, ForgetItemsInItems, 0);
+							UpdateFactors(entry.Item1, itm, NegItemsInUsers, NegItemsInItems, 0);
 
-			if (forget_items)
+			if (negate_items)
 			{
 				item_queue.Remove(entry.Item2);
 				item_queue.InsertLast(entry.Item2);
@@ -147,7 +161,7 @@ namespace MyMediaLite.ItemRecommendation
 					if (itm >= 0 && itm != entry.Item2)
 						item_queue.InsertLast(itm);
 			}
-			if (forget_users)
+			if (negate_users)
 			{
 				user_queue.Remove(entry.Item1);
 				user_queue.InsertLast(entry.Item1);
@@ -163,7 +177,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.RemoveItem(item_id);
 
-			if (forget_items)
+			if (negate_items)
 				item_queue.Remove(item_id);
 		}
 
@@ -172,26 +186,29 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.RemoveUser(user_id);
 
-			if (forget_users)
+			if (negate_users)
 				user_queue.Remove(user_id);
 		}
 
 		/// <summary>
 		/// Performs factor updates for a user and item pair.
 		/// </summary>
-		/// <param name="user_id">User_id.</param>
-		/// <param name="item_id">Item_id.</param>
-		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item, float base_val = 1)
+		/// <param name="user_id">The user ID</param>
+		/// <param name="item_id">The item ID</param>
+		/// <param name="update_user">Update user factors</param>
+		/// <param name="update_item">Update item factors</param>
+		/// <param name="rating_val">The rating (1 for positive feedback, 0 for negative feedback)</param>
+		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item, float rating_val = 1)
 		{
 			//Console.WriteLine(float.MinValue);
-			float err = base_val - Predict(user_id, item_id, false);
+			float err = rating_val - Predict(user_id, item_id, false);
 
 			// adjust factors
 			for (int f = 0; f < NumFactors; f++)
 			{
 				float u_f = user_factors[user_id, f];
 				float i_f = item_factors[item_id, f];
-				
+
 				// if necessary, compute and apply updates
 				if (update_user)
 				{
@@ -213,8 +230,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"RAISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}, horizon={6}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, Horizon);
+				"RAISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5}, neg_feedback={6}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NegFeedback);
 		}
 
 

@@ -49,7 +49,6 @@ class ItemRecommendation : CommandLineProgram<IRecommender>
 	float rating_threshold = float.NaN;
 	int num_test_users = -1;
 	int predict_items_number = -1;
-	bool online_eval;
 	bool repeated_items;
 	bool overlap_items;
 	bool in_training_items;
@@ -57,24 +56,20 @@ class ItemRecommendation : CommandLineProgram<IRecommender>
 	bool all_items;
 	bool user_prediction;
 
+	protected override ICollection<string> Measures { get { return Items.Measures; } }
+
+	protected override string ProgramName { get { return "Item Recommendation from Positive-Only Feedback"; } }
+
 	public ItemRecommendation()
 	{
 		cutoff  = double.MinValue;
 		eval_measures = ItemRecommendationEvaluationResults.DefaultMeasuresToShow;
 	}
 
-	protected override void ShowVersion()
-	{
-		ShowVersion(
-			"Item Recommendation from Positive-Only Feedback",
-			"Copyright (C) 2011, 2012, 2013 Zeno Gantner\nCopyright (C) 2010 Zeno Gantner, Steffen Rendle, Christoph Freudenthaler"
-		);
-	}
-
 	protected override void Usage(int exit_code)
 	{
 		var version = Assembly.GetEntryAssembly().GetName().Version;
-		Console.WriteLine("MyMediaLite item recommendation from positive-only feedback {0}.{1:00}", version.Major, version.Minor);
+		Console.WriteLine("MyMediaLite {0} {1}.{2:00}", ProgramName, version.Major, version.Minor);
 		Console.WriteLine(@"
  usage:   item_recommendation --training-file=FILE --recommender=METHOD [OPTIONS]
 
@@ -104,6 +99,10 @@ class ItemRecommendation : CommandLineProgram<IRecommender>
    --item-relations=FILE                    file with item relation information, 1 tuple per line
    --save-model=FILE                        save computed model to FILE
    --load-model=FILE                        load model from FILE
+   --save-user-mapping=FILE                 save user ID mapping to FILE
+   --save-item-mapping=FILE                 save item ID mapping to FILE
+   --load-user-mapping=FILE                 load user ID mapping from FILE
+   --load-item-mapping=FILE                 load item ID mapping from FILE
 
   data interpretation:
    --user-prediction            transpose the user-item matrix and perform user prediction instead of item prediction
@@ -133,7 +132,8 @@ class ItemRecommendation : CommandLineProgram<IRecommender>
    --num-test-users=N           evaluate on only N randomly picked users (to save time)
    --online-evaluation          perform online evaluation (use every tested user-item combination for incremental training)
    --compute-fit                display fit on training data
-   --measures=LIST              the evaluation measures to display (default is AUC, prec@5)
+   --measures=LIST              the evaluation measures to display (default is 'AUC, prec@5')
+                                use --help-measures to get a list of all available measures
 
   finding the right number of iterations (iterative methods)
    --find-iter=N                give out statistics every N iterations
@@ -161,7 +161,6 @@ class ItemRecommendation : CommandLineProgram<IRecommender>
 			.Add("rating-threshold=",    (float v)  => rating_threshold = v)
 			.Add("file-format=",         (ItemDataFileFormat v) => file_format = v)
 			.Add("user-prediction",      v => user_prediction   = v != null)
-			.Add("online-evaluation",    v => online_eval       = v != null)
 			.Add("repeated-items",       v => repeated_items    = v != null)
 			.Add("overlap-items",        v => overlap_items     = v != null)
 			.Add("all-items",            v => all_items         = v != null)
@@ -171,14 +170,20 @@ class ItemRecommendation : CommandLineProgram<IRecommender>
 
 	protected override void SetupRecommender()
 	{
- 		if (load_model_file != null)
+		if (load_model_file != null)
 			recommender = Model.Load(load_model_file);
 		else if (method != null)
 			recommender = method.CreateItemRecommender();
 		else
 			recommender = "MostPopular".CreateItemRecommender();
-		
+
 		base.SetupRecommender();
+	}
+
+	private void Train()
+	{
+		recommender.Train();
+		MyMediaLite.Random.Init(); // re-init to make sure eval results are the same after training and loading
 	}
 
 	protected override void Run(string[] args)
@@ -214,13 +219,17 @@ class ItemRecommendation : CommandLineProgram<IRecommender>
 			else
 			{
 				if (load_model_file == null)
-					recommender.Train();
+					Train();
 
 				if (compute_fit)
 					Console.WriteLine("fit: {0} iteration {1} ", ComputeFit(), iterative_recommender.NumIter);
 
-				var results = Evaluate();
-				Console.WriteLine("{0} iteration {1}", Render(results), iterative_recommender.NumIter);
+				EvaluationResults results = null;
+				if (!no_eval)
+				{
+					results = Evaluate();
+					Console.WriteLine("{0} iteration {1}", Render(results), iterative_recommender.NumIter);
+				}
 
 				for (int it = (int) iterative_recommender.NumIter + 1; it <= max_iter; it++)
 				{
@@ -239,28 +248,36 @@ class ItemRecommendation : CommandLineProgram<IRecommender>
 							fit_time_stats.Add(t.TotalSeconds);
 						}
 
-						t = Wrap.MeasureTime(delegate() { results = Evaluate(); });
-						eval_time_stats.Add(t.TotalSeconds);
-						eval_stats.Add(results[eval_measures[0]]);
-						Console.WriteLine("{0} iteration {1}", Render(results), it);
+						if (!no_eval)
+						{
+							t = Wrap.MeasureTime(delegate() { results = Evaluate(); });
+							eval_time_stats.Add(t.TotalSeconds);
+							eval_stats.Add(results[eval_measures[0]]);
+							Console.WriteLine("{0} iteration {1}", Render(results), it);
+						}
 
 						Model.Save(recommender, save_model_file, it);
 						Predict(prediction_file, test_users_file, it);
 
-						if (epsilon > 0.0 && eval_stats.Max() - results[eval_measures[0]] > epsilon)
+						if (!no_eval)
 						{
-							Console.Error.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0} >> {1}", results[eval_measures[0]], eval_stats.Min()));
-							Console.Error.WriteLine("Reached convergence on training/validation data after {0} iterations.", it);
-							break;
-						}
-						if (results[eval_measures[0]] < cutoff)
-						{
-								Console.Error.WriteLine("Reached cutoff after {0} iterations.", it);
-								Console.Error.WriteLine("DONE");
+							if (epsilon > 0.0 && eval_stats.Max() - results[eval_measures[0]] > epsilon)
+							{
+								Console.Error.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0} >> {1}", results[eval_measures[0]], eval_stats.Min()));
+								Console.Error.WriteLine("Reached convergence on training/validation data after {0} iterations.", it);
 								break;
+							}
+							if (results[eval_measures[0]] < cutoff)
+							{
+									Console.Error.WriteLine("Reached cutoff after {0} iterations.", it);
+									Console.Error.WriteLine("DONE");
+									break;
+							}
 						}
 					}
 				} // for
+				if (max_iter % find_iter != 0)
+					Predict(prediction_file, test_users_file);
 			}
 		}
 		else
@@ -277,7 +294,7 @@ class ItemRecommendation : CommandLineProgram<IRecommender>
 				}
 				else
 				{
-					time_span = Wrap.MeasureTime( delegate() { recommender.Train(); } );
+					time_span = Wrap.MeasureTime( delegate() { Train(); } );
 					Console.Write("training_time " + time_span + " ");
 				}
 			}
@@ -293,7 +310,7 @@ class ItemRecommendation : CommandLineProgram<IRecommender>
 
 				if (online_eval)
 					time_span = Wrap.MeasureTime( delegate() {
-						var results = recommender.EvaluateOnline(test_data, training_data, test_users, candidate_items, eval_item_mode, predict_items_number);
+						var results = recommender.EvaluateOnline(test_data, training_data, test_users, candidate_items, eval_item_mode);
 						Console.Write(Render(results));
 					});
 				else
@@ -316,8 +333,11 @@ class ItemRecommendation : CommandLineProgram<IRecommender>
 		if (online_eval && !(recommender is IIncrementalItemRecommender))
 			Abort(string.Format("Recommender {0} does not support incremental updates, which are necessary for an online experiment.", recommender.GetType().Name));
 
-		if (test_file == null && test_ratio == 0 && cross_validation == 0 && save_model_file == null && test_users_file == null)
-			Usage("Please provide either test-file=FILE, --test-ratio=NUM, --cross-validation=K, --save-model=FILE, or --test-users=FILE.");
+		if (find_iter != 0 && test_file == null && test_ratio == 0 && cross_validation == 0 && prediction_file == null && !compute_fit)
+			Abort("--find-iter=N must be combined with either --test-file=FILE, --test-ratio=NUM, --cross-validation=K, --compute-fit, or --prediction-file=FILE.");
+
+		if (test_file == null && test_ratio == 0 && cross_validation == 0 && save_model_file == null && prediction_file == null)
+			Usage("Please provide either --test-file=FILE, --test-ratio=NUM, --cross-validation=K, --save-model=FILE, or --prediction-file=FILE.");
 
 		if ((candidate_items_file != null ? 1 : 0) + (all_items ? 1 : 0) + (in_training_items ? 1 : 0) + (in_test_items ? 1 : 0) + (overlap_items ? 1 : 0) > 1)
 			Abort("--candidate-items=FILE, --all-items, --in-training-items, --in-test-items, and --overlap-items are mutually exclusive.");
@@ -328,8 +348,8 @@ class ItemRecommendation : CommandLineProgram<IRecommender>
 		if (test_file == null && test_ratio == 0 && cross_validation == 0 && in_test_items)
 			Abort("--in-test-items only makes sense with either --test-file=FILE, --test-ratio=NUM, or cross-validation=K.");
 
-		if (test_file == null && test_ratio == 0 && cross_validation == 0 && in_training_items)
-			Abort("--in-training-items only makes sense with either --test-file=FILE, --test-ratio=NUM, or cross-validation=K.");
+		if (test_file == null && test_ratio == 0 && cross_validation == 0 && prediction_file == null && in_training_items)
+			Abort("--in-training-items only makes sense with either --test-file=FILE, --test-ratio=NUM, cross-validation=K, or --prediction-file=FILE.");
 
 		if (user_prediction)
 		{

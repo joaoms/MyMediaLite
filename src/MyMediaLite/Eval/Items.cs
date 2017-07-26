@@ -55,6 +55,46 @@ namespace MyMediaLite.Eval
 			}
 		}
 
+		/// <param name="candidate_items">a list of integers with all candidate items</param>
+		/// <param name="candidate_item_mode">the mode used to determine the candidate items</param>
+		/// <param name="test">test cases</param>
+		/// <param name="training">training data</param>
+		static public IList<int> Candidates(
+			IList<int> candidate_items,
+			CandidateItems candidate_item_mode,
+			IPosOnlyFeedback test,
+			IPosOnlyFeedback training)
+		{
+			IList<int> test_items = (test != null) ? test.AllItems : new int[0];
+			IList<int> result = null;
+
+			switch (candidate_item_mode)
+			{
+				case CandidateItems.TRAINING:
+					result = training.AllItems.ToArray();
+					break;
+				case CandidateItems.TEST:
+					result = test.AllItems.ToArray();
+					break;
+				case CandidateItems.OVERLAP:
+					result = test_items.Intersect(training.AllItems).ToList();
+					break;
+				case CandidateItems.UNION:
+					result = test_items.Union(training.AllItems).ToList();
+					break;
+				case CandidateItems.EXPLICIT:
+					if (candidate_items == null)
+						throw new ArgumentNullException("candidate_items");
+					result = candidate_items.ToArray();
+					break;
+				default:
+					throw new ArgumentException("Unknown candidate_item_mode: " + candidate_item_mode.ToString());
+			}
+
+			result.Shuffle();
+			return result;
+		}
+
 		/// <summary>Evaluation for rankings of items</summary>
 		/// <remarks>
 		/// User-item combinations that appear in both sets are ignored for the test set, and thus in the evaluation,
@@ -93,25 +133,17 @@ namespace MyMediaLite.Eval
 			RepeatedEvents repeated_events = RepeatedEvents.No,
 			int n = -1)
 		{
-			switch (candidate_item_mode)
-			{
-				case CandidateItems.TRAINING: candidate_items = training.AllItems; break;
-				case CandidateItems.TEST:     candidate_items = test.AllItems; break;
-				case CandidateItems.OVERLAP:  candidate_items = new List<int>(test.AllItems.Intersect(training.AllItems)); break;
-				case CandidateItems.UNION:    candidate_items = new List<int>(test.AllItems.Union(training.AllItems)); break;
-			}
-			if (candidate_items == null)
-				throw new ArgumentNullException("candidate_items");
 			if (test_users == null)
 				test_users = test.AllUsers;
+			candidate_items = Candidates(candidate_items, candidate_item_mode, test, training);
 
-			int num_users = 0;
 			var result = new ItemRecommendationEvaluationResults();
 
 			// make sure that the user matrix is completely initialized before entering parallel code
 			var training_user_matrix = training.UserMatrix;
 			var test_user_matrix     = test.UserMatrix;
 
+			int num_users = 0;
 			Parallel.ForEach(test_users, user_id => {
 				try
 				{
@@ -121,8 +153,9 @@ namespace MyMediaLite.Eval
 						return;
 
 					var ignore_items_for_this_user = new HashSet<int>(
-						repeated_events == RepeatedEvents.Yes ? new int[0] : training_user_matrix[user_id]
+						repeated_events == RepeatedEvents.Yes || training_user_matrix[user_id] == null ? new int[0] : training_user_matrix[user_id]
 					);
+
 					ignore_items_for_this_user.IntersectWith(candidate_items);
 					int num_candidates_for_this_user = candidate_items.Count - ignore_items_for_this_user.Count;
 					if (correct_items.Count == num_candidates_for_this_user)
@@ -194,7 +227,7 @@ namespace MyMediaLite.Eval
 			return recommender.Evaluate(
 				recommender.Feedback, recommender.Feedback,
 				test_users, candidate_items,
-				candidate_item_mode, RepeatedEvents.Yes)["RMSE"];
+				candidate_item_mode, RepeatedEvents.Yes)["AUC"];
 		}
 	}
 }

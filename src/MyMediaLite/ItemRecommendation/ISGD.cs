@@ -1,4 +1,4 @@
-// Copyright (C) 2014 João Vinagre, Zeno Gantner
+﻿// Copyright (C) 2014 João Vinagre, Zeno Gantner
 //
 // This file is part of MyMediaLite.
 //
@@ -20,14 +20,12 @@ using C5;
 using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
-using MathNet.Numerics.LinearAlgebra.Double;
 using MyMediaLite.DataType;
-using MyMediaLite.Data;
 
 namespace MyMediaLite.ItemRecommendation
 {
 	/// <summary>
-	///   Inremental Stochastic Gradient Descent (SGD) algorithm for item prediction.
+	///   Incremental Stochastic Gradient Descent (ISGD) algorithm for item prediction.
 	/// </summary>
 	/// <remarks>
 	///   <para>
@@ -37,9 +35,18 @@ namespace MyMediaLite.ItemRecommendation
 	///         João Vinagre, Alípio Mário Jorge, João Gama:
 	///         Fast incremental matrix factorization for recommendation with positive-only feedback.
 	///         UMAP 2014.
-	///         https://www.researchgate.net/profile/Joao_Vinagre2/publication/263416416_Fast_Incremental_Matrix_Factorization_for_Recommendation_with_Positive-Only_Feedback/file/60b7d53ac3b980d4e2.pdf
+	///         http://link.springer.com/chapter/10.1007/978-3-319-08786-3_41
 	///       </description></item>
 	///     </list>
+	///   </para>
+	///   <para>
+	///     Known issues:
+	///     <list type="bullet">
+	/// 	  <item>This algorithm tends to saturate (converges globally to a single value) 
+	/// 		and slowly degrades with more than a few tens of thousands observations;</item>
+	///       <item>This algorithm is primarily designed to use with incremental learning, 
+	/// 		batch behavior has not been thoroughly studied.</item>
+	/// 	</list> 
 	///   </para> 
 	///   <para>
 	///     This algorithm supports (and encourages) incremental updates. 
@@ -60,13 +67,12 @@ namespace MyMediaLite.ItemRecommendation
 		public float Decay { get { return decay; } set { decay = value; } }
 		float decay = 1.0f;
 
-		/// <summary>Incremental iteration number</summary>
+		/// <summary>Incremental iteration number (if unset assumes the value for batch)</summary>
 		public uint IncrIter { get; set; }
 
 		/// <summary>The learn rate used for the current epoch</summary>
 		protected internal float current_learnrate;
 
-		// float max_score = 1.0f;
 
 		/// <summary>
 		/// Default constructor
@@ -106,13 +112,12 @@ namespace MyMediaLite.ItemRecommendation
 			{
 				int u = Feedback.Users[index];
 				int i = Feedback.Items[index];
-				//Console.WriteLine("User " + u + " Item " + i);
 
 				UpdateFactors(u, i, update_user, update_item);
 			}
 
 			UpdateLearnRate();
-			
+
 		}
 
 		/// 
@@ -128,7 +133,7 @@ namespace MyMediaLite.ItemRecommendation
 				return float.MinValue;
 
 			float result = DataType.MatrixExtensions.RowScalarProduct(user_factors, user_id, item_factors, item_id);
-			
+
 			if (bound)
 			{
 				if (result > 1)
@@ -138,7 +143,7 @@ namespace MyMediaLite.ItemRecommendation
 			}
 			return result;
 		}
-		
+
 		/// <summary>Updates <see cref="current_learnrate"/> after each epoch</summary>
 		protected virtual void UpdateLearnRate()
 		{
@@ -173,29 +178,47 @@ namespace MyMediaLite.ItemRecommendation
 			base.RemoveFeedback(feedback);
 			Retrain(feedback);
 		}
-		
+
 		/// 
 		protected virtual void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
-			for (uint i = 0; i < IncrIter; i++)
+			for (int i = 0; i < IncrIter; i++)
 				foreach (var entry in feedback)
 					UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems);
 		}
-		
+
+		/// 
+		protected override void RetrainUser(int user_id)
+		{
+			user_factors.RowInitNormal(user_id, InitMean, InitStdDev);
+			foreach (int item in Feedback.UserMatrix[user_id])
+				for (int i = 0; i < IncrIter; i++)
+					UpdateFactors(user_id, item, true, false);
+		}
+
+		///
+		protected override void RetrainItem(int item_id)
+		{
+			item_factors.RowInitNormal(item_id, InitMean, InitStdDev);
+			foreach (int user in Feedback.ItemMatrix[item_id])
+				for (int i = 0; i < IncrIter; i++)
+					UpdateFactors(user, item_id, false, true);
+		}
+
 		///
 		protected override void AddUser(int user_id)
 		{
 			base.AddUser(user_id);
-			
+
 			user_factors.AddRows(user_id + 1);
 			user_factors.RowInitNormal(user_id, InitMean, InitStdDev);
 		}
-		
+
 		///
 		protected override void AddItem(int item_id)
 		{
 			base.AddItem(item_id);
-			
+
 			item_factors.AddRows(item_id + 1);
 			item_factors.RowInitNormal(item_id, InitMean, InitStdDev);
 		}
@@ -205,20 +228,20 @@ namespace MyMediaLite.ItemRecommendation
 		public override void RemoveUser(int user_id)
 		{
 			base.RemoveUser(user_id);
-			
+
 			// set user latent factors to zero
 			user_factors.SetRowToOneValue(user_id, 0);
 		}
-		
+
 		///
 		public override void RemoveItem(int item_id)
 		{
 			base.RemoveItem(item_id);
-			
+
 			// set item latent factors to zero
 			item_factors.SetRowToOneValue(item_id, 0);
 		}
-		
+
 		/// <summary>
 		/// Performs factor updates for a user and item pair.
 		/// </summary>
@@ -228,7 +251,6 @@ namespace MyMediaLite.ItemRecommendation
 		/// <param name="update_item">true to update item factors.</param> 
 		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
 		{
-			//Console.WriteLine(float.MinValue);
 			float err = 1 - Predict(user_id, item_id, false);
 
 			// adjust factors
@@ -236,7 +258,7 @@ namespace MyMediaLite.ItemRecommendation
 			{
 				float u_f = user_factors[user_id, f];
 				float i_f = item_factors[item_id, f];
-				
+
 				// if necessary, compute and apply updates
 				if (update_user)
 				{

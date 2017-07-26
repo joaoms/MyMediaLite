@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 Zeno Gantner
+// Copyright (C) 2011, 2012, 2013 Zeno Gantner
 //
 // This file is part of MyMediaLite.
 //
@@ -33,6 +33,7 @@ namespace MyMediaLite.RatingPrediction
 	///
 	/// This recommender does NOT support incremental updates. They would be easy to implement, though.
 	/// </remarks>
+	[Obsolete]
 	public class SlopeOne : RatingPredictor
 	{
 		private SkewSymmetricSparseMatrix diff_matrix;
@@ -75,7 +76,12 @@ namespace MyMediaLite.RatingPrediction
 			if (frequency == 0)
 				return global_average;
 
-			return (float) (prediction / frequency);
+			float result = (float) (prediction / frequency);
+			if (result > MaxRating)
+				return MaxRating;
+			if (result < MinRating)
+				return MinRating;
+			return result;
 		}
 
 		void InitModel()
