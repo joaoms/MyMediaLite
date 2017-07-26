@@ -9,7 +9,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>OnlineCrossval</RootNamespace>
     <AssemblyName>OnlineCrossval</AssemblyName>
-    <ReleaseVersion>3.06</ReleaseVersion>
+    <ReleaseVersion>3.11</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>

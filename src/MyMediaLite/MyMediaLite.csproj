@@ -9,13 +9,13 @@
     <OutputType>Library</OutputType>
     <RootNamespace>MyMediaLite</RootNamespace>
     <AssemblyName>MyMediaLite</AssemblyName>
-    <ReleaseVersion>3.06</ReleaseVersion>
+    <ReleaseVersion>3.11</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
+    <OutputPath>bin/Debug</OutputPath>
     <DefineConstants>DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -25,24 +25,31 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
+    <OutputPath>bin/Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
+    <DocumentationFile>bin\Release\MyMediaLite.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="C5">
+      <HintPath>..\packages\C5.2.3\lib\net40\C5.dll</HintPath>
+    </Reference>
+    <Reference Include="MathNet.Numerics.IO">
+      <HintPath>..\packages\MathNet.Numerics.2.6.1\lib\net40\MathNet.Numerics.IO.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Core" />
-    <Reference Include="C5">
-      <HintPath>..\..\lib\C5\C5.dll</HintPath>
-    </Reference>
+    <Reference Include="Mono.Posix" />
+    <Reference Include="System.Numerics" />
     <Reference Include="MathNet.Numerics">
-      <HintPath>..\..\lib\MathNet\MathNet.Numerics.dll</HintPath>
+      <HintPath>..\packages\MathNet.Numerics.2.6.1\lib\net40\MathNet.Numerics.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="DelegateComparer.cs" />
     <Compile Include="IItemAttributeAwareRecommender.cs" />
     <Compile Include="IItemRelationAwareRecommender.cs" />
     <Compile Include="IIterativeModel.cs" />
@@ -54,6 +61,7 @@
     <Compile Include="Correlation\BinaryCosine.cs" />
     <Compile Include="Correlation\Jaccard.cs" />
     <Compile Include="Correlation\Pearson.cs" />
+    <Compile Include="Correlation\RatingCosine.cs" />
     <Compile Include="Data\CombinedRatings.cs" />
     <Compile Include="Data\IPosOnlyFeedback.cs" />
     <Compile Include="Data\IRatings.cs" />
@@ -163,7 +171,6 @@
     <Compile Include="ItemRecommendation\WeightedBPRMF.cs" />
     <Compile Include="RatingPrediction\Random.cs" />
     <Compile Include="RatingPrediction\Constant.cs" />
-    <Compile Include="ItemRecommendation\BPRLinear.cs" />
     <Compile Include="IO\KDDCup2011\Items.cs" />
     <Compile Include="IO\KDDCup2011\Ratings.cs" />
     <Compile Include="IO\KDDCup2011\Track2Items.cs" />
@@ -191,16 +198,7 @@
     <Compile Include="Eval\Measures\MAE.cs" />
     <Compile Include="Eval\Measures\LogisticLoss.cs" />
     <Compile Include="RatingPrediction\SigmoidItemAsymmetricFactorModel.cs" />
-    <Compile Include="AttrToFactor\BPRMF_ItemMapping.cs" />
-    <Compile Include="AttrToFactor\BPRMF_ItemMapping_Optimal.cs" />
-    <Compile Include="AttrToFactor\BPRMF_ItemMappingKNN.cs" />
-    <Compile Include="AttrToFactor\BPRMF_ItemMappingSVR.cs" />
-    <Compile Include="AttrToFactor\BPRMF_Mapping.cs" />
-    <Compile Include="AttrToFactor\BPRMF_UserMapping.cs" />
-    <Compile Include="AttrToFactor\BPRMF_UserMapping_Optimal.cs" />
-    <Compile Include="ItemRecommendation\ItemAttributeSVM.cs" />
     <Compile Include="ItemRecommendation\ITransductiveItemRecommender.cs" />
-    <Compile Include="ItemRecommendation\BPRMF_Mapping.cs" />
     <Compile Include="RatingPrediction\ITransductiveRatingPredictor.cs" />
     <Compile Include="RatingPrediction\SigmoidUserAsymmetricFactorModel.cs" />
     <Compile Include="RatingPrediction\SigmoidCombinedAsymmetricFactorModel.cs" />
@@ -233,7 +231,6 @@
     <Compile Include="Correlation\BinaryDataAsymmetricCorrelationMatrix.cs" />
     <Compile Include="Correlation\Overlap.cs" />
     <Compile Include="Correlation\BinaryDataSymmetricCorrelationMatrix.cs" />
-    <Compile Include="ItemRecommendation\CLiMF.cs" />
     <Compile Include="Eval\RepeatedEvents.cs" />
     <Compile Include="ItemRecommendation\BPRSLIM.cs" />
     <Compile Include="ItemRecommendation\SLIM.cs" />
@@ -244,28 +241,31 @@
     <Compile Include="ItemRecommendation\ExternalItemRecommender.cs" />
     <Compile Include="RatingPrediction\GSVDPlusPlus.cs" />
     <Compile Include="Eval\RatingBasedRankingCrossValidation.cs" />
-    <Compile Include="ItemRecommendation\SimilarityWeightedMF.cs" />
     <Compile Include="ItemRecommendation\ItemSimMF.cs" />
-    <Compile Include="ItemRecommendation\ItemAtributeCMF.cs" />
     <Compile Include="DataType\ListMatrix.cs" />
-    <Compile Include="ItemRecommendation\BaggedSimpleSGD.cs" />
-    <Compile Include="ItemRecommendation\BPRMFRecency.cs" />
+    <Compile Include="ItemRecommendation\BaggedISGD.cs" />
+    <Compile Include="IO\FileSystem.cs" />
     <Compile Include="ItemRecommendation\ISGD.cs" />
     <Compile Include="ItemRecommendation\RAISGD.cs" />
+    <Compile Include="ItemRecommendation\BigramRules.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
+  <Import Project="MyMediaLite.targets" />
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="Eval\Measures\" />
-    <Folder Include="AttrToFactor\" />
+    <None Include="MyMediaLite.nuspec" />
+    <None Include="MyMediaLite.targets">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SVM\SVM.csproj">
-      <Project>{309290E3-E52B-4E67-9F6E-2A67B5D54320}</Project>
-      <Name>SVM</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\HeapPriorityQueue\HeapPriorityQueue.csproj">
-      <Project>{C9B34AB2-F7C5-439C-A5E7-FCD919D205AF}</Project>
-      <Name>HeapPriorityQueue</Name>
-    </ProjectReference>
-  </ItemGroup>
+  <ProjectExtensions>
+    <MonoDevelop>
+      <Properties>
+        <Policies>
+          <StandardHeader Text="Copyright (C) 2015 Zeno Gantner&#xA;&#xA;This file is part of MyMediaLite.&#xA;&#xA;MyMediaLite is free software: you can redistribute it and/or modify&#xA;it under the terms of the GNU General Public License as published by&#xA;the Free Software Foundation, either version 3 of the License, or&#xA;(at your option) any later version.&#xA;&#xA;MyMediaLite is distributed in the hope that it will be useful,&#xA;but WITHOUT ANY WARRANTY; without even the implied warranty of&#xA;MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the&#xA;GNU General Public License for more details.&#xA;&#xA; You should have received a copy of the GNU General Public License&#xA; along with MyMediaLite.  If not, see &lt;http://www.gnu.org/licenses/&gt;.&#xA;" IncludeInNewFiles="True" />
+        </Policies>
+      </Properties>
+    </MonoDevelop>
+  </ProjectExtensions>
 </Project>

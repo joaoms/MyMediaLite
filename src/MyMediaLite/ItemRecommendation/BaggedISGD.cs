@@ -21,14 +21,11 @@ using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MathNet.Numerics.LinearAlgebra.Double;
-using MyMediaLite.DataType;
-using MyMediaLite.Data;
 using MathNet.Numerics.Distributions;
 
 namespace MyMediaLite.ItemRecommendation
 {
-	public class BaggedSimpleSGD : MF
+	public class BaggedISGD : MF
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
@@ -65,7 +62,7 @@ namespace MyMediaLite.ItemRecommendation
 
 		// float max_score = 1.0f;
 
-		public BaggedSimpleSGD ()
+		public BaggedISGD ()
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
@@ -303,6 +300,15 @@ namespace MyMediaLite.ItemRecommendation
 			return ordered_items;
 		}
 
+		/// 
+		protected override void RetrainUser(int user_id)
+		{
+		}
+
+		///
+		protected override void RetrainItem(int item_id)
+		{
+		}
 
 		///
 		public override string ToString()
