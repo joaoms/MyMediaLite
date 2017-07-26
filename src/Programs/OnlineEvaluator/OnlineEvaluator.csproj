@@ -9,7 +9,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>OnlineEvaluator</RootNamespace>
     <AssemblyName>OnlineEvaluator</AssemblyName>
-    <ReleaseVersion>3.06</ReleaseVersion>
+    <ReleaseVersion>3.11</ReleaseVersion>
     <StartupObject>OnlineEvaluator</StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
