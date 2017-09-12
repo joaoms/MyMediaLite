@@ -97,12 +97,6 @@ namespace MyMediaLite.ItemRecommendation
 			Iterate(UpdateUsers, UpdateItems);
 		}
 
-		///
-		public override float ComputeObjective()
-		{
-			return -1;
-		}
-
 		/// <summary>Iterate once over feedback data and adjust corresponding factors (stochastic gradient descent)</summary>
 		/// <param name="update_user">true if user factors to be updated</param>
 		/// <param name="update_item">true if item factors to be updated</param>
@@ -132,7 +126,7 @@ namespace MyMediaLite.ItemRecommendation
 			if (user_id >= user_factors.dim1 || item_id >= item_factors.dim1)
 				return float.MinValue;
 
-			float result = DataType.MatrixExtensions.RowScalarProduct(user_factors, user_id, item_factors, item_id);
+			float result = MatrixExtensions.RowScalarProduct(user_factors, user_id, item_factors, item_id);
 
 			if (bound)
 			{

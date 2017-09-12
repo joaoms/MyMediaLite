@@ -25,6 +25,29 @@ using MathNet.Numerics.Distributions;
 
 namespace MyMediaLite.ItemRecommendation
 {
+	/// <summary>
+	///   Bagging with Incremental Stochastic Gradient Descent (BaggedISGD) algorithm for item prediction.
+	/// </summary>
+	/// <remarks>
+	///   <para>
+	///     Literature:
+	/// 	<list type="bullet">
+	///       <item><description>
+	///         João Vinagre, Alípio Mário Jorge, João Gama:
+	///         Improving incremental recommenders with online bagging.
+	///         EPIA 2017.
+	///         https://link.springer.com/chapter/10.1007/978-3-319-65340-2_49
+	///       </description></item>
+	///     </list>
+	///   </para>
+	///   <para>
+	///       This algorithm is primarily designed to use with incremental learning, 
+	/// 		batch behavior has not been thoroughly studied.
+	///   </para> 
+	///   <para>
+	///     This algorithm supports (and encourages) incremental updates. 
+	///   </para>
+	/// </remarks>
 	public class BaggedISGD : MF
 	{
 		/// <summary>Regularization parameter</summary>
@@ -47,21 +70,21 @@ namespace MyMediaLite.ItemRecommendation
 		public bool UseMulticore { get { return use_multicore; } set { use_multicore = value; } }
 		bool use_multicore = true;
 
+		/// <summary>Number of bootstrap nodes.</summary>
 		public int NumNodes { get { return num_nodes; } set { num_nodes = value; } }
 		int num_nodes = 4;
 
+		/// <summary>Aggregation strategy to combine sub-models' predictions. Possible values: "best_score", "average", "cooccurrence"</summary>
 		public string AggregationStrategy { get { return aggregation_strategy; } set { aggregation_strategy = value; } }
 		string aggregation_strategy = "best_score";
 
+		///
 		protected MyMediaLite.Random rand;
-
+		
+		/// 
 		protected List<ISGD> recommender_nodes;
 
-		//readonly double BAG_PROB = 1 - 1 / Math.E;
-
-
-		// float max_score = 1.0f;
-
+		///
 		public BaggedISGD ()
 		{
 			UpdateUsers = true;
@@ -69,6 +92,7 @@ namespace MyMediaLite.ItemRecommendation
 			rand = MyMediaLite.Random.GetInstance();
 		}
 
+		///
 		protected override void InitModel()
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
@@ -77,17 +101,18 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node = new ISGD();
 				recommender_node.UpdateUsers = true;
 				recommender_node.UpdateItems = true;
-				recommender_node.Regularization = this.Regularization;
-				recommender_node.NumFactors = this.NumFactors;
-				recommender_node.LearnRate = this.LearnRate;
-				recommender_node.IncrIter = this.IncrIter;
-				recommender_node.NumIter = this.NumIter;
-				recommender_node.Decay = this.Decay;
-				recommender_node.Feedback = this.Feedback;
+				recommender_node.Regularization = Regularization;
+				recommender_node.NumFactors = NumFactors;
+				recommender_node.LearnRate = LearnRate;
+				recommender_node.IncrIter = IncrIter;
+				recommender_node.NumIter = NumIter;
+				recommender_node.Decay = Decay;
+				recommender_node.Feedback = Feedback;
 				recommender_nodes.Add(recommender_node);
 			}
 		}
 
+		///
 		public override void Train()
 		{
 			InitModel();
@@ -100,11 +125,7 @@ namespace MyMediaLite.ItemRecommendation
 			Parallel.ForEach(recommender_nodes, rnode => { rnode.Iterate(); });
 		}
 
-		public override float ComputeObjective()
-		{
-			return -1;
-		}
-
+		///
 		public override float Predict(int user_id, int item_id)
 		{
 			return Predict(user_id, item_id, false);
@@ -142,12 +163,6 @@ namespace MyMediaLite.ItemRecommendation
 				int npoisson = Poisson.Sample(rand,1);
 				rnode.AddFeedbackRetrainN(feedback, npoisson);
 			}
-			/*
-			Parallel.For(0, num_nodes, i => {
-				int npoisson = Poisson.Sample(rand,1);
-				recommender_nodes[i].AddFeedbackRetrainN(feedback, npoisson);
-			});
-			*/
 		}
 
 		///
@@ -164,7 +179,7 @@ namespace MyMediaLite.ItemRecommendation
 			System.Collections.Generic.ICollection<int> ignore_items = null,
 			System.Collections.Generic.ICollection<int> candidate_items = null)
 		{
-			var resultsLock = new Object();
+			var resultsLock = new object ();
 			var results = new List<System.Collections.Generic.IList<Tuple<int,float>>>(num_nodes);
 
 			Parallel.ForEach(recommender_nodes, rnode => {
