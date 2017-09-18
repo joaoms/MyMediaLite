@@ -45,11 +45,19 @@ namespace MyMediaLite.ItemRecommendation
 	///     This algorithm supports (and encourages) incremental updates. 
 	///   </para>
 	/// </remarks>
-	public class BaggedUserISGD : MF
+	public class BaggedUserISGD : IncrementalItemRecommender, IIterativeModel
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
 		double regularization = 0.032;
+
+		/// <summary>Number of latent factors per user/item</summary>
+		public uint NumFactors { get { return (uint) num_factors; } set { num_factors = (int) value; } }
+		/// <summary>Number of latent factors per user/item</summary>
+		protected int num_factors = 10;
+
+		/// <summary>Number of iterations over the training data</summary>
+		public uint NumIter { get; set; } = 30;
 
 		/// <summary>Learn rate (update step size)</summary>
 		public float LearnRate { get { return learn_rate; } set { learn_rate = value; } }
@@ -93,7 +101,7 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		///
-		protected override void InitModel()
+		protected virtual void InitModel()
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
 			user_k = new List<int>[num_nodes];
@@ -122,7 +130,7 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		///
-		public override void Iterate()
+		public virtual void Iterate()
 		{
 			Parallel.ForEach(recommender_nodes, rnode => { rnode.Iterate(); });
 		}
@@ -175,7 +183,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.AddUser(user_id);
 			for (int i = 0; i < num_nodes; i++)
-				user_k[i][user_id] = Poisson.Sample(rand, 1);
+				user_k[i].Add(Poisson.Sample(rand, 1));
 		} 
 
 		///
@@ -332,16 +340,6 @@ namespace MyMediaLite.ItemRecommendation
 			for (int i = 0; i < ordered_items.Count; i++) 
 				ordered_items[i] = heap.DeleteMax();
 			return ordered_items;
-		}
-
-		/// 
-		protected override void RetrainUser(int user_id)
-		{
-		}
-
-		///
-		protected override void RetrainItem(int item_id)
-		{
 		}
 
 		///
