@@ -26,7 +26,8 @@ using MathNet.Numerics.Distributions;
 namespace MyMediaLite.ItemRecommendation
 {
 	/// <summary>
-	///   Bagging with Incremental Stochastic Gradient Descent (BaggedISGD) algorithm for item prediction.
+	///   Boosting with Incremental Stochastic Gradient Descent (BoostedISGD) algorithm for item prediction. 
+	/// 	This version uses online AdaBoost based on recall@N (hit or miss) obtained by each weak model.
 	/// </summary>
 	/// <remarks>
 	///   <para>
@@ -34,9 +35,7 @@ namespace MyMediaLite.ItemRecommendation
 	/// 	<list type="bullet">
 	///       <item><description>
 	///         João Vinagre, Alípio Mário Jorge, João Gama:
-	///         Improving incremental recommenders with online bagging.
-	///         EPIA 2017.
-	///         https://link.springer.com/chapter/10.1007/978-3-319-65340-2_49
+	///         
 	///       </description></item>
 	///     </list>
 	///   </para>
@@ -48,7 +47,7 @@ namespace MyMediaLite.ItemRecommendation
 	///     This algorithm supports (and encourages) incremental updates. 
 	///   </para>
 	/// </remarks>
-	public class BaggedISGD : MF
+	public class BoostedISGD : MF
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
@@ -74,9 +73,10 @@ namespace MyMediaLite.ItemRecommendation
 		public int NumNodes { get { return num_nodes; } set { num_nodes = value; } }
 		int num_nodes = 4;
 
-		/// <summary>Aggregation strategy to combine sub-models' predictions. Possible values: "best_score", "average", "cooccurrence"</summary>
-		public string AggregationStrategy { get { return aggregation_strategy; } set { aggregation_strategy = value; } }
-		string aggregation_strategy = "best_score";
+		/// <summary>Cutoff (relevance threshold). The size of recommended items' list to check for observed item.</summary>
+		public int Cutoff { get { return cutoff; } set { cutoff = value; } }
+		int cutoff = 10;
+
 
 		///
 		protected MyMediaLite.Random rand;
@@ -85,7 +85,16 @@ namespace MyMediaLite.ItemRecommendation
 		protected List<ISGD> recommender_nodes;
 
 		///
-		public BaggedISGD ()
+		protected List<float> hit_rate;
+
+		///
+		protected List<float> miss_rate;
+
+		/// 
+		protected List<double> weight;
+
+		///
+		public BoostedISGD ()
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
@@ -96,6 +105,9 @@ namespace MyMediaLite.ItemRecommendation
 		protected override void InitModel()
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
+			hit_rate = new List<float>(num_nodes);
+			miss_rate = new List<float>(num_nodes);
+			weight = new List<double>(num_nodes);
 			ISGD recommender_node;
 			for (int i = 0; i < num_nodes; i++) {
 				recommender_node = new ISGD();
@@ -109,6 +121,9 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.Decay = Decay;
 				recommender_node.Feedback = Feedback;
 				recommender_nodes.Add(recommender_node);
+				hit_rate.Add(0);
+				miss_rate.Add(0);
+				weight.Add(0);
 			}
 		}
 
@@ -156,12 +171,36 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		public override void AddFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
+			float lambda;
 			base.AddFeedback(feedback);
-			recommender_nodes.Shuffle();
-			foreach (var rnode in recommender_nodes)
+			foreach (var entry in feedback)
 			{
-				int npoisson = Poisson.Sample(rand,1);
-				rnode.AddFeedbackRetrainN(feedback, npoisson);
+				lambda = 1;
+				for (int i = 0; i < num_nodes; i++)
+				{
+					var rnode = recommender_nodes[i];
+					bool hit = false;
+					float err;
+					int npoisson = Poisson.Sample(rand, lambda);
+					rnode.AddFeedbackRetrainN(new Tuple<int, int>[] {entry}, npoisson);
+					var recs = rnode.Recommend(entry.Item1, cutoff);
+					foreach (var rec in recs)
+						if (hit = (rec.Item1 == entry.Item2))
+							break;
+					if(hit)
+					{
+						hit_rate[i] += lambda;
+						err = miss_rate[i] / (hit_rate[i] + miss_rate[i]);
+						lambda = lambda / (2 * (1 - err));
+					}
+					else
+					{
+						miss_rate[i] += lambda;
+						err = miss_rate[i] / (hit_rate[i] + miss_rate[i]);
+						lambda = lambda / (2 * err);
+					}
+					weight[i] = Math.Log((1 - err) / err);
+				}
 			}
 		}
 
@@ -187,29 +226,23 @@ namespace MyMediaLite.ItemRecommendation
 				lock(resultsLock) results.Add(res);
 			});
 
-			switch(aggregation_strategy) {
-			case "average":
-				return AvgResults(results);
-			case "cooccurrence":
-				return CooResults(results);
-			default:	
-				return BestResults(results);
-			}
+			return AggregateResults(results);
 
 		}
 
-		System.Collections.Generic.IList<Tuple<int, float>> AvgResults(System.Collections.Generic.IList<System.Collections.Generic.IList<Tuple<int, float>>> results)
+		System.Collections.Generic.IList<Tuple<int, float>> AggregateResults(System.Collections.Generic.IList<System.Collections.Generic.IList<Tuple<int, float>>> results)
 		{
 			int n = results[0].Count;
 			var items = new Dictionary<int,float>();
-			foreach (var recs in results)
+			for (int i = 0; i < num_nodes; i++)
 			{
+				var recs = results[i];
 				foreach(var tup in recs)
 				{
 					if(items.ContainsKey(tup.Item1))
-						items[tup.Item1] += (1 - tup.Item2);
+						items[tup.Item1] += (float) (weight[i] * (1 - tup.Item2));
 					else
-						items.Add(tup.Item1,1 - tup.Item2);
+						items.Add(tup.Item1, (float) (weight[i] * (1 - tup.Item2)));
 				}
 			}
 
@@ -234,87 +267,6 @@ namespace MyMediaLite.ItemRecommendation
 			return ordered_items;
 		}
 
-		System.Collections.Generic.IList<Tuple<int, float>> CooResults(System.Collections.Generic.IList<System.Collections.Generic.IList<Tuple<int, float>>> results)
-		{
-			int n = results[0].Count;
-			var items = new Dictionary<int,float>();
-			foreach (var recs in results)
-			{
-				foreach(var tup in recs)
-				{
-					if(items.ContainsKey(tup.Item1))
-						items[tup.Item1] += num_nodes + (1 - tup.Item2);
-					else
-						items.Add(tup.Item1,1 - tup.Item2);
-				}
-			}
-
-			var comparer = new DelegateComparer<Tuple<int, float>>( (a, b) => a.Item2.CompareTo(b.Item2) );
-			var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
-			float min_score = float.MinValue;
-
-			foreach (var item in items)
-			{
-				if (item.Value > min_score)
-				{
-					heap.Add(Tuple.Create(item.Key, item.Value));
-					if (heap.Count > n)
-					{
-						heap.DeleteMin();
-						min_score = heap.FindMin().Item2;
-					}
-				}
-			}
-
-			System.Collections.Generic.IList<Tuple<int, float>> ordered_items = new Tuple<int, float>[heap.Count];
-			for (int i = 0; i < ordered_items.Count; i++) 
-			{
-				var tup = heap.DeleteMax();
-				ordered_items[i] = Tuple.Create(tup.Item1, 
-					(float) (Math.Floor(tup.Item2 / num_nodes) + 1
-						+ (tup.Item2 % num_nodes) / (Math.Floor(tup.Item2 / num_nodes) + 1)));
-			}
-			return ordered_items;
-		}
-
-		System.Collections.Generic.IList<Tuple<int, float>> BestResults(System.Collections.Generic.IList<System.Collections.Generic.IList<Tuple<int, float>>> results)
-		{
-			int n = results[0].Count;
-			var items = new Dictionary<int,float>();
-			foreach (var recs in results)
-			{
-				foreach(var tup in recs)
-				{
-					if(items.ContainsKey(tup.Item1))
-						items[tup.Item1] = Math.Max(1 - tup.Item2, items[tup.Item1]);
-					else
-						items.Add(tup.Item1,1 - tup.Item2);
-				}
-			}
-
-			var comparer = new DelegateComparer<Tuple<int, float>>( (a, b) => a.Item2.CompareTo(b.Item2) );
-			var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
-			float min_score = float.MinValue;
-
-			foreach (var item in items)
-			{
-				if (item.Value > min_score)
-				{
-					heap.Add(Tuple.Create(item.Key, item.Value));
-					if (heap.Count > n)
-					{
-						heap.DeleteMin();
-						min_score = heap.FindMin().Item2;
-					}
-				}
-			}
-
-			System.Collections.Generic.IList<Tuple<int, float>> ordered_items = new Tuple<int, float>[heap.Count];
-			for (int i = 0; i < ordered_items.Count; i++) 
-				ordered_items[i] = heap.DeleteMax();
-			return ordered_items;
-		}
-
 		/// 
 		protected override void RetrainUser(int user_id)
 		{
@@ -330,8 +282,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"BaggedSimpleSGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} aggregation_strategy={7}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, AggregationStrategy);
+				"BoostedISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} aggregation_strategy={7}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes);
 		}
 
 
