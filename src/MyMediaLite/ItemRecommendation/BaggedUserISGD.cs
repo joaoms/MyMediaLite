@@ -82,7 +82,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected List<ISGD> recommender_nodes;
 
 		///
-		private List<List<int>> user_k;
+		private List<int>[] user_k;
 
 		///
 		public BaggedUserISGD ()
@@ -96,7 +96,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected override void InitModel()
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
-			user_k = new List<List<int>>(num_nodes);
+			user_k = new List<int>[num_nodes];
 			ISGD recommender_node;
 			for (int i = 0; i < num_nodes; i++) {
 				recommender_node = new ISGD();
@@ -110,9 +110,7 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.Decay = Decay;
 				recommender_node.Feedback = Feedback;
 				recommender_nodes.Add(recommender_node);
-				user_k[i] = new List<int>(Feedback.MaxUserID);
-				for (int j = 0; i <= Feedback.MaxUserID; j++)
-					user_k[i][j] = 1;
+				user_k[i] = Enumerable.Repeat(1, Feedback.Count).ToList();
 			}
 		}
 
