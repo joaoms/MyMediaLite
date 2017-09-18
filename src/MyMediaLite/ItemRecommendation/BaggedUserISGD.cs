@@ -164,7 +164,7 @@ namespace MyMediaLite.ItemRecommendation
 			{
 				for (int i = 0; i < num_nodes; i++)
 				{
-					int npoisson = user_k[entry.Item1][i];
+					int npoisson = user_k[i][entry.Item1];
 					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, npoisson);
 				}
 			}
