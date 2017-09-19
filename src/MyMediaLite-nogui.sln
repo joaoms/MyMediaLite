@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RatingPrediction", "Program
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RatingBasedRanking", "Programs\RatingBasedRanking\RatingBasedRanking.csproj", "{7180F796-4365-498D-87AA-4A6F8DE42A1D}"
 EndProject
-Project("{9344BDBB-3E7F-41FC-A0DD-8665D75EE146}") = "Packages", "Packages.mdproj", "{754B8D15-F1A3-4F96-AE63-7291E3DEB13F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatchEvaluator", "Programs\BatchEvaluator\BatchEvaluator.csproj", "{8C06BF85-A57A-4AAE-95FF-B43631291664}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KFoldPrequentialEval", "Programs\KFoldPrequentialEval\KFoldPrequentialEval.csproj", "{81CC7CD5-4C08-469C-9F35-9601670827AB}"
@@ -24,6 +22,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineEvaluator", "Programs\OnlineEvaluator\OnlineEvaluator.csproj", "{0A94ED78-4D40-44E0-8C99-F64CC9A8BC20}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineLearner", "Programs\OnlineLearner\OnlineLearner.csproj", "{0ED9B6E7-37C6-4A2A-B588-FA54B0EC7824}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandLineProgram", "Programs\CommandLineProgram\CommandLineProgram.csproj", "{CF099BD4-46D6-4FB0-B42B-641A1F829241}"
+EndProject
+Project("{9344BDBB-3E7F-41FC-A0DD-8665D75EE146}") = "Packages", "Packages.mdproj", "{3B1E2AF0-A60B-40AE-AC97-AE8C4A1EAE03}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -96,8 +98,6 @@ Global
 		{DFDFC30F-6BDE-4D8B-BF84-CE958DD662C3}.Default|Any CPU.Build.0 = Debug|Any CPU
 		{DFDFC30F-6BDE-4D8B-BF84-CE958DD662C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DFDFC30F-6BDE-4D8B-BF84-CE958DD662C3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{754B8D15-F1A3-4F96-AE63-7291E3DEB13F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{754B8D15-F1A3-4F96-AE63-7291E3DEB13F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8C06BF85-A57A-4AAE-95FF-B43631291664}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8C06BF85-A57A-4AAE-95FF-B43631291664}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C06BF85-A57A-4AAE-95FF-B43631291664}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -128,6 +128,8 @@ Global
 		{0ED9B6E7-37C6-4A2A-B588-FA54B0EC7824}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0ED9B6E7-37C6-4A2A-B588-FA54B0EC7824}.Default|Any CPU.ActiveCfg = Debug|Any CPU
 		{0ED9B6E7-37C6-4A2A-B588-FA54B0EC7824}.Default|Any CPU.Build.0 = Debug|Any CPU
+		{3B1E2AF0-A60B-40AE-AC97-AE8C4A1EAE03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B1E2AF0-A60B-40AE-AC97-AE8C4A1EAE03}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E1ECFAE9-E3D8-4567-8FA9-536A50F1C531} = {233B7F1D-99AA-4D55-BDD9-770B3428A317}
