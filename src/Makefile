@@ -11,16 +11,10 @@ all: ../lib/mymedialite
 	cp -r Programs/OnlineEvaluator/bin/Debug/*.mdb ../lib/mymedialite
 	cp -r Programs/OnlineCrossval/bin/Debug/*.exe ../lib/mymedialite
 	cp -r Programs/OnlineCrossval/bin/Debug/*.mdb ../lib/mymedialite
-	cp -r Programs/BaggingEvaluator/bin/Debug/*.exe ../lib/mymedialite
-	cp -r Programs/BaggingEvaluator/bin/Debug/*.mdb ../lib/mymedialite
 	cp -r Programs/BatchEvaluator/bin/Debug/*.exe ../lib/mymedialite
 	cp -r Programs/BatchEvaluator/bin/Debug/*.mdb ../lib/mymedialite
-	cp -r Programs/ForgettingProfile/bin/Debug/*.exe ../lib/mymedialite
-	cp -r Programs/ForgettingProfile/bin/Debug/*.mdb ../lib/mymedialite
 	cp -r Programs/OnlineLearner/bin/Debug/*.exe ../lib/mymedialite
 	cp -r Programs/OnlineLearner/bin/Debug/*.mdb ../lib/mymedialite
-	cp -r Programs/KFoldOnlineEval/bin/Debug/*.exe ../lib/mymedialite
-	cp -r Programs/KFoldOnlineEval/bin/Debug/*.mdb ../lib/mymedialite
 	cp -r Programs/KFoldPrequentialEval/bin/Debug/*.exe ../lib/mymedialite
 	cp -r Programs/KFoldPrequentialEval/bin/Debug/*.mdb ../lib/mymedialite
 
