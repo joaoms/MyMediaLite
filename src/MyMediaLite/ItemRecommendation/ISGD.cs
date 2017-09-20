@@ -166,6 +166,13 @@ namespace MyMediaLite.ItemRecommendation
 				Retrain(feedback);
 		}
 
+		/// 
+		public virtual void AddFeedbackRetrainW(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, double weight)
+		{
+			base.AddFeedback(feedback);
+			RetrainW(feedback, weight);
+		}
+
 		///
 		public override void RemoveFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
@@ -179,6 +186,14 @@ namespace MyMediaLite.ItemRecommendation
 			for (int i = 0; i < IncrIter; i++)
 				foreach (var entry in feedback)
 					UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems);
+		}
+
+		/// 
+		protected virtual void RetrainW(System.Collections.Generic.ICollection<Tuple<int, int>> feedback, double weight)
+		{
+			for (int i = 0; i < IncrIter; i++)
+				foreach (var entry in feedback)
+					UpdateFactorsW(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, weight);
 		}
 
 		/// 
@@ -237,15 +252,16 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		/// <summary>
-		/// Performs factor updates for a user and item pair.
+		/// Performs weighted factor updates for a user and item pair.
 		/// </summary>
 		/// <param name="user_id">User_id.</param>
 		/// <param name="item_id">Item_id.</param>
 		/// <param name="update_user">true to update user factors.</param>
 		/// <param name="update_item">true to update item factors.</param> 
-		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
+		/// <param name="weight">Weight of the training example</param>
+		protected virtual void UpdateFactorsW(int user_id, int item_id, bool update_user, bool update_item, double weight)
 		{
-			float err = 1 - Predict(user_id, item_id, false);
+			double err = weight * (1 - Predict(user_id, item_id, false));
 
 			// adjust factors
 			for (int f = 0; f < NumFactors; f++)
@@ -268,6 +284,17 @@ namespace MyMediaLite.ItemRecommendation
 
 		}
 
+		/// <summary>
+		/// Performs factor updates for a user and item pair.
+		/// </summary>
+		/// <param name="user_id">User_id.</param>
+		/// <param name="item_id">Item_id.</param>
+		/// <param name="update_user">true to update user factors.</param>
+		/// <param name="update_item">true to update item factors.</param> 
+		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
+		{
+			UpdateFactorsW(user_id, item_id, update_user, update_item, 1);
+		}
 
 		///
 		public override System.Collections.Generic.IList<Tuple<int, float>> Recommend(

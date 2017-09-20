@@ -79,6 +79,10 @@ namespace MyMediaLite.ItemRecommendation
 		public int NumNodes { get { return num_nodes; } set { num_nodes = value; } }
 		int num_nodes = 4;
 
+		/// <summary>Number of bootstrap nodes.</summary>
+		public bool Weighted { get { return weighted; } set { weighted = value; } }
+		bool weighted = false;
+
 		/// <summary>Aggregation strategy to combine sub-models' predictions. Possible values: "best_score", "average", "cooccurrence"</summary>
 		public string AggregationStrategy { get { return aggregation_strategy; } set { aggregation_strategy = value; } }
 		string aggregation_strategy = "best_score";
@@ -90,7 +94,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected List<ISGD> recommender_nodes;
 
 		///
-		private List<int>[] user_k;
+		private List<double>[] user_k;
 
 		///
 		public BaggedUserISGD ()
@@ -104,7 +108,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected virtual void InitModel()
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
-			user_k = new List<int>[num_nodes];
+			user_k = new List<double>[num_nodes];
 			ISGD recommender_node;
 			for (int i = 0; i < num_nodes; i++) {
 				recommender_node = new ISGD();
@@ -118,7 +122,7 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.Decay = Decay;
 				recommender_node.Feedback = Feedback;
 				recommender_nodes.Add(recommender_node);
-				user_k[i] = Enumerable.Repeat(1, Feedback.Count).ToList();
+				user_k[i] = Enumerable.Repeat(1d, Feedback.Count).ToList();
 			}
 		}
 
@@ -172,8 +176,11 @@ namespace MyMediaLite.ItemRecommendation
 			{
 				for (int i = 0; i < num_nodes; i++)
 				{
-					int npoisson = user_k[i][entry.Item1];
-					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, npoisson);
+					double weight = user_k[i][entry.Item1];
+					if(weighted)
+						recommender_nodes[i].AddFeedbackRetrainW(new Tuple<int,int>[] {entry}, weight);
+					else
+						recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, Convert.ToInt32(weight));
 				}
 			}
 		}
@@ -183,7 +190,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.AddUser(user_id);
 			for (int i = 0; i < num_nodes; i++)
-				user_k[i].Add(Poisson.Sample(rand, 1));
+				user_k[i].Add(Gamma.Sample(rand, 1, 1));
 		} 
 
 		///
