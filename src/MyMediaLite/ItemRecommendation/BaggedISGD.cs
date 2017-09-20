@@ -82,6 +82,10 @@ namespace MyMediaLite.ItemRecommendation
 		public int NumNodes { get { return num_nodes; } set { num_nodes = value; } }
 		int num_nodes = 4;
 
+		/// <summary>Number of bootstrap nodes.</summary>
+		public bool Weighted { get { return weighted; } set { weighted = value; } }
+		bool weighted = true;
+
 		/// <summary>Aggregation strategy to combine sub-models' predictions. Possible values: "best_score", "average", "cooccurrence"</summary>
 		public string AggregationStrategy { get { return aggregation_strategy; } set { aggregation_strategy = value; } }
 		string aggregation_strategy = "best_score";
@@ -165,11 +169,16 @@ namespace MyMediaLite.ItemRecommendation
 		public override void AddFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			base.AddFeedback(feedback);
-			recommender_nodes.Shuffle();
-			foreach (var rnode in recommender_nodes)
+			foreach (var entry in feedback)
 			{
-				int npoisson = Poisson.Sample(rand,1);
-				rnode.AddFeedbackRetrainN(feedback, npoisson);
+				for (int i = 0; i < num_nodes; i++)
+				{
+					if(weighted)
+						recommender_nodes[i].AddFeedbackRetrainW(new Tuple<int,int>[] { entry }, Gamma.Sample(rand, 1, 1));
+					else
+						recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] { entry }, Poisson.Sample(rand, 1));
+
+				}
 			}
 		}
 
@@ -328,8 +337,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"BaggedSimpleSGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} aggregation_strategy={7}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, AggregationStrategy);
+				"BaggedSimpleSGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} aggregation_strategy={7} weighted={8}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, AggregationStrategy, Weighted);
 		}
 
 
