@@ -45,7 +45,7 @@ namespace MyMediaLite.ItemRecommendation
 	///     This algorithm supports (and encourages) incremental updates. 
 	///   </para>
 	/// </remarks>
-	public class BaggedUserISGD : IncrementalItemRecommender, IIterativeModel
+	public class BaggedUIISGD : IncrementalItemRecommender, IIterativeModel
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
@@ -83,6 +83,10 @@ namespace MyMediaLite.ItemRecommendation
 		public bool Weighted { get { return weighted; } set { weighted = value; } }
 		bool weighted = false;
 
+		/// <summary>Number of bootstrap nodes.</summary>
+		public string WeightCombination { get { return weight_combination; } set { weight_combination = value; } }
+		string weight_combination = "minimum";
+
 		/// <summary>Aggregation strategy to combine sub-models' predictions. Possible values: "best_score", "average", "cooccurrence"</summary>
 		public string AggregationStrategy { get { return aggregation_strategy; } set { aggregation_strategy = value; } }
 		string aggregation_strategy = "best_score";
@@ -94,10 +98,10 @@ namespace MyMediaLite.ItemRecommendation
 		protected List<ISGD> recommender_nodes;
 
 		///
-		private List<double>[] user_k;
+		private List<double>[] user_k, item_k;
 
 		///
-		public BaggedUserISGD ()
+		public BaggedUIISGD ()
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
@@ -123,6 +127,7 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.Feedback = Feedback;
 				recommender_nodes.Add(recommender_node);
 				user_k[i] = Enumerable.Repeat(Math.Tanh(1), Feedback.Count).ToList();
+				item_k[i] = Enumerable.Repeat(Math.Tanh(1), Feedback.Count).ToList();
 			}
 		}
 
@@ -176,21 +181,43 @@ namespace MyMediaLite.ItemRecommendation
 			{
 				for (int i = 0; i < num_nodes; i++)
 				{
-					double weight = user_k[i][entry.Item1];
+					double weight = CombineWeights(user_k[i][entry.Item1], item_k[i][entry.Item2]);
 					if(weighted)
-						recommender_nodes[i].AddFeedbackRetrainW(new Tuple<int,int>[] {entry}, weight);
+						recommender_nodes[i].AddFeedbackRetrainW(new Tuple<int,int>[] {entry}, Math.Tanh(weight));
 					else
 						recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, Convert.ToInt32(weight));
 				}
 			}
 		}
 
+		protected virtual double CombineWeights(double w1, double w2)
+		{
+			switch(weight_combination) {
+			case "average":
+				return (w1 + w2) / 2;
+			case "maximum":
+				return Math.Max(w1, w2);
+			case "minimum":
+			default:
+				return Math.Min(w1, w2);
+			}
+		}
+
+
 		/// 
 		protected override void AddUser (int user_id)
 		{
 			base.AddUser(user_id);
 			for (int i = 0; i < num_nodes; i++)
-				user_k[i].Add(Math.Tanh(Gamma.Sample(rand, 1, 1)));
+				user_k[i].Add(Gamma.Sample(rand, 1, 1));
+		} 
+
+		/// 
+		protected override void AddItem (int item_id)
+		{
+			base.AddItem(item_id);
+			for (int i = 0; i < num_nodes; i++)
+				item_k[i].Add(Gamma.Sample(rand, 1, 1));
 		} 
 
 		///
@@ -354,8 +381,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"BaggedUserISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} aggregation_strategy={7} weighted={8}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, AggregationStrategy, Weighted);
+				"BaggedUserISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} aggregation_strategy={7} weighted={8} weight_combination={9}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, AggregationStrategy, Weighted, WeightCombination);
 		}
 
 
