@@ -113,6 +113,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
 			user_k = new List<double>[num_nodes];
+			item_k = new List<double>[num_nodes];
 			ISGD recommender_node;
 			for (int i = 0; i < num_nodes; i++) {
 				recommender_node = new ISGD();
