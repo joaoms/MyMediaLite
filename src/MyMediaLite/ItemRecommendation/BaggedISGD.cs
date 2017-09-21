@@ -174,7 +174,7 @@ namespace MyMediaLite.ItemRecommendation
 				for (int i = 0; i < num_nodes; i++)
 				{
 					if(weighted)
-						recommender_nodes[i].AddFeedbackRetrainW(new Tuple<int,int>[] { entry }, Gamma.Sample(rand, 1, 1));
+						recommender_nodes[i].AddFeedbackRetrainW(new Tuple<int,int>[] { entry }, Math.Tanh(Gamma.Sample(rand, 1, 1)));
 					else
 						recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] { entry }, Poisson.Sample(rand, 1));
 

@@ -122,7 +122,7 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.Decay = Decay;
 				recommender_node.Feedback = Feedback;
 				recommender_nodes.Add(recommender_node);
-				user_k[i] = Enumerable.Repeat(1d, Feedback.Count).ToList();
+				user_k[i] = Enumerable.Repeat(Math.Tanh(1), Feedback.Count).ToList();
 			}
 		}
 
@@ -190,7 +190,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.AddUser(user_id);
 			for (int i = 0; i < num_nodes; i++)
-				user_k[i].Add(Gamma.Sample(rand, 1, 1));
+				user_k[i].Add(Math.Tanh(Gamma.Sample(rand, 1, 1)));
 		} 
 
 		///
