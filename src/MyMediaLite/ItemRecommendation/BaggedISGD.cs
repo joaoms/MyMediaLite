@@ -69,10 +69,8 @@ namespace MyMediaLite.ItemRecommendation
 		protected int num_factors = 10;
 
 		/// <summary>Number of iterations over the training data</summary>
-		public uint NumIter { get; set; } = 30;
-
-		/// <summary>Incremental iteration number</summary>
-		public uint IncrIter { get; set; }
+		public uint NumIter { get { return num_iter; } set { num_iter = value; } }
+		uint num_iter = 10;
 
 		/// <summary>Incremental iteration number</summary>
 		public bool UseMulticore { get { return use_multicore; } set { use_multicore = value; } }
@@ -101,7 +99,6 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
-			IncrIter = NumIter;
 			rand = MyMediaLite.Random.GetInstance();
 		}
 
@@ -118,7 +115,7 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.NumFactors = NumFactors;
 				recommender_node.LearnRate = LearnRate;
 				recommender_node.NumIter = NumIter;
-				recommender_node.IncrIter = IncrIter;
+				recommender_node.IncrIter = NumIter;
 				recommender_node.Decay = Decay;
 				recommender_node.Feedback = Feedback;
 				recommender_nodes.Add(recommender_node);
@@ -338,8 +335,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"BaggedSimpleSGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} aggregation_strategy={7} weighted={8}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, AggregationStrategy, Weighted);
+				"BaggedSimpleSGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} decay={4} num_nodes={5} aggregation_strategy={6} weighted={7}",
+				NumFactors, Regularization, LearnRate, NumIter, Decay, NumNodes, AggregationStrategy, Weighted);
 		}
 
 

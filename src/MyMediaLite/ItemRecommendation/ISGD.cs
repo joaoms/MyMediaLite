@@ -68,7 +68,7 @@ namespace MyMediaLite.ItemRecommendation
 		float decay = 1.0f;
 
 		/// <summary>Incremental iteration number (if unset assumes the value for batch)</summary>
-		public uint IncrIter { get; set; }
+		public uint IncrIter { get; set; } = 0;
 
 		/// <summary>The learn rate used for the current epoch</summary>
 		protected internal float current_learnrate;
@@ -88,7 +88,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.InitModel();
 			current_learnrate = LearnRate;
-			IncrIter = NumIter;
+			if (IncrIter == 0) IncrIter = NumIter;
 		}
 
 		///
