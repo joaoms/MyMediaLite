@@ -101,6 +101,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
+			IncrIter = NumIter;
 			rand = MyMediaLite.Random.GetInstance();
 		}
 
@@ -116,8 +117,8 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.Regularization = Regularization;
 				recommender_node.NumFactors = NumFactors;
 				recommender_node.LearnRate = LearnRate;
-				recommender_node.IncrIter = IncrIter;
 				recommender_node.NumIter = NumIter;
+				recommender_node.IncrIter = IncrIter;
 				recommender_node.Decay = Decay;
 				recommender_node.Feedback = Feedback;
 				recommender_nodes.Add(recommender_node);
