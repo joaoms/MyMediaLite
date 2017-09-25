@@ -58,7 +58,7 @@ namespace MyMediaLite.ItemRecommendation
 
 		protected MyMediaLite.Random rand;
 
-		protected List<ISGD> recommender_nodes;
+		protected List<ISGDOld> recommender_nodes;
 
 		//readonly double BAG_PROB = 1 - 1 / Math.E;
 
@@ -75,10 +75,10 @@ namespace MyMediaLite.ItemRecommendation
 		protected override void InitModel()
 		{
 			base.InitModel();
-			recommender_nodes = new List<ISGD>(num_nodes);
-			ISGD recommender_node;
+			recommender_nodes = new List<ISGDOld>(num_nodes);
+			ISGDOld recommender_node;
 			for (int i = 0; i < num_nodes; i++) {
-				recommender_node = new ISGD();
+				recommender_node = new ISGDOld();
 				recommender_node.UpdateUsers = true;
 				recommender_node.UpdateItems = true;
 				recommender_node.Regularization = this.Regularization;
