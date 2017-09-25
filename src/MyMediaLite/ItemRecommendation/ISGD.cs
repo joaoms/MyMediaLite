@@ -152,16 +152,9 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		/// 
-		public virtual void AddFeedback(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, bool retrain)
-		{
-			base.AddFeedback(feedback);
-			if (retrain) Retrain(feedback);
-		}
-
-		/// 
 		public virtual void AddFeedbackRetrainN(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, int n_retrain)
 		{
-			base.AddFeedback(feedback);
+			base.AddFeedback(feedback, false);
 			for(int i = 0; i < n_retrain; i++)
 				Retrain(feedback);
 		}
@@ -169,7 +162,7 @@ namespace MyMediaLite.ItemRecommendation
 		/// 
 		public virtual void AddFeedbackRetrainW(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, double weight)
 		{
-			base.AddFeedback(feedback);
+			base.AddFeedback(feedback, false);
 			RetrainW(feedback, weight);
 		}
 
@@ -183,9 +176,7 @@ namespace MyMediaLite.ItemRecommendation
 		/// 
 		protected virtual void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
-			for (int i = 0; i < IncrIter; i++)
-				foreach (var entry in feedback)
-					UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems);
+			RetrainW(feedback, 1);
 		}
 
 		/// 
@@ -212,43 +203,6 @@ namespace MyMediaLite.ItemRecommendation
 			foreach (int user in Feedback.ItemMatrix[item_id])
 				for (int i = 0; i < IncrIter; i++)
 					UpdateFactors(user, item_id, false, true);
-		}
-
-		///
-		protected override void AddUser(int user_id)
-		{
-			base.AddUser(user_id);
-
-			user_factors.AddRows(user_id + 1);
-			user_factors.RowInitNormal(user_id, InitMean, InitStdDev);
-		}
-
-		///
-		protected override void AddItem(int item_id)
-		{
-			base.AddItem(item_id);
-
-			item_factors.AddRows(item_id + 1);
-			item_factors.RowInitNormal(item_id, InitMean, InitStdDev);
-		}
-
-
-		///
-		public override void RemoveUser(int user_id)
-		{
-			base.RemoveUser(user_id);
-
-			// set user latent factors to zero
-			user_factors.SetRowToOneValue(user_id, 0);
-		}
-
-		///
-		public override void RemoveItem(int item_id)
-		{
-			base.RemoveItem(item_id);
-
-			// set item latent factors to zero
-			item_factors.SetRowToOneValue(item_id, 0);
 		}
 
 		/// <summary>

@@ -72,8 +72,14 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		public override void AddFeedback(ICollection<Tuple<int, int>> feedback)
 		{
+			AddFeedback(feedback, true);
+		}
+
+		///
+		public virtual void AddFeedback(ICollection<Tuple<int, int>> feedback, bool retrain)
+		{
 			base.AddFeedback(feedback);
-			Retrain(feedback);
+			if(retrain) Retrain(feedback);
 		}
 
 		void Retrain(ICollection<Tuple<int, int>> feedback)
