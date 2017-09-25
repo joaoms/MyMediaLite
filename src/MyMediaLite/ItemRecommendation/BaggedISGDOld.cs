@@ -74,6 +74,7 @@ namespace MyMediaLite.ItemRecommendation
 
 		protected override void InitModel()
 		{
+			base.InitModel();
 			recommender_nodes = new List<ISGD>(num_nodes);
 			ISGD recommender_node;
 			for (int i = 0; i < num_nodes; i++) {
