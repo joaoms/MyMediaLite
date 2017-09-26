@@ -83,7 +83,7 @@ namespace MyMediaLite.ItemRecommendation
 		public bool Weighted { get { return weighted; } set { weighted = value; } }
 		bool weighted = false;
 
-		/// <summary>Number of bootstrap nodes.</summary>
+		/// <summary>How to combine weights of user and item.</summary>
 		public string WeightCombination { get { return weight_combination; } set { weight_combination = value; } }
 		string weight_combination = "minimum";
 
@@ -191,9 +191,19 @@ namespace MyMediaLite.ItemRecommendation
 			}
 		}
 
+		/// <summary>
+		/// Combines the weights of user and item.
+		/// </summary>
+		/// <returns>The combined weight.</returns>
+		/// <param name="w1">user weight.</param>
+		/// <param name="w2">item weight.</param>
 		protected virtual double CombineWeights(double w1, double w2)
 		{
 			switch(weight_combination) {
+			case "user_only":
+				return w1;
+			case "item_only":
+				return w2;
 			case "average":
 				return (w1 + w2) / 2;
 			case "maximum":
