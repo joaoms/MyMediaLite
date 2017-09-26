@@ -79,9 +79,9 @@ namespace MyMediaLite.ItemRecommendation
 		public int NumNodes { get { return num_nodes; } set { num_nodes = value; } }
 		int num_nodes = 4;
 
-		/// <summary>Number of bootstrap nodes.</summary>
-		public bool Weighted { get { return weighted; } set { weighted = value; } }
-		bool weighted = false;
+		/// <summary>Bagging type. Possible values: normal, normal_bounded, bayesian</summary>
+		public string BaggingType { get { return bagging_type; } set { bagging_type = value; } }
+		string bagging_type = "normal";
 
 		/// <summary>How to combine weights of user and item.</summary>
 		public string WeightCombination { get { return weight_combination; } set { weight_combination = value; } }
@@ -183,10 +183,12 @@ namespace MyMediaLite.ItemRecommendation
 				for (int i = 0; i < num_nodes; i++)
 				{
 					double weight = CombineWeights(user_k[i][entry.Item1], item_k[i][entry.Item2]);
-					if(weighted)
+					if(BaggingType == "bayesian")
 						recommender_nodes[i].AddFeedbackRetrainW(new Tuple<int,int>[] {entry}, Math.Tanh(weight));
-					else
+					else if(BaggingType == "normal_bounded")
 						recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, Convert.ToInt32(weight));
+					else
+						recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, Math.Min(1, Convert.ToInt32(weight)));
 				}
 			}
 		}
@@ -392,8 +394,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"BaggedUIISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} aggregation_strategy={7} weighted={8} weight_combination={9}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, AggregationStrategy, Weighted, WeightCombination);
+				"BaggedUIISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} aggregation_strategy={7} bagging_type={8} weight_combination={9}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, AggregationStrategy, BaggingType, WeightCombination);
 		}
 
 
