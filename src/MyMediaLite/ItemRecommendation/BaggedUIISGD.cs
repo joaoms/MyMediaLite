@@ -89,7 +89,7 @@ namespace MyMediaLite.ItemRecommendation
 
 		/// <summary>Aggregation strategy to combine sub-models' predictions. Possible values: "best_score", "average", "cooccurrence"</summary>
 		public string AggregationStrategy { get { return aggregation_strategy; } set { aggregation_strategy = value; } }
-		string aggregation_strategy = "best_score";
+		string aggregation_strategy = "average";
 
 		///
 		protected MyMediaLite.Random rand;
@@ -127,8 +127,8 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.Decay = Decay;
 				recommender_node.Feedback = Feedback;
 				recommender_nodes.Add(recommender_node);
-				user_k[i] = Enumerable.Repeat(Math.Tanh(1), Feedback.Count).ToList();
-				item_k[i] = Enumerable.Repeat(Math.Tanh(1), Feedback.Count).ToList();
+				user_k[i] = Enumerable.Repeat(1d, Feedback.Count).ToList();
+				item_k[i] = Enumerable.Repeat(1d, Feedback.Count).ToList();
 			}
 		}
 
@@ -382,7 +382,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"BaggedUserISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} aggregation_strategy={7} weighted={8} weight_combination={9}",
+				"BaggedUIISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} aggregation_strategy={7} weighted={8} weight_combination={9}",
 				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, AggregationStrategy, Weighted, WeightCombination);
 		}
 

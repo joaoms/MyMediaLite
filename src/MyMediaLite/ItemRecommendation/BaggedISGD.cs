@@ -86,7 +86,7 @@ namespace MyMediaLite.ItemRecommendation
 
 		/// <summary>Aggregation strategy to combine sub-models' predictions. Possible values: "best_score", "average", "cooccurrence"</summary>
 		public string AggregationStrategy { get { return aggregation_strategy; } set { aggregation_strategy = value; } }
-		string aggregation_strategy = "best_score";
+		string aggregation_strategy = "average";
 
 		///
 		protected MyMediaLite.Random rand;
