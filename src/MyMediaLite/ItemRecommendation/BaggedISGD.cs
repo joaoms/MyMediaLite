@@ -80,9 +80,9 @@ namespace MyMediaLite.ItemRecommendation
 		public int NumNodes { get { return num_nodes; } set { num_nodes = value; } }
 		int num_nodes = 4;
 
-		/// <summary>Number of bootstrap nodes.</summary>
-		public bool Weighted { get { return weighted; } set { weighted = value; } }
-		bool weighted = true;
+		/// <summary>Type of bagging: normal, normal_bounded or bayesian.</summary>
+		public string BaggingType { get { return bagging_type; } set { bagging_type = value; } }
+		string bagging_type = "normal";
 
 		/// <summary>Aggregation strategy to combine sub-models' predictions. Possible values: "best_score", "average", "cooccurrence"</summary>
 		public string AggregationStrategy { get { return aggregation_strategy; } set { aggregation_strategy = value; } }
@@ -171,11 +171,12 @@ namespace MyMediaLite.ItemRecommendation
 			{
 				for (int i = 0; i < num_nodes; i++)
 				{
-					if(weighted)
+					if(BaggingType == "weighted")
 						recommender_nodes[i].AddFeedbackRetrainW(new Tuple<int,int>[] { entry }, Math.Tanh(Gamma.Sample(rand, 1, 1)));
+					else if(BaggingType == "normal_bounded")
+						recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] { entry }, Math.Min(1, Poisson.Sample(rand, 1)));
 					else
 						recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] { entry }, Poisson.Sample(rand, 1));
-
 				}
 			}
 		}
@@ -335,8 +336,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"BaggedSimpleSGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} decay={4} num_nodes={5} aggregation_strategy={6} weighted={7}",
-				NumFactors, Regularization, LearnRate, NumIter, Decay, NumNodes, AggregationStrategy, Weighted);
+				"BaggedSimpleSGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} decay={4} num_nodes={5} aggregation_strategy={6} bagging_type={7}",
+				NumFactors, Regularization, LearnRate, NumIter, Decay, NumNodes, AggregationStrategy, BaggingType);
 		}
 
 
