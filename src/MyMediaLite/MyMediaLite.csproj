@@ -236,6 +236,8 @@
     <Compile Include="ItemRecommendation\BigramRules.cs" />
     <Compile Include="ItemRecommendation\BoostedISGD.cs" />
     <Compile Include="ItemRecommendation\BaggedUIISGD.cs" />
+    <Compile Include="ItemRecommendation\MFLegacy.cs" />
+    <Compile Include="ItemRecommendation\SimpleSGD.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <Import Project="MyMediaLite.targets" />
