@@ -187,6 +187,43 @@ namespace MyMediaLite.ItemRecommendation
 					UpdateFactorsW(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, weight);
 		}
 
+		///
+		protected override void AddUser(int user_id)
+		{
+			base.AddUser(user_id);
+
+			user_factors.AddRows(user_id + 1);
+			user_factors.RowInitNormal(user_id, InitMean, InitStdDev);
+		}
+
+		///
+		protected override void AddItem(int item_id)
+		{
+			base.AddItem(item_id);
+
+			item_factors.AddRows(item_id + 1);
+			item_factors.RowInitNormal(item_id, InitMean, InitStdDev);
+		}
+
+
+		///
+		public override void RemoveUser(int user_id)
+		{
+			base.RemoveUser(user_id);
+
+			// set user latent factors to zero
+			user_factors.SetRowToOneValue(user_id, 0);
+		}
+
+		///
+		public override void RemoveItem(int item_id)
+		{
+			base.RemoveItem(item_id);
+
+			// set item latent factors to zero
+			item_factors.SetRowToOneValue(item_id, 0);
+		}
+
 		/*
 		/// 
 		protected override void RetrainUser(int user_id)
