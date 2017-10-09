@@ -52,7 +52,7 @@ namespace MyMediaLite.ItemRecommendation
 	///     This algorithm supports (and encourages) incremental updates. 
 	///   </para>
 	/// </remarks>
-	public class ISGD : MF
+	public class ISGD : MFLegacy
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
@@ -146,15 +146,15 @@ namespace MyMediaLite.ItemRecommendation
 
 
 		///
-		public override void AddFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
-		{
-			AddFeedback(feedback,true);
-		}
+		//public override void AddFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
+		//{
+		//	AddFeedback(feedback,true);
+		//}
 
 		/// 
 		public virtual void AddFeedbackRetrainN(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, int n_retrain)
 		{
-			base.AddFeedback(feedback, false);
+			base.AddFeedback(feedback);
 			for(int i = 0; i < n_retrain; i++)
 				Retrain(feedback);
 		}
@@ -162,7 +162,7 @@ namespace MyMediaLite.ItemRecommendation
 		/// 
 		public virtual void AddFeedbackRetrainW(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, double weight)
 		{
-			base.AddFeedback(feedback, false);
+			base.AddFeedback(feedback);
 			RetrainW(feedback, weight);
 		}
 
@@ -187,6 +187,7 @@ namespace MyMediaLite.ItemRecommendation
 					UpdateFactorsW(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, weight);
 		}
 
+		/*
 		/// 
 		protected override void RetrainUser(int user_id)
 		{
@@ -204,6 +205,7 @@ namespace MyMediaLite.ItemRecommendation
 				for (int i = 0; i < IncrIter; i++)
 					UpdateFactors(user, item_id, false, true);
 		}
+		*/
 
 		/// <summary>
 		/// Performs weighted factor updates for a user and item pair.
@@ -316,7 +318,10 @@ namespace MyMediaLite.ItemRecommendation
 				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay);
 		}
 
-
+		public override float ComputeObjective ()
+		{
+			return -1;
+		}
 	}
 }
 
