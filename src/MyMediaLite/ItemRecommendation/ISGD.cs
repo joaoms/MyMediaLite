@@ -146,10 +146,10 @@ namespace MyMediaLite.ItemRecommendation
 
 
 		///
-		//public override void AddFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
-		//{
-		//	AddFeedback(feedback,true);
-		//}
+		public override void AddFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
+		{
+			AddFeedbackRetrainN(feedback, 1);
+		}
 
 		/// 
 		public virtual void AddFeedbackRetrainN(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, int n_retrain)
