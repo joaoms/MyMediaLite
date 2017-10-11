@@ -38,7 +38,7 @@ class WSDMCupTask2
 
 	public WSDMCupTask2(string[] args)
 	{
-		if(args.Length < 4) {
+		if(args.Length < 6) {
 			Console.WriteLine("Usage: wsdm_cup_task2 <recommender> <\"recommender params\"> <train_file> <test_file> <submission_file>[ <random_seed>]");
 			Environment.Exit(1);
 		}
@@ -76,7 +76,7 @@ class WSDMCupTask2
 		var ret = new List<Tuple<int,int>>();
 		var reader = new StreamReader(filename);
 
-		string line;
+		string line = reader.ReadLine();
 		while ((line = reader.ReadLine()) != null)
 		{
 			if (line.Trim().Length == 0)
@@ -134,7 +134,7 @@ class WSDMCupTask2
 		submission_file = new StreamWriter(submission_filename + String.Format("{0:yyMMddHHmmss}", DateTime.Now));
 		submission_file.WriteLine("id,target");
 		for(int i = 0; i < predictions.Count; i++)
-			submission_file.WriteLine(i + "," + predictions[i]);
+			submission_file.WriteLine(i + "," + predictions[i].ToString("R"));
 		submission_file.Close();
 	}
 
