@@ -127,7 +127,7 @@ class WSDMCupTask2
 			int tu = test_data[i].Item1;
 			int ti = test_data[i].Item2;
 			log_file.WriteLine(tu + " " + ti);
-			predictions.Add(recommender.Predict(tu, ti));
+			predictions.Add(Math.Max(Math.Min(recommender.Predict(tu, ti), 1d), 0d));
 
 			if(i % (test_data.Count/100) == 0)
 			{
