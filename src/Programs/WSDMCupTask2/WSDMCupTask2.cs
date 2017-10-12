@@ -34,6 +34,7 @@ class WSDMCupTask2
 	List<Tuple<int,int>> test_data;
 	string submission_filename;
 	StreamWriter submission_file, log_file;
+	DateTime dt = DateTime.Now;
 
 
 	public WSDMCupTask2(string[] args)
@@ -43,6 +44,8 @@ class WSDMCupTask2
 			Environment.Exit(1);
 		}
 
+		log_file = new StreamWriter("log" + string.Format("{0:yyMMddHHmmss}", dt));
+
 		method = args[0];
 		recommender = (IncrementalItemRecommender) method.CreateItemRecommender();
 		if (recommender == null) {
@@ -50,18 +53,20 @@ class WSDMCupTask2
 			Environment.Exit(1);
 		}
 
+		Console.WriteLine("Configuring recommender " + method);
 		SetupRecommender(args[1]);
+		log_file.WriteLine(recommender.ToString());
 
+		Console.WriteLine("Reading train data...");
 		train_data = ItemData.Read(args[2], user_mapping, item_mapping);
+		Console.WriteLine("Reading test data...");
 		test_data = ReadTestData(args[3]);
 		submission_filename = args[4];
 
-		if(args.Length > 5) random_seed = Int32.Parse(args[5]);
+		if(args.Length > 5) random_seed = int.Parse(args[5]);
 		MyMediaLite.Random.Seed = random_seed;
 
-		DateTime dt = DateTime.Now;
 
-		log_file = new StreamWriter("log" + String.Format("{0:yyMMddHHmmss}", dt));
 
 	}
 
@@ -89,8 +94,8 @@ class WSDMCupTask2
 
 			try
 			{
-				int user_id = user_mapping.ToInternalID(tokens[0]);
-				int item_id = item_mapping.ToInternalID(tokens[1]);
+				int user_id = user_mapping.ToInternalID(tokens[1]);
+				int item_id = item_mapping.ToInternalID(tokens[2]);
 				ret.Add(Tuple.Create(user_id, item_id));
 			}
 			catch (Exception)
@@ -109,19 +114,19 @@ class WSDMCupTask2
 
 		recommender.Feedback = train_data;
 
-		log_file.WriteLine(recommender.ToString());
+		Console.WriteLine("Training...");
 
 		DateTime start_train = DateTime.Now;
 		recommender.Train();
 		TimeSpan train_time = DateTime.Now - start_train;
 
-		log_file.WriteLine("Train time: " + train_time.TotalMilliseconds);
+		Console.WriteLine("Train time: " + train_time.TotalMilliseconds);
 
 		for (int i = 0; i < test_data.Count; i++)
 		{
 			int tu = test_data[i].Item1;
 			int ti = test_data[i].Item2;
-			log_file.WriteLine("\n" + tu + " " + ti + "\n");
+			log_file.WriteLine(tu + " " + ti);
 			predictions.Add(recommender.Predict(tu, ti));
 
 			if(i % (test_data.Count/100) == 0)
@@ -131,10 +136,10 @@ class WSDMCupTask2
 			}
 		}
 		Console.WriteLine("Writing submission file...");
-		submission_file = new StreamWriter(submission_filename + String.Format("{0:yyMMddHHmmss}", DateTime.Now));
+		submission_file = new StreamWriter(submission_filename + string.Format("{0:yyMMddHHmmss}", dt));
 		submission_file.WriteLine("id,target");
 		for(int i = 0; i < predictions.Count; i++)
-			submission_file.WriteLine(i + "," + predictions[i].ToString("R"));
+			submission_file.WriteLine(i + "," + predictions[i].ToString("F6"));
 		submission_file.Close();
 	}
 
