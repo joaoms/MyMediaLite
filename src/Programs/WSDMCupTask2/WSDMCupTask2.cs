@@ -39,7 +39,7 @@ class WSDMCupTask2
 
 	public WSDMCupTask2(string[] args)
 	{
-		if(args.Length < 6) {
+		if(args.Length < 5) {
 			Console.WriteLine("Usage: wsdm_cup_task2 <recommender> <\"recommender params\"> <train_file> <test_file> <submission_file>[ <random_seed>]");
 			Environment.Exit(1);
 		}
