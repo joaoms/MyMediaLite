@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.IO;
 using MyMediaLite;
 using MyMediaLite.Data;
+using MyMediaLite.DataType;
 using MyMediaLite.IO;
 using MyMediaLite.ItemRecommendation;
 
@@ -55,6 +56,7 @@ class WSDMCupTask2
 		}
 		*/
 		recommender = new ISGDWSDM();
+		recommender.Feedback = new PosOnlyFeedback<SparseBooleanMatrix>();
 
 		Console.WriteLine("Configuring recommender " + method);
 		SetupRecommender(args[1]);
