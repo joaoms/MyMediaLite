@@ -25,12 +25,12 @@ using MyMediaLite.ItemRecommendation;
 
 class WSDMCupTask2
 {
-	string method = "ISGD";
+	string method = "ISGDWSDM";
 	int random_seed = 10;
-	IncrementalItemRecommender recommender;
+	ISGDWSDM recommender;
 	IMapping user_mapping = new Mapping();
 	IMapping item_mapping = new Mapping();
-	IPosOnlyFeedback train_data;
+	Tuple<List<Tuple<int,int>>,List<int>> train_data_r;
 	List<Tuple<int,int>> test_data;
 	string submission_filename;
 	StreamWriter submission_file, log_file;
@@ -46,21 +46,25 @@ class WSDMCupTask2
 
 		log_file = new StreamWriter("log" + string.Format("{0:yyMMddHHmmss}", dt));
 
+		/*
 		method = args[0];
 		recommender = (IncrementalItemRecommender) method.CreateItemRecommender();
 		if (recommender == null) {
 			Console.WriteLine("Invalid method: "+method);
 			Environment.Exit(1);
 		}
+		*/
+		recommender = new ISGDWSDM();
 
 		Console.WriteLine("Configuring recommender " + method);
 		SetupRecommender(args[1]);
 		log_file.WriteLine(recommender.ToString());
 
 		Console.WriteLine("Reading train data...");
-		train_data = ItemData.Read(args[2], user_mapping, item_mapping);
+		ReadTrainData(args[2]);
+
 		Console.WriteLine("Reading test data...");
-		test_data = ReadTestData(args[3]);
+		ReadTestData(args[3]);
 		submission_filename = args[4];
 
 		if(args.Length > 5) random_seed = int.Parse(args[5]);
@@ -76,9 +80,42 @@ class WSDMCupTask2
 		program.Run();
 	}
 
-	private List<Tuple<int,int>> ReadTestData(string filename)
+	private void ReadTrainData(string filename)
 	{
-		var ret = new List<Tuple<int,int>>();
+		var ret_ui = new List<Tuple<int,int>>();
+		var ret_r = new List<int>();
+		var reader = new StreamReader(filename);
+
+		string line = reader.ReadLine();
+		while ((line = reader.ReadLine()) != null)
+		{
+			if (line.Trim().Length == 0)
+				continue;
+
+			string[] tokens = line.Split(Constants.SPLIT_CHARS);
+
+			if (tokens.Length < 6)
+				throw new FormatException("Expected at least 6 columns: " + line);
+
+			try
+			{
+				int user_id = user_mapping.ToInternalID(tokens[0]);
+				int item_id = item_mapping.ToInternalID(tokens[1]);
+				int rating = int.Parse(tokens[5]);
+				recommender.Feedback.Add(user_id, item_id);
+				recommender.AddScore(rating);
+			}
+			catch (Exception)
+			{
+				throw new FormatException(string.Format("Could not read line '{0}'", line));
+			}
+		}
+
+	}
+
+	private void ReadTestData(string filename)
+	{
+		test_data = new List<Tuple<int, int>>();
 		var reader = new StreamReader(filename);
 
 		string line = reader.ReadLine();
@@ -96,23 +133,20 @@ class WSDMCupTask2
 			{
 				int user_id = user_mapping.ToInternalID(tokens[1]);
 				int item_id = item_mapping.ToInternalID(tokens[2]);
-				ret.Add(Tuple.Create(user_id, item_id));
+				test_data.Add(Tuple.Create(user_id, item_id));
 			}
 			catch (Exception)
 			{
 				throw new FormatException(string.Format("Could not read line '{0}'", line));
 			}
 		}
-		return ret;
 
 	}
 
 	private void Run()
 	{
-		var candidate_items = train_data.AllItems;
+		var candidate_items = recommender.Feedback.AllItems;
 		var predictions = new List<double>(test_data.Count);
-
-		recommender.Feedback = train_data;
 
 		Console.WriteLine("Training...");
 

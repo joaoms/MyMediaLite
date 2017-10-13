@@ -215,9 +215,9 @@ namespace MyMediaLite.ItemRecommendation
 		/// <param name="update_user">true to update user factors.</param>
 		/// <param name="update_item">true to update item factors.</param> 
 		/// <param name="weight">Weight of the training example</param>
-		protected virtual void UpdateFactorsW(int user_id, int item_id, bool update_user, bool update_item, double weight)
+		protected virtual void UpdateFactorsW(int user_id, int item_id, bool update_user, bool update_item, double weight, double score = 1d)
 		{
-			double err = weight * (1 - Predict(user_id, item_id, false));
+			double err = weight * (score - Predict(user_id, item_id, false));
 
 			// adjust factors
 			for (int f = 0; f < NumFactors; f++)
@@ -247,9 +247,9 @@ namespace MyMediaLite.ItemRecommendation
 		/// <param name="item_id">Item_id.</param>
 		/// <param name="update_user">true to update user factors.</param>
 		/// <param name="update_item">true to update item factors.</param> 
-		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
+		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item, double score = 1d)
 		{
-			UpdateFactorsW(user_id, item_id, update_user, update_item, 1);
+			UpdateFactorsW(user_id, item_id, update_user, update_item, 1, score);
 		}
 
 		///
