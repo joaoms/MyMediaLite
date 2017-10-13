@@ -23,17 +23,7 @@ namespace MyMediaLite.ItemRecommendation
 	public class ISGDWSDM : ISGD
 	{
 
-		List<int> scores;
-
-		public ISGDWSDM() : base()
-		{
-			scores = new List<int>();
-		}
-
-		public void AddScore(int score)
-		{
-			scores.Add(score);
-		}
+		public List<int> scores;
 
 		public override void Iterate ()
 		{
