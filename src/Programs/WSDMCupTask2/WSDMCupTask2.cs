@@ -36,6 +36,7 @@ class WSDMCupTask2
 	string submission_filename;
 	StreamWriter submission_file, log_file;
 	DateTime dt = DateTime.Now;
+	readonly char[] SPLITCHARS = new char[] { '\t', ',' };
 
 
 	public WSDMCupTask2(string[] args)
@@ -94,7 +95,7 @@ class WSDMCupTask2
 			if (line.Trim().Length == 0)
 				continue;
 
-			string[] tokens = line.Split(Constants.SPLIT_CHARS);
+			string[] tokens = line.Split(SPLITCHARS);
 
 			if (tokens.Length < 6)
 				throw new FormatException("Expected at least 6 columns: " + line);
@@ -126,7 +127,7 @@ class WSDMCupTask2
 			if (line.Trim().Length == 0)
 				continue;
 
-			string[] tokens = line.Split(Constants.SPLIT_CHARS);
+			string[] tokens = line.Split(SPLITCHARS);
 
 			if (tokens.Length < 2)
 				throw new FormatException("Expected at least 2 columns: " + line);
