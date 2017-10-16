@@ -227,11 +227,11 @@ class WSDMCupTask2
 
 	private void Run()
 	{
-		var candidate_items = recommender.Feedback.AllItems;
-		var predictions = new List<double>(test_data.Count);
-
 		recommender.Feedback = train_data.Item1;
 		recommender.scores = train_data.Item2;
+
+		var candidate_items = recommender.Feedback.AllItems;
+		var predictions = new List<double>(test_data.Count);
 
 		Console.WriteLine("Training...");
 
