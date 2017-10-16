@@ -185,7 +185,7 @@ class WSDMCupTask2
 
 			try
 			{
-				int item_id = user_mapping.ToInternalID(tokens[0]);
+				int item_id = item_mapping.ToInternalID(tokens[0]);
 				var attr = new string[cols.Length];
 				for (int i = 0; i < cols.Length; i++)
 				{
@@ -210,9 +210,9 @@ class WSDMCupTask2
 			int user = train_data.Item1.Users[i];
 			int item = train_data.Item1.Items[i];
 			int score = train_data.Item2[i];
-			string[] item_attrs = item_features[item];
 			new_train_data.Item1.Add(user, item);
 			new_train_data.Item2.Add(score);
+			var item_attrs = item_features[item];
 			for (int j = 0; j < item_attrs.Length; j++)
 			{
 				new_train_data.Item1.Add(user, item_mapping.ToInternalID(item_attrs[j]));
