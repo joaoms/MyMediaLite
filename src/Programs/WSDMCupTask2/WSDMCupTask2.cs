@@ -165,9 +165,9 @@ class WSDMCupTask2
 		var ret = new Dictionary<int, string[]>();
 		var reader = new StreamReader(filename);
 		var colnum_str = cols.Split(',');
-		var colnums = new int[cols.Length];
+		var colnums = new int[colnum_str.Length];
 		int colmax = 0;
-		for (int i = 0; i < cols.Length; i++)
+		for (int i = 0; i < colnum_str.Length; i++)
 		{
 			colnums[i] = int.Parse(colnum_str[i]);
 			if (colnums[i] > colmax) colmax = colnums[i];
