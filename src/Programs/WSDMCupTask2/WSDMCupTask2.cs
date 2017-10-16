@@ -212,11 +212,14 @@ class WSDMCupTask2
 			int score = train_data.Item2[i];
 			new_train_data.Item1.Add(user, item);
 			new_train_data.Item2.Add(score);
-			var item_attrs = item_features[item];
-			for (int j = 0; j < item_attrs.Length; j++)
+			if(item_features.ContainsKey(item))
 			{
-				new_train_data.Item1.Add(user, item_mapping.ToInternalID(item_attrs[j]));
-				new_train_data.Item2.Add(score);
+				var item_attrs = item_features[item];
+				for (int j = 0; j < item_attrs.Length; j++)
+				{
+					new_train_data.Item1.Add(user, item_mapping.ToInternalID(item_attrs[j]));
+					new_train_data.Item2.Add(score);
+				}
 			}
 		}
 		return new_train_data;
