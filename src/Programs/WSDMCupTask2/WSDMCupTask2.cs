@@ -187,8 +187,8 @@ class WSDMCupTask2
 			try
 			{
 				int item_id = item_mapping.ToInternalID(tokens[0]);
-				var attr = new string[cols.Length];
-				for (int i = 0; i < cols.Length; i++)
+				var attr = new string[colnum_str.Length];
+				for (int i = 0; i < attr.Length; i++)
 				{
 					attr[i] = tokens[colnums[i]];
 				}
