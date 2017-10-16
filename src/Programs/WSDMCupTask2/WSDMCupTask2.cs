@@ -31,6 +31,8 @@ class WSDMCupTask2
 	ISGDWSDM recommender;
 	IMapping user_mapping = new Mapping();
 	IMapping item_mapping = new Mapping();
+	//Dictionary<int,List<string>> user_features;
+	Dictionary<int,string[]> item_features;
 	Tuple<PosOnlyFeedback<SparseBooleanMatrix>,List<int>> train_data;
 	List<Tuple<int,int>> test_data;
 	string submission_filename;
@@ -41,8 +43,8 @@ class WSDMCupTask2
 
 	public WSDMCupTask2(string[] args)
 	{
-		if(args.Length < 5) {
-			Console.WriteLine("Usage: wsdm_cup_task2 <recommender> <\"recommender params\"> <train_file> <test_file> <submission_file>[ <random_seed>]");
+		if(args.Length < 4) {
+			Console.WriteLine("Usage: wsdm_cup_task2 <\"recommender params\"> <train_file> <test_file> <submission_file>[ <random_seed>[ <item_feature_file> <\"item_features\">]]");
 			Environment.Exit(1);
 		}
 
@@ -59,21 +61,28 @@ class WSDMCupTask2
 		recommender = new ISGDWSDM();
 
 		Console.WriteLine("Configuring recommender " + method);
-		SetupRecommender(args[1]);
+		SetupRecommender(args[0]);
 		log_file.WriteLine(recommender.ToString());
 
 		Console.WriteLine("Reading train data...");
-		train_data = ReadTrainData(args[2]);
-		recommender.Feedback = train_data.Item1;
-		recommender.scores = train_data.Item2;
+		train_data = ReadTrainData(args[1]);
 
 		Console.WriteLine("Reading test data...");
-		test_data = ReadTestData(args[3]);
-		submission_filename = args[4];
+		test_data = ReadTestData(args[2]);
 
-		if(args.Length > 5) random_seed = int.Parse(args[5]);
+		submission_filename = args[3];
+
+		if(args.Length > 4) random_seed = int.Parse(args[4]);
 		MyMediaLite.Random.Seed = random_seed;
 
+		if(args.Length > 5)
+		{
+			Console.WriteLine("Reading item features...");
+			item_features = ReadItemData(args[5], args[6]);
+		}
+
+		Console.WriteLine("Adding item features as virtual items...");
+		train_data = InsertVirtualItems();
 
 
 	}
@@ -150,10 +159,76 @@ class WSDMCupTask2
 
 	}
 
+	private Dictionary<int,string[]> ReadItemData(string filename, string cols)
+	{
+		var ret = new Dictionary<int, string[]>();
+		var reader = new StreamReader(filename);
+		var colnum_str = cols.Split(',');
+		var colnums = new int[cols.Length];
+		int colmax = 0;
+		for (int i = 0; i < cols.Length; i++)
+		{
+			colnums[i] = int.Parse(colnum_str[i]);
+			if (colnums[i] > colmax) colmax = colnums[i];
+		}
+
+		string line = reader.ReadLine();
+		while ((line = reader.ReadLine()) != null)
+		{
+			if (line.Trim().Length == 0)
+				continue;
+
+			string[] tokens = line.Split(SPLITCHARS);
+
+			if (tokens.Length < colmax)
+				throw new FormatException("Expected at least " + colmax + " columns: " + line);
+
+			try
+			{
+				int item_id = user_mapping.ToInternalID(tokens[0]);
+				var attr = new string[cols.Length];
+				for (int i = 0; i < cols.Length; i++)
+				{
+					attr[i] = tokens[colnums[i]];
+				}
+				ret.Add(item_id, attr);
+			}
+			catch (Exception)
+			{
+				throw new FormatException(string.Format("Could not read line '{0}'", line));
+			}
+		}
+		return ret;
+
+	}
+
+	private Tuple<PosOnlyFeedback<SparseBooleanMatrix>,List<int>> InsertVirtualItems()
+	{
+		Tuple<PosOnlyFeedback<SparseBooleanMatrix>, List<int>> new_train_data = Tuple.Create(new PosOnlyFeedback<SparseBooleanMatrix>(), new List<int>());
+		for (int i = 0; i < train_data.Item1.Count; i++)
+		{
+			int user = train_data.Item1.Users[i];
+			int item = train_data.Item1.Items[i];
+			int score = train_data.Item2[i];
+			string[] item_attrs = item_features[item];
+			new_train_data.Item1.Add(user, item);
+			new_train_data.Item2.Add(score);
+			for (int j = 0; j < item_attrs.Length; j++)
+			{
+				new_train_data.Item1.Add(user, item_mapping.ToInternalID(item_attrs[j]));
+				new_train_data.Item2.Add(score);
+			}
+		}
+		return new_train_data;
+	}
+
 	private void Run()
 	{
 		var candidate_items = recommender.Feedback.AllItems;
 		var predictions = new List<double>(test_data.Count);
+
+		recommender.Feedback = train_data.Item1;
+		recommender.scores = train_data.Item2;
 
 		Console.WriteLine("Training...");
 
