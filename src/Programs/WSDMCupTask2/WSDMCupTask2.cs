@@ -79,10 +79,11 @@ class WSDMCupTask2
 		{
 			Console.WriteLine("Reading item features...");
 			item_features = ReadItemData(args[5], args[6]);
-		}
 
-		Console.WriteLine("Adding item features as virtual items...");
-		train_data = InsertVirtualItems();
+			Console.WriteLine("Adding item features as virtual items...");
+			train_data = InsertVirtualItems();
+
+		}
 
 
 	}
