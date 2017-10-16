@@ -17,6 +17,7 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MyMediaLite.ItemRecommendation
 {
@@ -27,11 +28,13 @@ namespace MyMediaLite.ItemRecommendation
 
 		public override void Iterate ()
 		{
+			int[] indexes = Enumerable.Range(0, Feedback.Count).ToArray();
+			indexes.Shuffle();
 			for (int index = 0; index < Feedback.Count; index++)
 			{
-				int u = Feedback.Users[index];
-				int i = Feedback.Items[index];
-				int r = scores[index];
+				int u = Feedback.Users[indexes[index]];
+				int i = Feedback.Items[indexes[index]];
+				int r = scores[indexes[index]];
 
 				UpdateFactors(u, i, UpdateUsers, UpdateItems, r);
 			}
