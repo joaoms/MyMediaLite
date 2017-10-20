@@ -127,12 +127,12 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.Decay = Decay;
 				recommender_node.Feedback = Feedback;
 				recommender_nodes.Add(recommender_node);
-				user_k[i] = new List<double>(Feedback.AllUsers.Count);
-				item_k[i] = new List<double>(Feedback.AllItems.Count);
-				foreach (var user in Feedback.AllUsers)
-					user_k[i][user] = Gamma.Sample(rand, 1, 1);
-				foreach (var item in Feedback.AllItems)
-					item_k[i][item] = Gamma.Sample(rand, 1, 1);
+				user_k[i] = new List<double>(Feedback.MaxUserID+1);
+				item_k[i] = new List<double>(Feedback.MaxItemID+1);
+				for (int j = 0; j <= Feedback.MaxUserID; j++)
+					user_k[i].Add(Gamma.Sample(rand, 1, 1));
+				for (int j = 0; j <= Feedback.MaxItemID; j++)
+					item_k[i].Add(Gamma.Sample(rand, 1, 1));
 			}
 		}
 
