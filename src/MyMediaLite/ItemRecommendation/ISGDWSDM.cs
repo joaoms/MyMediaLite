@@ -26,6 +26,11 @@ namespace MyMediaLite.ItemRecommendation
 
 		public List<int> scores;
 
+		public ISGDWSDM()
+		{
+			InitMean = 0.5;
+		}
+
 		public override void Iterate ()
 		{
 			int[] indexes = Enumerable.Range(0, Feedback.Count).ToArray();
