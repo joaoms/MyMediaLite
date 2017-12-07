@@ -218,45 +218,22 @@ class WSDMCupParams
 
 		var count = truth.Count;
 
-		var pairs = new List<Tuple<double,int>>(count);
+		int pos = 0;
+		int neg = 0;
 
-		double pos = 0;
-		double neg = 0;
+		int sum = 0;
 
-		for (int i = 0; i < count; i++) {
-			if (truth[i] == 0) {
-				neg++;
-			} else if (truth[i] == 1) {
+		for (int i = 0; i < count; i++)
+		{
+			if(truth[i] == 1) 
+			{
 				pos++;
-			} else {
-				throw new Exception("AUC is only for binary classification. Invalid label: " + truth[i]);
-			}
-			pairs.Add(Tuple.Create(probability[i], truth[i]));
+				for (int j = 0; j < count; j++)
+					if(truth[j] == 0 && probability[i] > probability[j]) sum++;
+			} else neg++;
 		}
 
-		pairs.OrderBy(x => x.Item1);
-
-		double[] rank = new double[count];
-		for (int i = 0; i < count; i++) {
-			if (i == count - 1 || pairs[i].Item1.CompareTo(pairs[i+1].Item1) != 0) {
-				rank[i] = i + 1;
-			} else {
-				int j = i + 1;
-				for (; j < count && pairs[j].Item1.CompareTo(pairs[i].Item1) == 0; j++) {}
-				double r = (i + 1 + j) / 2.0;
-				for (int k = i; k < j; k++) rank[k] = r;
-				i = j - 1;
-			}
-		}
-
-		double auc = 0.0;
-		for (int i = 0; i < count; i++) {
-			if (pairs[i].Item2 == 1)
-				auc += rank[i];
-		}
-
-		auc = (auc - (pos * (pos+1) / 2.0)) / (pos * neg);
-		return auc;
+		return sum / (pos * neg);
 	}
 
 	private void Run()
