@@ -33,23 +33,20 @@ class WSDMCupParams
 	IMapping item_mapping = new Mapping();
 	Dictionary<int,string[]> item_features;
 	Tuple<PosOnlyFeedback<SparseBooleanMatrix>,List<int>> all_data, train_data, test_data;
-	StreamWriter log_file;
 	DateTime dt = DateTime.Now;
 	double split;
 	string parameters, test_param;
 	string[] test_param_values;
-	int max_cores = -1;
+	int max_cores = 16;
 	readonly char[] SPLITCHARS = { '\t', ',' };
 
 
 	public WSDMCupParams(string[] args)
 	{
 		if(args.Length < 4) {
-			Console.WriteLine("Usage: wsdm_cup_task2 <\"recommender params\"> <test_param> <\"test_param_values\"> <train_file> <test_file> <out_file>[ <random_seed>[ <item_feature_file> <\"item_features\">[ <max_cores>]]]");
+			Console.WriteLine("Usage: wsdm_cup_task2 <\"recommender params\"> <test_param> <\"test_param_values\"> <data_file> <split>[ <random_seed>[ <item_feature_file> <\"item_features\">[ <max_cores>]]]");
 			Environment.Exit(1);
 		}
-
-		log_file = new StreamWriter("param_log" + string.Format("{0:yyMMddHHmmss}", dt));
 
 		parameters = args[0];
 
@@ -272,7 +269,6 @@ class WSDMCupParams
 
 			recommender.Configure(parameters);
 			recommender.SetProperty(test_param, param_val);
-			log_file.WriteLine(recommender.ToString());
 
 			recommender.Feedback = train_data.Item1;
 			recommender.scores = train_data.Item2;
@@ -286,7 +282,6 @@ class WSDMCupParams
 			{
 				int tu = test_data.Item1.Users[i];
 				int ti = test_data.Item1.Items[i];
-				log_file.WriteLine(tu + " " + ti);
 				predictions.Add(Math.Max(Math.Min(recommender.Predict(tu, ti), 1d), 0d));
 
 				if(i % (test_data.Item2.Count/100) == 0)
