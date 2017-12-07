@@ -230,11 +230,11 @@ class WSDMCupParams
 
 		for (int i = 0; i < count; i++)
 		{
-			nfalse += 1 - pairs[i].Item2;
-			auc += pairs[i].Item2 * nfalse;
+			nfalse += (1 - pairs[i].Item2);
+			auc += (pairs[i].Item2 * nfalse);
 		}
 
-		return auc / (nfalse * (count - nfalse));
+		return (auc / (nfalse * (count - nfalse)));
 	}
 
 	private void Run()
