@@ -212,28 +212,29 @@ class WSDMCupParams
 	{
 
 
+		double auc = 0;
+		int nfalse = 0;
+
 		if (truth.Count != probability.Count) {
 			throw new Exception("The vector sizes don't match");
 		}
 
 		var count = truth.Count;
+		var pairs = new List<Tuple<double, int>>(count);
 
-		int pos = 0;
-		int neg = 0;
+		for (int i = 0; i < count; i++)
+			pairs.Add(Tuple.Create(probability[i], truth[i]));
 
-		int sum = 0;
+		pairs.OrderBy(x => x.Item1);
+
 
 		for (int i = 0; i < count; i++)
 		{
-			if(truth[i] == 1) 
-			{
-				pos++;
-				for (int j = 0; j < count; j++)
-					if(truth[j] == 0 && probability[i] > probability[j]) sum++;
-			} else neg++;
+			nfalse += 1 - pairs[i].Item2;
+			auc += pairs[i].Item2 * nfalse;
 		}
 
-		return sum / (pos * neg);
+		return auc / (nfalse * (count - nfalse));
 	}
 
 	private void Run()
