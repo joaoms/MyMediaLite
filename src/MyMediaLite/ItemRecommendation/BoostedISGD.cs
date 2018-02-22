@@ -47,7 +47,7 @@ namespace MyMediaLite.ItemRecommendation
 	///     This algorithm supports (and encourages) incremental updates. 
 	///   </para>
 	/// </remarks>
-	public class BoostedISGD : MF
+	public class BoostedISGD : IncrementalItemRecommender, IIterativeModel
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
@@ -61,6 +61,16 @@ namespace MyMediaLite.ItemRecommendation
 		/// <remarks>Applied after each epoch (= pass over the whole dataset)</remarks>
 		public float Decay { get { return decay; } set { decay = value; } }
 		float decay = 1.0f;
+
+		/// <summary>Number of latent factors per user/item</summary>
+		public uint NumFactors { get { return (uint) num_factors; } set { num_factors = (int) value; } }
+		/// <summary>Number of latent factors per user/item</summary>
+		protected int num_factors = 10;
+
+
+		/// <summary>Number of iterations over the training data</summary>
+		public uint NumIter { get { return num_iter; } set { num_iter = value; } }
+		uint num_iter = 10;
 
 		/// <summary>Incremental iteration number</summary>
 		public uint IncrIter { get; set; }
@@ -102,7 +112,7 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		///
-		protected override void InitModel()
+		protected virtual void InitModel()
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
 			hit_rate = new List<float>(num_nodes);
@@ -135,7 +145,7 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		///
-		public override void Iterate()
+		public virtual void Iterate()
 		{
 			Parallel.ForEach(recommender_nodes, rnode => { rnode.Iterate(); });
 		}
@@ -265,16 +275,6 @@ namespace MyMediaLite.ItemRecommendation
 			for (int i = 0; i < ordered_items.Count; i++)
 				ordered_items[i] = heap.DeleteMax();
 			return ordered_items;
-		}
-
-		/// 
-		protected override void RetrainUser(int user_id)
-		{
-		}
-
-		///
-		protected override void RetrainItem(int item_id)
-		{
 		}
 
 		///
