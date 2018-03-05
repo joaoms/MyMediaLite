@@ -154,6 +154,8 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.Decay = Decay;
 				recommender_node.Feedback = Feedback;
 				recommender_nodes.Add(recommender_node);
+				node_err_u[i] = new List<double>();
+				node_err_i[i] = new List<double>();
 				for (int j = 0; j <= MaxUserID; j++)
 					node_err_u[i].Add(0);
 				for (int j = 0; j <= MaxItemID; j++)
