@@ -87,10 +87,6 @@ namespace MyMediaLite.ItemRecommendation
 		public int NumNodes { get { return num_nodes; } set { num_nodes = value; } }
 		int num_nodes = 4;
 
-		/// <summary>Boosting metric (recall - use cutoff, or rmse)</summary>
-		public string BoostingMetric { get { return boosting_metric; } set { boosting_metric = value; } }
-		string boosting_metric = "recall";
-
 		/// <summary>Cutoff (relevance threshold). The size of recommended items' list to check for observed item for hit/miss ratio.</summary>
 		public int Cutoff { get { return cutoff; } set { cutoff = value; } }
 		int cutoff = 10;
@@ -115,7 +111,7 @@ namespace MyMediaLite.ItemRecommendation
 		//protected List<double>[] node_weight_u, node_weight_i;
 
 		/// 
-		//private List<double> lambda_u, lambda_i;
+		private List<double>[] lambda_u, lambda_i;
 
 		///
 		public GBoostedUIISGD ()
@@ -133,14 +129,8 @@ namespace MyMediaLite.ItemRecommendation
 			//node_weight_i = new List<double>[num_nodes];
 			node_err_u = new List<double>[num_nodes];
 			node_err_i = new List<double>[num_nodes];
-			/*
-			lambda_u = new List<double>();
-			for (int i = 0; i <= MaxUserID; i++)
-				lambda_u.Add(1); 
-			lambda_i = new List<double>();
-			for (int i = 0; i <= MaxItemID; i++)
-				lambda_i.Add(1);
-			*/
+			lambda_u = new List<double>[num_nodes];
+			lambda_i = new List<double>[num_nodes];
 			ISGD recommender_node;
 			for (int i = 0; i < num_nodes; i++) {
 				recommender_node = new ISGD();
@@ -156,10 +146,18 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_nodes.Add(recommender_node);
 				node_err_u[i] = new List<double>();
 				node_err_i[i] = new List<double>();
+				lambda_u[i] = new List<double>();
+				lambda_i[i] = new List<double>();
 				for (int j = 0; j <= MaxUserID; j++)
+				{
 					node_err_u[i].Add(0);
+					lambda_u[i].Add(1);
+				}
 				for (int j = 0; j <= MaxItemID; j++)
+				{
 					node_err_i[i].Add(0);
+					lambda_i[i].Add(1);
+				}
 			}
 		}
 
@@ -218,10 +216,40 @@ namespace MyMediaLite.ItemRecommendation
 
 				for (int i = 0; i < num_nodes; i++)
 				{
+					double lambda = 1;
+					switch (weight_combination)
+					{
+						case "user_only":
+							lambda = lambda_u[i][user];
+							break;
+						case "item_only":
+							lambda = lambda_u[i][user];
+							break;
+						case "max":
+							lambda = Math.Max(lambda_u[i][user],lambda_i[i][item]);
+							break;
+						case "min":
+							lambda = Math.Min(lambda_u[i][user],lambda_i[i][item]);
+							break;
+						case "avg":
+							lambda = (lambda_u[i][user] + lambda_i[i][item]) / 2;
+							break;
+					}
+
+					int npoisson = Poisson.Sample(rand, lambda);
+					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, npoisson);
 					double err = Math.Abs(target - recommender_nodes[i].Predict(user,item));
-					node_err_u[i][user] += (err - node_err_u[i][user]) / (MaxUserID + 1);
-					node_err_i[i][item] += (err - node_err_i[i][item]) / (MaxItemID + 1);
+					node_err_u[i][user] += (err - node_err_u[i][user]) / (Feedback.ByUser[user].Count + 1);
+					node_err_i[i][item] += (err - node_err_i[i][item]) / (Feedback.ByItem[item].Count + 1);
 					target = err;
+					if (err < node_err_u[i][user]) 
+						lambda_u[(i + 1) % num_nodes][user] /= 2;
+					else
+						lambda_u[(i + 1) % num_nodes][user] *= 2;
+					if (err < node_err_i[i][user]) 
+						lambda_i[(i + 1) % num_nodes][item] /= 2;
+					else
+						lambda_i[(i + 1) % num_nodes][item] *= 2;
 				}
 			}
 		}
@@ -301,7 +329,10 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.AddUser (user_id);
 			for (int i = 0; i < num_nodes; i++)
+			{
 				node_err_u[i].Add(0);
+				lambda_u[i].Add(1);
+			}
 		}
 
 		/// <summary>
@@ -312,7 +343,10 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.AddItem (item_id);
 			for (int i = 0; i < num_nodes; i++)
+			{
 				node_err_i[i].Add(0);
+				lambda_i[i].Add(1);
+			}
 		}
 
 		///
