@@ -19,7 +19,6 @@ using System;
 using C5;
 using System.Linq;
 using System.Globalization;
-using MyMediaLite.DataType;
 
 namespace MyMediaLite.ItemRecommendation
 {
@@ -97,11 +96,11 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		///
-		protected override void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
+		protected override void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback, double target)
 		{
 			foreach (var entry in feedback)
 			{
-				RetrainEntry(entry);
+				RetrainEntry(entry, target);
 			}
 		}
 
@@ -109,11 +108,11 @@ namespace MyMediaLite.ItemRecommendation
 		/// Retrains a single user-item pair.
 		/// </summary>
 		/// <param name="entry">The user-item pair</param>
-		protected virtual void RetrainEntry(Tuple<int,int> entry)
+		protected virtual void RetrainEntry(Tuple<int,int> entry, double target)
 		{
 			InsertNegFeedback(entry);
 			for (uint i = 0; i < IncrIter; i++)
-				UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, 1);
+				UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, target);
 		}
 
 		/// <summary>
@@ -189,41 +188,6 @@ namespace MyMediaLite.ItemRecommendation
 			if (negate_users)
 				user_queue.Remove(user_id);
 		}
-
-		/// <summary>
-		/// Performs factor updates for a user and item pair.
-		/// </summary>
-		/// <param name="user_id">The user ID</param>
-		/// <param name="item_id">The item ID</param>
-		/// <param name="update_user">Update user factors</param>
-		/// <param name="update_item">Update item factors</param>
-		/// <param name="rating_val">The rating (1 for positive feedback, 0 for negative feedback)</param>
-		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item, float rating_val = 1)
-		{
-			//Console.WriteLine(float.MinValue);
-			float err = rating_val - Predict(user_id, item_id, false);
-
-			// adjust factors
-			for (int f = 0; f < NumFactors; f++)
-			{
-				float u_f = user_factors[user_id, f];
-				float i_f = item_factors[item_id, f];
-
-				// if necessary, compute and apply updates
-				if (update_user)
-				{
-					double delta_u = err * i_f - Regularization * u_f;
-					user_factors.Inc(user_id, f, current_learnrate * delta_u);
-				}
-				if (update_item)
-				{
-					double delta_i = err * u_f - Regularization * i_f;
-					item_factors.Inc(item_id, f, current_learnrate * delta_i);
-				}
-			}
-
-		}
-
 
 		///
 		public override string ToString()

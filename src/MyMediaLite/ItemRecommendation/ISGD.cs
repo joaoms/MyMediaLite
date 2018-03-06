@@ -107,7 +107,7 @@ namespace MyMediaLite.ItemRecommendation
 				int u = Feedback.Users[index];
 				int i = Feedback.Items[index];
 
-				UpdateFactors(u, i, update_user, update_item);
+				UpdateFactors(u, i, update_user, update_item, 1);
 			}
 
 			UpdateLearnRate();
@@ -148,43 +148,43 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		public override void AddFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
-			AddFeedbackRetrainN(feedback, 1);
+			AddFeedbackRetrainN(feedback, 1, 1);
 		}
 
 		/// 
-		public virtual void AddFeedbackRetrainN(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, int n_retrain)
+		public virtual void AddFeedbackRetrainN(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, int n_retrain, double target = 1)
 		{
 			base.AddFeedback(feedback);
 			for(int i = 0; i < n_retrain; i++)
-				Retrain(feedback);
+				Retrain(feedback, target);
 		}
 
 		/// 
-		public virtual void AddFeedbackRetrainW(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, double weight)
+		public virtual void AddFeedbackRetrainW(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, double weight, double target = 1)
 		{
 			base.AddFeedback(feedback);
-			RetrainW(feedback, weight);
+			RetrainW(feedback, weight, target);
 		}
 
 		///
 		public override void RemoveFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			base.RemoveFeedback(feedback);
-			Retrain(feedback);
+			Retrain(feedback, 1);
 		}
 
 		/// 
-		protected virtual void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
+		protected virtual void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback, double target)
 		{
-			RetrainW(feedback, 1);
+			RetrainW(feedback, 1, target);
 		}
 
 		/// 
-		protected virtual void RetrainW(System.Collections.Generic.ICollection<Tuple<int, int>> feedback, double weight)
+		protected virtual void RetrainW(System.Collections.Generic.ICollection<Tuple<int, int>> feedback, double weight, double target)
 		{
 			for (int i = 0; i < IncrIter; i++)
 				foreach (var entry in feedback)
-					UpdateFactorsW(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, weight);
+					UpdateFactorsW(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, weight, target);
 		}
 
 		///
@@ -252,9 +252,9 @@ namespace MyMediaLite.ItemRecommendation
 		/// <param name="update_user">true to update user factors.</param>
 		/// <param name="update_item">true to update item factors.</param> 
 		/// <param name="weight">Weight of the training example</param>
-		protected virtual void UpdateFactorsW(int user_id, int item_id, bool update_user, bool update_item, double weight)
+		protected virtual void UpdateFactorsW(int user_id, int item_id, bool update_user, bool update_item, double weight, double target)
 		{
-			double err = weight * (1 - Predict(user_id, item_id, false));
+			double err = weight * (target - Predict(user_id, item_id, false));
 
 			// adjust factors
 			for (int f = 0; f < NumFactors; f++)
@@ -284,9 +284,9 @@ namespace MyMediaLite.ItemRecommendation
 		/// <param name="item_id">Item_id.</param>
 		/// <param name="update_user">true to update user factors.</param>
 		/// <param name="update_item">true to update item factors.</param> 
-		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
+		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item, double target)
 		{
-			UpdateFactorsW(user_id, item_id, update_user, update_item, 1);
+			UpdateFactorsW(user_id, item_id, update_user, update_item, 1, target);
 		}
 
 		///

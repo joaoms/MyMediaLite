@@ -226,10 +226,10 @@ namespace MyMediaLite.ItemRecommendation
 							lambda = lambda_u[i][user];
 							break;
 						case "max":
-							lambda = Math.Max(lambda_u[i][user],lambda_i[i][item]);
+							lambda = Math.Max(lambda_u[i][user], lambda_i[i][item]);
 							break;
 						case "min":
-							lambda = Math.Min(lambda_u[i][user],lambda_i[i][item]);
+							lambda = Math.Min(lambda_u[i][user], lambda_i[i][item]);
 							break;
 						case "avg":
 							lambda = (lambda_u[i][user] + lambda_i[i][item]) / 2;
@@ -237,7 +237,7 @@ namespace MyMediaLite.ItemRecommendation
 					}
 
 					int npoisson = Poisson.Sample(rand, lambda);
-					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, npoisson);
+					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, npoisson, target);
 					double err = Math.Abs(target - recommender_nodes[i].Predict(user,item));
 					node_err_u[i][user] += (err - node_err_u[i][user]) / (Feedback.ByUser[user].Count + 1);
 					node_err_i[i][item] += (err - node_err_i[i][item]) / (Feedback.ByItem[item].Count + 1);

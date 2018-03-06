@@ -229,7 +229,7 @@ namespace MyMediaLite.ItemRecommendation
 					bool hit = false;
 					double err;
 					int npoisson = Poisson.Sample(rand, lambda);
-					rnode.AddFeedbackRetrainN(new Tuple<int, int>[] {entry}, npoisson);
+					rnode.AddFeedbackRetrainN(new Tuple<int, int>[] {entry}, npoisson, 1);
 					var recs = rnode.Recommend(entry.Item1, cutoff);
 					foreach (var rec in recs)
 						if (hit = (rec.Item1 == entry.Item2))
