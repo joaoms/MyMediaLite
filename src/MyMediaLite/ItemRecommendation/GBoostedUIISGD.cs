@@ -148,12 +148,12 @@ namespace MyMediaLite.ItemRecommendation
 				node_err_i[i] = new List<double>();
 				lambda_u[i] = new List<double>();
 				lambda_i[i] = new List<double>();
-				for (int j = 0; j <= MaxUserID; j++)
+				for (int j = 0; j <= Feedback.MaxUserID; j++)
 				{
 					node_err_u[i].Add(0);
 					lambda_u[i].Add(1);
 				}
-				for (int j = 0; j <= MaxItemID; j++)
+				for (int j = 0; j <= Feedback.MaxItemID; j++)
 				{
 					node_err_i[i].Add(0);
 					lambda_i[i].Add(1);
