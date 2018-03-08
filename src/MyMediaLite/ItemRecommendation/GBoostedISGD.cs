@@ -152,11 +152,16 @@ namespace MyMediaLite.ItemRecommendation
 				return float.MinValue;
 
 			List<float> results = new List<float>(num_nodes);
-			foreach (var rnode in recommender_nodes)
-				results.Add(rnode.Predict(user_id, item_id));
-			
-			float result = results.Average();
 
+			double weight_sum = 0;
+			for (int i = 0; i < num_nodes; i++)
+				weight_sum += node_err[i];
+
+			double result = 0;
+
+			for (int i = 0; i < num_nodes; i++)
+				result += (node_err[i] / weight_sum) * recommender_nodes[i].Predict(user_id, item_id);
+			
 			if (bound)
 			{
 				if (result > 1)
@@ -164,7 +169,7 @@ namespace MyMediaLite.ItemRecommendation
 				if (result < 0)
 					return 0;
 			}
-			return result;
+			return (float) result;
 		}
 
 		///
@@ -210,59 +215,56 @@ namespace MyMediaLite.ItemRecommendation
 			System.Collections.Generic.ICollection<int> ignore_items = null,
 			System.Collections.Generic.ICollection<int> candidate_items = null)
 		{
-			var resultsLock = new object ();
-			var results = new List<System.Collections.Generic.IList<Tuple<int,float>>>(num_nodes);
-			for (int i = 0; i < num_nodes; i++)
-				results.Add(null);
+			if (candidate_items == null)
+				candidate_items = Enumerable.Range(0, MaxItemID - 1).ToList();
+			if (ignore_items == null)
+				ignore_items = new int[0];
 
-			Parallel.For(0, num_nodes, rnode => {
-				var res = recommender_nodes[rnode].Recommend(user_id, n, ignore_items, candidate_items);
-				lock(resultsLock) results[rnode] = res;
-			});
+			System.Collections.Generic.IList<Tuple<int, float>> ordered_items;
 
-			return AggregateResults(results, user_id);
-
-		}
-
-		System.Collections.Generic.IList<Tuple<int, float>> AggregateResults(System.Collections.Generic.IList<System.Collections.Generic.IList<Tuple<int, float>>> results, int user_id)
-		{
-			int n = results[0].Count;
-			var items = new Dictionary<int,float>();
-			double weight_sum = 0;
-			for (int i = 0; i < num_nodes; i++)
-				weight_sum += node_err[i];
-			for (int i = 0; i < num_nodes; i++)
+			if (n == -1)
 			{
-				var recs = results[i];
-				foreach(var tup in recs)
+				var scored_items = new List<Tuple<int, float>>();
+				foreach (int item_id in candidate_items)
+					if (!ignore_items.Contains(item_id))
 				{
-					if(items.ContainsKey(tup.Item1))
-						items[tup.Item1] += (float) ((node_err[i] / weight_sum) * tup.Item2);
-					else
-						items.Add(tup.Item1, (float) ((node_err[i] / weight_sum) * tup.Item2));
+					float error = Math.Abs(1 - Predict(user_id, item_id));
+					if (error > float.MaxValue)
+						error = float.MaxValue;
+					scored_items.Add(Tuple.Create(item_id, error));
 				}
+
+				ordered_items = scored_items.OrderBy(x => x.Item2).ToArray();
 			}
+			else
+			{
+				var comparer = new DelegateComparer<Tuple<int, float>>( (a, b) => a.Item2.CompareTo(b.Item2) );
+				var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
+				float max_error = float.MaxValue;
 
-			var comparer = new DelegateComparer<Tuple<int, float>>( (a, b) => b.Item2.CompareTo(a.Item2) );
-			var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
-			float min_score = float.MinValue;
-
-			foreach (var item in items)
-				if (item.Value/num_nodes > min_score)
+				foreach (int item_id in candidate_items)
+					if (!ignore_items.Contains(item_id))
 				{
-					heap.Add(Tuple.Create(item.Key, item.Value/num_nodes));
-					if (heap.Count > n)
+					float error = Math.Abs(1 - Predict(user_id, item_id));
+					if (error < max_error)
 					{
-						heap.DeleteMin();
-						min_score = heap.FindMin().Item2;
+						heap.Add(Tuple.Create(item_id, error));
+						if (heap.Count > n)
+						{
+							heap.DeleteMax();
+							max_error = heap.FindMax().Item2;
+						}
 					}
 				}
 
-			System.Collections.Generic.IList<Tuple<int, float>> ordered_items = new Tuple<int, float>[heap.Count];
-			for (int i = 0; i < ordered_items.Count; i++)
-				ordered_items[i] = heap.DeleteMax();
+				ordered_items = new Tuple<int, float>[heap.Count];
+				for (int i = 0; i < ordered_items.Count; i++)
+					ordered_items[i] = heap.DeleteMin();
+			}
+
 			return ordered_items;
 		}
+
 
 		///
 		public override string ToString()
