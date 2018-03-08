@@ -22,6 +22,8 @@ using System.Globalization;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MathNet.Numerics.Distributions;
+using MyMediaLite.Data;
+using MyMediaLite.DataType;
 
 namespace MyMediaLite.ItemRecommendation
 {
@@ -176,19 +178,19 @@ namespace MyMediaLite.ItemRecommendation
 				item = entry.Item2;
 
 				double target = 1;
+				double lambda = 1;
 
 				for (int i = 0; i < num_nodes; i++)
 				{
-					double lambda = 1;
 					int npoisson = Poisson.Sample(rand, lambda);
 					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, npoisson, target);
 					double err = Math.Abs(target - recommender_nodes[i].Predict(user,item));
 					target = err;
-					if (err < node_err[i]) 
-						lambda /= 2;
+					if (err < node_err[i])
+						lambda = Math.Max(1, lambda - 1);
 					else
-						lambda *= 2;
-					node_err[i] += (err - node_err[i]) / Feedback.Count;
+						lambda += 1;
+					node_err[i] += (err - node_err[i]) / (Feedback.Count / num_nodes);
 				}
 			}
 		}
@@ -210,10 +212,12 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			var resultsLock = new object ();
 			var results = new List<System.Collections.Generic.IList<Tuple<int,float>>>(num_nodes);
+			for (int i = 0; i < num_nodes; i++)
+				results.Add(null);
 
-			Parallel.ForEach(recommender_nodes, rnode => {
-				var res = rnode.Recommend(user_id, n, ignore_items, candidate_items);
-				lock(resultsLock) results.Add(res);
+			Parallel.For(0, num_nodes, rnode => {
+				var res = recommender_nodes[rnode].Recommend(user_id, n, ignore_items, candidate_items);
+				lock(resultsLock) results[rnode] = res;
 			});
 
 			return AggregateResults(results, user_id);
@@ -233,13 +237,13 @@ namespace MyMediaLite.ItemRecommendation
 				foreach(var tup in recs)
 				{
 					if(items.ContainsKey(tup.Item1))
-						items[tup.Item1] += (float) ((node_err[i] / weight_sum) * (1 - tup.Item2));
+						items[tup.Item1] += (float) ((node_err[i] / weight_sum) * tup.Item2);
 					else
-						items.Add(tup.Item1, (float) ((node_err[i] / weight_sum) * (1 - tup.Item2)));
+						items.Add(tup.Item1, (float) ((node_err[i] / weight_sum) * tup.Item2));
 				}
 			}
 
-			var comparer = new DelegateComparer<Tuple<int, float>>( (a, b) => a.Item2.CompareTo(b.Item2) );
+			var comparer = new DelegateComparer<Tuple<int, float>>( (a, b) => b.Item2.CompareTo(a.Item2) );
 			var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
 			float min_score = float.MinValue;
 
