@@ -160,7 +160,7 @@ namespace MyMediaLite.ItemRecommendation
 			double result = 0;
 
 			for (int i = 0; i < num_nodes; i++)
-				result += (node_err[i] / weight_sum) * recommender_nodes[i].Predict(user_id, item_id);
+				result += (1 - (node_err[i] / weight_sum)) * recommender_nodes[i].Predict(user_id, item_id);
 			
 			if (bound)
 			{

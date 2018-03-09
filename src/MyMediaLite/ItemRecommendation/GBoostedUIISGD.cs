@@ -22,6 +22,8 @@ using System.Globalization;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MathNet.Numerics.Distributions;
+using MyMediaLite.Data;
+using MyMediaLite.DataType;
 
 namespace MyMediaLite.ItemRecommendation
 {
@@ -75,10 +77,6 @@ namespace MyMediaLite.ItemRecommendation
 		/// <summary>Incremental iteration number</summary>
 		public uint IncrIter { get; set; }
 
-		/// <summary>How to combine weights of user and item.</summary>
-		public string WeightCombination { get { return weight_combination; } set { weight_combination = value; } }
-		string weight_combination = "user_only";
-
 		/// <summary>Incremental iteration number</summary>
 		public bool UseMulticore { get { return use_multicore; } set { use_multicore = value; } }
 		bool use_multicore = true;
@@ -87,31 +85,20 @@ namespace MyMediaLite.ItemRecommendation
 		public int NumNodes { get { return num_nodes; } set { num_nodes = value; } }
 		int num_nodes = 4;
 
-		/// <summary>Cutoff (relevance threshold). The size of recommended items' list to check for observed item for hit/miss ratio.</summary>
-		public int Cutoff { get { return cutoff; } set { cutoff = value; } }
-		int cutoff = 10;
-
-
 		///
 		protected MyMediaLite.Random rand;
-		
+
 		/// 
 		protected List<ISGD> recommender_nodes;
 
 		///
-		protected List<double>[] node_err_u, node_err_i;
+		protected List<double>[] node_err_u;
 
 		///
-		protected List<double>[] node_miss_rate_u, node_miss_rate_i;
+		protected List<double>[] lambda_u;
 
 		///
-		protected double[] node_err;
-
-		///
-		//protected List<double>[] node_weight_u, node_weight_i;
-
-		/// 
-		private List<double>[] lambda_u, lambda_i;
+		protected List<int> user_counts;
 
 		///
 		public GBoostedUIISGD ()
@@ -125,12 +112,11 @@ namespace MyMediaLite.ItemRecommendation
 		protected virtual void InitModel()
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
-			//node_weight_u = new List<double>[num_nodes];
-			//node_weight_i = new List<double>[num_nodes];
 			node_err_u = new List<double>[num_nodes];
-			node_err_i = new List<double>[num_nodes];
 			lambda_u = new List<double>[num_nodes];
-			lambda_i = new List<double>[num_nodes];
+			user_counts = new List<int>();
+			for (int i = 0; i <= MaxUserID; i++)
+				user_counts.Add(0);
 			ISGD recommender_node;
 			for (int i = 0; i < num_nodes; i++) {
 				recommender_node = new ISGD();
@@ -145,18 +131,11 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.Feedback = Feedback;
 				recommender_nodes.Add(recommender_node);
 				node_err_u[i] = new List<double>();
-				node_err_i[i] = new List<double>();
 				lambda_u[i] = new List<double>();
-				lambda_i[i] = new List<double>();
-				for (int j = 0; j <= Feedback.MaxUserID; j++)
+				for (int j = 0; j <= MaxUserID; j++)
 				{
 					node_err_u[i].Add(0);
 					lambda_u[i].Add(1);
-				}
-				for (int j = 0; j <= Feedback.MaxItemID; j++)
-				{
-					node_err_i[i].Add(0);
-					lambda_i[i].Add(1);
 				}
 			}
 		}
@@ -187,10 +166,15 @@ namespace MyMediaLite.ItemRecommendation
 				return float.MinValue;
 
 			List<float> results = new List<float>(num_nodes);
-			foreach (var rnode in recommender_nodes)
-				results.Add(rnode.Predict(user_id, item_id));
-			
-			float result = results.Average();
+
+			double weight_sum = 0;
+			for (int i = 0; i < num_nodes; i++)
+				weight_sum += node_err_u[i][user_id];
+
+			double result = 0;
+
+			for (int i = 0; i < num_nodes; i++)
+				result += (1 - (node_err_u[i][user_id] / weight_sum)) * recommender_nodes[i].Predict(user_id, item_id);
 
 			if (bound)
 			{
@@ -199,7 +183,7 @@ namespace MyMediaLite.ItemRecommendation
 				if (result < 0)
 					return 0;
 			}
-			return result;
+			return (float) result;
 		}
 
 		///
@@ -211,50 +195,32 @@ namespace MyMediaLite.ItemRecommendation
 			{
 				user = entry.Item1;
 				item = entry.Item2;
+				user_counts[user]++;
 
 				double target = 1;
 
 				for (int i = 0; i < num_nodes; i++)
 				{
-					double lambda = 1;
-					switch (weight_combination)
-					{
-						case "user_only":
-							lambda = lambda_u[i][user];
-							break;
-						case "item_only":
-							lambda = lambda_u[i][user];
-							break;
-						case "max":
-							lambda = Math.Max(lambda_u[i][user], lambda_i[i][item]);
-							break;
-						case "min":
-							lambda = Math.Min(lambda_u[i][user], lambda_i[i][item]);
-							break;
-						case "avg":
-							lambda = (lambda_u[i][user] + lambda_i[i][item]) / 2;
-							break;
-					}
-
-					int npoisson = Poisson.Sample(rand, lambda);
+					int npoisson = Poisson.Sample(rand, lambda_u[i][user]);
 					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, npoisson, target);
 					double err = Math.Abs(target - recommender_nodes[i].Predict(user,item));
-					node_err_u[i][user] += (err - node_err_u[i][user]) / (Feedback.ByUser[user].Count + 1);
-					node_err_i[i][item] += (err - node_err_i[i][item]) / (Feedback.ByItem[item].Count + 1);
 					target = err;
-					if (err < node_err_u[i][user]) 
-						lambda_u[(i + 1) % num_nodes][user] /= 2;
+					if (err < node_err_u[i][user])
+						lambda_u[(i + 1) % num_nodes][user] = Math.Max(1, lambda_u[i][user] - 1);
 					else
-						lambda_u[(i + 1) % num_nodes][user] *= 2;
-					if (err < node_err_i[i][user]) 
-						lambda_i[(i + 1) % num_nodes][item] /= 2;
-					else
-						lambda_i[(i + 1) % num_nodes][item] *= 2;
+						lambda_u[(i + 1) % num_nodes][user] += 1;
+					node_err_u[i][user] += (err - node_err_u[i][user]) / user_counts[user];
 				}
 			}
 		}
 
-	
+		protected override void AddUser (int user_id)
+		{
+			base.AddUser (user_id);
+			user_counts.Add(0);
+		}
+
+
 		///
 		public override void RemoveFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
@@ -269,93 +235,64 @@ namespace MyMediaLite.ItemRecommendation
 			System.Collections.Generic.ICollection<int> ignore_items = null,
 			System.Collections.Generic.ICollection<int> candidate_items = null)
 		{
-			var resultsLock = new object ();
-			var results = new List<System.Collections.Generic.IList<Tuple<int,float>>>(num_nodes);
+			if (candidate_items == null)
+				candidate_items = Enumerable.Range(0, MaxItemID - 1).ToList();
+			if (ignore_items == null)
+				ignore_items = new int[0];
 
-			Parallel.ForEach(recommender_nodes, rnode => {
-				var res = rnode.Recommend(user_id, n, ignore_items, candidate_items);
-				lock(resultsLock) results.Add(res);
-			});
+			System.Collections.Generic.IList<Tuple<int, float>> ordered_items;
 
-			return AggregateResults(results, user_id);
-
-		}
-
-		System.Collections.Generic.IList<Tuple<int, float>> AggregateResults(System.Collections.Generic.IList<System.Collections.Generic.IList<Tuple<int, float>>> results, int user_id)
-		{
-			int n = results[0].Count;
-			var items = new Dictionary<int,float>();
-			double weight_sum_u = 0;
-			for (int i = 0; i < num_nodes; i++)
-				weight_sum_u += node_err_u[i][user_id];
-			for (int i = 0; i < num_nodes; i++)
+			if (n == -1)
 			{
-				var recs = results[i];
-				foreach(var tup in recs)
+				var scored_items = new List<Tuple<int, float>>();
+				foreach (int item_id in candidate_items)
+					if (!ignore_items.Contains(item_id))
 				{
-					if(items.ContainsKey(tup.Item1))
-						items[tup.Item1] += (float) ((node_err_u[i][user_id] / weight_sum_u) * (1 - tup.Item2));
-					else
-						items.Add(tup.Item1, (float) ((node_err_u[i][user_id] / weight_sum_u) * (1 - tup.Item2)));
+					float error = Math.Abs(1 - Predict(user_id, item_id));
+					if (error > float.MaxValue)
+						error = float.MaxValue;
+					scored_items.Add(Tuple.Create(item_id, error));
 				}
+
+				ordered_items = scored_items.OrderBy(x => x.Item2).ToArray();
 			}
+			else
+			{
+				var comparer = new DelegateComparer<Tuple<int, float>>( (a, b) => a.Item2.CompareTo(b.Item2) );
+				var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
+				float max_error = float.MaxValue;
 
-			var comparer = new DelegateComparer<Tuple<int, float>>( (a, b) => a.Item2.CompareTo(b.Item2) );
-			var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
-			float min_score = float.MinValue;
-
-			foreach (var item in items)
-				if (item.Value/num_nodes > min_score)
+				foreach (int item_id in candidate_items)
+					if (!ignore_items.Contains(item_id))
 				{
-					heap.Add(Tuple.Create(item.Key, item.Value/num_nodes));
-					if (heap.Count > n)
+					float error = Math.Abs(1 - Predict(user_id, item_id));
+					if (error < max_error)
 					{
-						heap.DeleteMin();
-						min_score = heap.FindMin().Item2;
+						heap.Add(Tuple.Create(item_id, error));
+						if (heap.Count > n)
+						{
+							heap.DeleteMax();
+							max_error = heap.FindMax().Item2;
+						}
 					}
 				}
 
-			System.Collections.Generic.IList<Tuple<int, float>> ordered_items = new Tuple<int, float>[heap.Count];
-			for (int i = 0; i < ordered_items.Count; i++)
-				ordered_items[i] = heap.DeleteMax();
+				ordered_items = new Tuple<int, float>[heap.Count];
+				for (int i = 0; i < ordered_items.Count; i++)
+					ordered_items[i] = heap.DeleteMin();
+			}
+
 			return ordered_items;
 		}
 
-		/// <summary>
-		/// Adds the user.
-		/// </summary>
-		/// <param name="user_id">User identifier.</param>
-		protected override void AddUser (int user_id)
-		{
-			base.AddUser (user_id);
-			for (int i = 0; i < num_nodes; i++)
-			{
-				node_err_u[i].Add(0);
-				lambda_u[i].Add(1);
-			}
-		}
-
-		/// <summary>
-		/// Adds the item.
-		/// </summary>
-		/// <param name="item_id">Item identifier.</param>
-		protected override void AddItem (int item_id)
-		{
-			base.AddItem (item_id);
-			for (int i = 0; i < num_nodes; i++)
-			{
-				node_err_i[i].Add(0);
-				lambda_i[i].Add(1);
-			}
-		}
 
 		///
 		public override string ToString()
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"BoostedISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} cutoff={7}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, Cutoff);
+				"BoostedISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes);
 		}
 
 
