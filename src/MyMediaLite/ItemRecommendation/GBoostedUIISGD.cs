@@ -218,6 +218,11 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.AddUser (user_id);
 			user_counts.Add(0);
+			for (int i = 0; i < num_nodes; i++)
+			{
+				node_err_u[i].Add(0);
+				lambda_u[i].Add(1);
+			}
 		}
 
 
