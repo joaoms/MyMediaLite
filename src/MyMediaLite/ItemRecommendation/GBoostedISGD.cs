@@ -195,7 +195,7 @@ namespace MyMediaLite.ItemRecommendation
 						lambda = Math.Max(1, lambda - 1);
 					else
 						lambda += 1;
-					node_err[i] += (err - node_err[i]) / (Feedback.Count / num_nodes);
+					node_err[i] += (err - node_err[i]) / ((double) Feedback.Count / num_nodes);
 				}
 			}
 		}
