@@ -95,7 +95,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected List<double>[] node_err_u;
 
 		///
-		protected List<double>[] lambda_u;
+		protected List<int>[] lambda_u;
 
 		///
 		protected List<int> user_counts;
@@ -113,7 +113,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
 			node_err_u = new List<double>[num_nodes];
-			lambda_u = new List<double>[num_nodes];
+			lambda_u = new List<int>[num_nodes];
 			user_counts = new List<int>();
 			for (int i = 0; i <= MaxUserID; i++)
 				user_counts.Add(0);
@@ -131,7 +131,7 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.Feedback = Feedback;
 				recommender_nodes.Add(recommender_node);
 				node_err_u[i] = new List<double>();
-				lambda_u[i] = new List<double>();
+				lambda_u[i] = new List<int>();
 				for (int j = 0; j <= MaxUserID; j++)
 				{
 					node_err_u[i].Add(0);
@@ -201,8 +201,8 @@ namespace MyMediaLite.ItemRecommendation
 
 				for (int i = 0; i < num_nodes; i++)
 				{
-					int npoisson = Poisson.Sample(rand, lambda_u[i][user]);
-					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, npoisson, target);
+					// int npoisson = Poisson.Sample(rand, lambda_u[i][user]);
+					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, lambda_u[i][user], target);
 					double err = Math.Abs(target - recommender_nodes[i].Predict(user,item));
 					target = err;
 					if (err < node_err_u[i][user])
