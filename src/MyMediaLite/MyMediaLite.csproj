@@ -243,6 +243,8 @@
     <Compile Include="ItemRecommendation\GBoostedISGD.cs" />
     <Compile Include="ItemRecommendation\GBoostedISGDNP.cs" />
     <Compile Include="ItemRecommendation\GBoostedUIISGDNP.cs" />
+    <Compile Include="ItemRecommendation\GBoostedISGDIter.cs" />
+    <Compile Include="ItemRecommendation\GBoostedUIISGDIter.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <Import Project="MyMediaLite.targets" />
