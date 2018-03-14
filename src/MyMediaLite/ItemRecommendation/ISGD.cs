@@ -174,7 +174,7 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		/// 
-		protected virtual void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback, double target)
+		public virtual void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback, double target)
 		{
 			RetrainW(feedback, 1, target);
 		}

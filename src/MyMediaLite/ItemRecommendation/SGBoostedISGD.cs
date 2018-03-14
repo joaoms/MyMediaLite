@@ -158,7 +158,7 @@ namespace MyMediaLite.ItemRecommendation
 			for (int i = 0; i < num_nodes; i++)
 				result += recommender_nodes[i].Predict(user_id, item_id);
 			
-			result /= num_nodes;
+			result /= (double) num_nodes;
 
 			if (bound)
 			{
@@ -182,20 +182,21 @@ namespace MyMediaLite.ItemRecommendation
 
 				double gradient = 0;
 				double residual = 0;
-				double target = 0;
+				double target = 1;
 
 				for (int i = 0; i < num_nodes; i++)
 				{
+					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, 0);
 					predictions[i] = recommender_nodes[i].Predict(user, item);
 					errors[i] = Math.Max(Math.Min(target - (boosting_learn_rate * predictions[i]), 1), 0);
 					target = errors[i];
 				}
-				recommender_nodes[0].AddFeedback(new Tuple<int,int>[] {entry});
+				recommender_nodes[0].Retrain(new Tuple<int,int>[] {entry}, 1);
 				for (int i = 1; i < num_nodes; i++)
 				{
 					gradient = 2 * boosting_learn_rate * errors[i-1];
 					residual += gradient;
-					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, 1, residual - predictions[i]);
+					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, residual - predictions[i]);
 				}
 			}
 		}
