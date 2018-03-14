@@ -96,7 +96,7 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		///
-		protected override void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback, double target)
+		public override void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback, double target)
 		{
 			foreach (var entry in feedback)
 			{
