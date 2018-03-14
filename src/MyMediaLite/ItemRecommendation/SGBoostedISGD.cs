@@ -153,12 +153,21 @@ namespace MyMediaLite.ItemRecommendation
 			if (user_id > recommender_nodes[0].MaxUserID || item_id >= recommender_nodes[0].MaxItemID)
 				return float.MinValue;
 
-			double result = 0;
+			float result = 0;
+			float p = 0;
+			int n = 0;
 
 			for (int i = 0; i < num_nodes; i++)
-				result += recommender_nodes[i].Predict(user_id, item_id);
-			
-			result /= (double) num_nodes;
+			{
+				if (float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
+				{
+					result += p;
+					n++;
+				}
+			}
+
+			if (n > 0)
+				result /= n;
 
 			if (bound)
 			{
@@ -167,7 +176,7 @@ namespace MyMediaLite.ItemRecommendation
 				if (result < 0)
 					return 0;
 			}
-			return (float) result;
+			return result;
 		}
 
 		///
