@@ -123,7 +123,7 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.IncrIter = IncrIter;
 				recommender_node.NumIter = NumIter;
 				recommender_node.Decay = Decay;
-				recommender_node.Feedback = Feedback;
+				recommender_node.Feedback = new PosOnlyFeedback<SparseBooleanMatrix>(Feedback);
 				recommender_nodes.Add(recommender_node);
 			}
 		}
@@ -204,8 +204,8 @@ namespace MyMediaLite.ItemRecommendation
 				for (int i = 1; i < num_nodes; i++)
 				{
 					gradient = 2 * boosting_learn_rate * errors[i-1];
-					residual += gradient;
-					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, residual - predictions[i]);
+					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, residual	+ gradient);
+					residual += gradient - predictions[i];
 				}
 			}
 		}
@@ -281,8 +281,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"BoostedISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes);
+				"SGBoostedISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} boosting_learn_rate={7}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, BoostingLearnRate);
 		}
 
 
