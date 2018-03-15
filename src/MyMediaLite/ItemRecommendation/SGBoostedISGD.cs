@@ -113,6 +113,7 @@ namespace MyMediaLite.ItemRecommendation
 			predictions = new double[num_nodes];
 			errors = new double[num_nodes];
 			ISGD recommender_node;
+			IPosOnlyFeedback train_data;
 			for (int i = 0; i < num_nodes; i++) {
 				recommender_node = new ISGD();
 				recommender_node.UpdateUsers = true;
@@ -123,7 +124,10 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.IncrIter = IncrIter;
 				recommender_node.NumIter = NumIter;
 				recommender_node.Decay = Decay;
-				recommender_node.Feedback = new PosOnlyFeedback<SparseBooleanMatrix>(Feedback);
+				train_data = new PosOnlyFeedback<SparseBooleanMatrix>();
+				for (int j = 0; j < Feedback.Count; j++)
+					train_data.Add(Feedback.Users[j], Feedback.Items[j]);
+				recommender_node.Feedback = train_data;
 				recommender_nodes.Add(recommender_node);
 			}
 		}
@@ -132,7 +136,9 @@ namespace MyMediaLite.ItemRecommendation
 		public override void Train()
 		{
 			InitModel();
-			Parallel.ForEach(recommender_nodes, rnode => { rnode.Train(); });
+			Parallel.ForEach(recommender_nodes, rnode => { 
+				rnode.Train(); 
+			});
 		}
 
 		///
