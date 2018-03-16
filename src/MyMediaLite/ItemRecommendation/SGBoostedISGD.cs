@@ -166,7 +166,7 @@ namespace MyMediaLite.ItemRecommendation
 
 			for (int i = 0; i < num_nodes; i++)
 			{
-				if (float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
+				if (!float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
 				{
 					result += boosting_learn_rate * p;
 					n++;
