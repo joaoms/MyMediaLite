@@ -285,8 +285,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"SGBoostedISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} boosting_learn_rate={7}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, BoostingLearnRate);
+				"SGBoostedISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes);
 		}
 
 
