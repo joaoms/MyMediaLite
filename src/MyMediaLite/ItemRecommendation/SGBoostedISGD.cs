@@ -59,10 +59,6 @@ namespace MyMediaLite.ItemRecommendation
 		public float LearnRate { get { return learn_rate; } set { learn_rate = value; } }
 		float learn_rate = 0.31f;
 
-		/// <summary>Learn rate (update step size)</summary>
-		public float BoostingLearnRate { get { return boosting_learn_rate; } set { boosting_learn_rate = value; } }
-		float boosting_learn_rate = 0.31f;
-
 		/// <summary>Multiplicative learn rate decay</summary>
 		/// <remarks>Applied after each epoch (= pass over the whole dataset)</remarks>
 		public float Decay { get { return decay; } set { decay = value; } }
@@ -89,6 +85,8 @@ namespace MyMediaLite.ItemRecommendation
 		public int NumNodes { get { return num_nodes; } set { num_nodes = value; } }
 		int num_nodes = 4;
 
+		double boosting_learn_rate;
+
 		///
 		protected MyMediaLite.Random rand;
 		
@@ -96,7 +94,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected List<ISGD> recommender_nodes;
 
 		///
-		protected double[] predictions, errors;
+		protected double[] predictions, errors, sigma;
 
 		///
 		public SGBoostedISGD ()
@@ -104,17 +102,20 @@ namespace MyMediaLite.ItemRecommendation
 			UpdateUsers = true;
 			UpdateItems = true;
 			rand = MyMediaLite.Random.GetInstance();
+			boosting_learn_rate = Math.Log(num_nodes) / num_nodes;
 		}
 
 		///
 		protected virtual void InitModel()
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
+			sigma = new double[num_nodes];
 			predictions = new double[num_nodes];
 			errors = new double[num_nodes];
 			ISGD recommender_node;
 			IPosOnlyFeedback train_data;
 			for (int i = 0; i < num_nodes; i++) {
+				sigma[i] = 0;
 				recommender_node = new ISGD();
 				recommender_node.UpdateUsers = true;
 				recommender_node.UpdateItems = true;
@@ -159,7 +160,7 @@ namespace MyMediaLite.ItemRecommendation
 			if (user_id > recommender_nodes[0].MaxUserID || item_id >= recommender_nodes[0].MaxItemID)
 				return float.MinValue;
 
-			float result = 0;
+			double result = 0;
 			float p = 0;
 			int n = 0;
 
@@ -167,7 +168,7 @@ namespace MyMediaLite.ItemRecommendation
 			{
 				if (float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
 				{
-					result += p;
+					result += boosting_learn_rate * p;
 					n++;
 				}
 			}
@@ -182,7 +183,7 @@ namespace MyMediaLite.ItemRecommendation
 				if (result < 0)
 					return 0;
 			}
-			return result;
+			return (float) result;
 		}
 
 		///
@@ -195,23 +196,20 @@ namespace MyMediaLite.ItemRecommendation
 				user = entry.Item1;
 				item = entry.Item2;
 
-				double gradient = 0;
-				double residual = 0;
+				double prediction = 0;
 				double target = 1;
 
 				for (int i = 0; i < num_nodes; i++)
 				{
 					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, 0);
 					predictions[i] = recommender_nodes[i].Predict(user, item);
-					errors[i] = Math.Max(Math.Min(target - (boosting_learn_rate * predictions[i]), 1), 0);
-					target = errors[i];
+					prediction = (1 - boosting_learn_rate) * prediction + boosting_learn_rate * predictions[i];
 				}
-				recommender_nodes[0].Retrain(new Tuple<int,int>[] {entry}, 1);
-				for (int i = 1; i < num_nodes; i++)
+
+				for (int i = 0; i < num_nodes; i++)
 				{
-					gradient = 2 * boosting_learn_rate * errors[i-1];
-					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, residual	+ gradient);
-					residual += gradient - predictions[i];
+					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, boosting_learn_rate * target);
+					target = (1 - boosting_learn_rate) * target + boosting_learn_rate - boosting_learn_rate * predictions[i];
 				}
 			}
 		}
