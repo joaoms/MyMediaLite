@@ -246,7 +246,6 @@
     <Compile Include="ItemRecommendation\GBoostedISGDIter.cs" />
     <Compile Include="ItemRecommendation\GBoostedUIISGDIter.cs" />
     <Compile Include="ItemRecommendation\SGBoostedISGD.cs" />
-    <Compile Include="ItemRecommendation\SGBoostedISGD3.cs" />
     <Compile Include="ItemRecommendation\SGBoostedISGD4.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
