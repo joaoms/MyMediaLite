@@ -168,13 +168,10 @@ namespace MyMediaLite.ItemRecommendation
 			{
 				if (!float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
 				{
-					result += p;
+					result += boosting_learn_rate * p;
 					n++;
 				}
 			}
-
-			if (n > 0)
-				result /= n;
 
 			if (bound)
 			{
