@@ -113,6 +113,7 @@ namespace MyMediaLite.ItemRecommendation
 			predictions = new double[num_nodes];
 			errors = new double[num_nodes];
 			partial_sum = new double[num_nodes];
+			node_err = new double[num_nodes];
 			ISGD recommender_node;
 			IPosOnlyFeedback train_data;
 			for (int i = 0; i < num_nodes; i++) {
@@ -130,6 +131,7 @@ namespace MyMediaLite.ItemRecommendation
 					train_data.Add(Feedback.Users[j], Feedback.Items[j]);
 				recommender_node.Feedback = train_data;
 				recommender_nodes.Add(recommender_node);
+				node_err[i] = 0;
 			}
 		}
 
