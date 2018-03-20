@@ -49,7 +49,7 @@ namespace MyMediaLite.ItemRecommendation
 	///     This algorithm supports (and encourages) incremental updates. 
 	///   </para>
 	/// </remarks>
-	public class GBoostedISGDIter : IncrementalItemRecommender, IIterativeModel
+	public class SGBoostedISGD4bIter : IncrementalItemRecommender, IIterativeModel
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
@@ -58,6 +58,10 @@ namespace MyMediaLite.ItemRecommendation
 		/// <summary>Learn rate (update step size)</summary>
 		public float LearnRate { get { return learn_rate; } set { learn_rate = value; } }
 		float learn_rate = 0.31f;
+
+		/// <summary>Learn rate (update step size)</summary>
+		public float BoostingLearnRate { get { return boosting_learn_rate; } set { boosting_learn_rate = value; } }
+		float boosting_learn_rate = 0.31f;
 
 		/// <summary>Multiplicative learn rate decay</summary>
 		/// <remarks>Applied after each epoch (= pass over the whole dataset)</remarks>
@@ -92,10 +96,10 @@ namespace MyMediaLite.ItemRecommendation
 		protected List<ISGD> recommender_nodes;
 
 		///
-		protected double[] node_err;
+		protected double[] predictions, errors, partial_sum, node_err;
 
 		///
-		public GBoostedISGDIter ()
+		public SGBoostedISGD4bIter ()
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
@@ -106,10 +110,11 @@ namespace MyMediaLite.ItemRecommendation
 		protected virtual void InitModel()
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
-			//node_weight_u = new List<double>[num_nodes];
-			//node_weight_i = new List<double>[num_nodes];
-			node_err = new double[num_nodes];
+			predictions = new double[num_nodes];
+			errors = new double[num_nodes];
+			partial_sum = new double[num_nodes];
 			ISGD recommender_node;
+			IPosOnlyFeedback train_data;
 			for (int i = 0; i < num_nodes; i++) {
 				recommender_node = new ISGD();
 				recommender_node.UpdateUsers = true;
@@ -120,9 +125,11 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_node.IncrIter = IncrIter;
 				recommender_node.NumIter = NumIter;
 				recommender_node.Decay = Decay;
-				recommender_node.Feedback = Feedback;
+				train_data = new PosOnlyFeedback<SparseBooleanMatrix>();
+				for (int j = 0; j < Feedback.Count; j++)
+					train_data.Add(Feedback.Users[j], Feedback.Items[j]);
+				recommender_node.Feedback = train_data;
 				recommender_nodes.Add(recommender_node);
-				node_err[i] = 0;
 			}
 		}
 
@@ -130,7 +137,9 @@ namespace MyMediaLite.ItemRecommendation
 		public override void Train()
 		{
 			InitModel();
-			Parallel.ForEach(recommender_nodes, rnode => { rnode.Train(); });
+			Parallel.ForEach(recommender_nodes, rnode => { 
+				rnode.Train(); 
+			});
 		}
 
 		///
@@ -151,17 +160,18 @@ namespace MyMediaLite.ItemRecommendation
 			if (user_id > recommender_nodes[0].MaxUserID || item_id >= recommender_nodes[0].MaxItemID)
 				return float.MinValue;
 
-			List<float> results = new List<float>(num_nodes);
+			double result = 0;
+			float p = 0;
 
 			double weight_sum = 0;
 			for (int i = 0; i < num_nodes; i++)
 				weight_sum += node_err[i];
-
-			double result = 0;
+			
 
 			for (int i = 0; i < num_nodes; i++)
-				result += (1 - (node_err[i] / weight_sum)) * recommender_nodes[i].Predict(user_id, item_id);
-			
+				if (!float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
+					result += (1 - (node_err[i] / weight_sum)) * boosting_learn_rate * p;
+
 			if (bound)
 			{
 				if (result > 1)
@@ -169,7 +179,7 @@ namespace MyMediaLite.ItemRecommendation
 				if (result < 0)
 					return 0;
 			}
-			return (float) result;
+			return (float)result;
 		}
 
 		///
@@ -182,21 +192,30 @@ namespace MyMediaLite.ItemRecommendation
 				user = entry.Item1;
 				item = entry.Item2;
 
+				double psum = 0;
 				double target = 1;
-				uint lambda = IncrIter;
+				uint iter = NumIter;
+				double err;
 
 				for (int i = 0; i < num_nodes; i++)
 				{
-					// int npoisson = Poisson.Sample(rand, lambda);
-					recommender_nodes[i].IncrIter = lambda;
-					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, 1, target);
-					double err = Math.Abs(target - recommender_nodes[i].Predict(user,item));
-					target = err;
+					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, 0);
+					predictions[i] = recommender_nodes[i].Predict(user, item);
+					psum += boosting_learn_rate * predictions[i];
+					partial_sum[i] = psum;
+				}
+
+				for (int i = 0; i < num_nodes; i++)
+				{
+					err = Math.Abs(target - predictions[i]);
 					if (err < node_err[i])
-						lambda = Math.Max(1, lambda - 1);
+						iter = Math.Max(1, iter - 1);
 					else
-						lambda += 1;
-					node_err[i] += (err - node_err[i]) / ((double) Feedback.Count / num_nodes);
+						iter += 1;
+					node_err[i] += (err - node_err[i]) / (double) Feedback.Count;
+					recommender_nodes[i].IncrIter = iter;
+					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, target);
+					target -= boosting_learn_rate * partial_sum[i];
 				}
 			}
 		}
@@ -272,8 +291,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"BoostedISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes);
+				"SGBoostedISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} boosting_learn_rate={7}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, BoostingLearnRate);
 		}
 
 
