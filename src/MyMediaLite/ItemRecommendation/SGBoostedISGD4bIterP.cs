@@ -214,9 +214,9 @@ namespace MyMediaLite.ItemRecommendation
 					if (err < node_err[i])
 						node_lambda[i] = Math.Max(1, node_lambda[i] - 1);
 					else
-						node_lambda[i] = Math.Min(NumIter * 2, node_lambda[i] + 1);
+						node_lambda[i] = Math.Min(NumIter, node_lambda[i] + 1);
 					node_err[i] += (err - node_err[i]) / (double) Feedback.Count;
-					recommender_nodes[i].IncrIter = (uint)Poisson.Sample(rand, node_lambda[i]);
+					recommender_nodes[i].IncrIter = (uint) Math.Max(1, Poisson.Sample(rand, node_lambda[i]));
 					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, target);
 					target -= boosting_learn_rate * partial_sum[i];
 				}
