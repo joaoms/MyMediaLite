@@ -167,14 +167,10 @@ namespace MyMediaLite.ItemRecommendation
 			double result = 0;
 			float p = 0;
 
-			double weight_sum = 0;
-			for (int i = 0; i < num_nodes; i++)
-				weight_sum += node_err[i];
-
 
 			for (int i = 0; i < num_nodes; i++)
 				if (!float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
-					result += (1 - (node_err[i] / weight_sum)) * boosting_learn_rate * p;
+					result += node_shrink[i] * boosting_learn_rate * p;
 
 			if (bound)
 			{
