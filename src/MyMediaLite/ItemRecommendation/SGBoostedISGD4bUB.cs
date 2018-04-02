@@ -287,6 +287,12 @@ namespace MyMediaLite.ItemRecommendation
 			return ordered_items;
 		}
 
+		protected override void AddUser(int user_id)
+		{
+			base.AddUser(user_id);
+			for (int i = 0; i < num_nodes; i++)
+				user_shrink[i].Add(1);
+		}
 
 		///
 		public override string ToString()
