@@ -21,7 +21,6 @@ using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MathNet.Numerics.Distributions;
 using MyMediaLite.Data;
 using MyMediaLite.DataType;
 
@@ -167,14 +166,9 @@ namespace MyMediaLite.ItemRecommendation
 			double result = 0;
 			float p = 0;
 
-			double weight_sum = 0;
-			for (int i = 0; i < num_nodes; i++)
-				weight_sum += node_err[i];
-
-
 			for (int i = 0; i < num_nodes; i++)
 				if (!float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
-					result += (1 - (node_err[i] / weight_sum)) * boosting_learn_rate * p;
+					result += boosting_learn_rate * p;
 
 			if (bound)
 			{
@@ -215,7 +209,7 @@ namespace MyMediaLite.ItemRecommendation
 						node_lambda[i] = Math.Max(1, node_lambda[i] - 1);
 					else
 						node_lambda[i] = Math.Min(NumIter, node_lambda[i] + 1);
-					node_err[i] += (err - node_err[i]) / (double) Feedback.Count;
+					node_err[i] += (err - node_err[i]) / Feedback.Count;
 					recommender_nodes[i].IncrIter = (uint) node_lambda[i];
 					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, target);
 					target -= boosting_learn_rate * partial_sum[i];

@@ -21,7 +21,6 @@ using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MathNet.Numerics.Distributions;
 using MyMediaLite.Data;
 using MyMediaLite.DataType;
 
@@ -162,7 +161,6 @@ namespace MyMediaLite.ItemRecommendation
 
 			float result = 0;
 			float p = 0;
-			int n = 0;
 
 			for (int i = 0; i < num_nodes; i++)
 				if (!float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
