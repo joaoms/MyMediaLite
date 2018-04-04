@@ -102,10 +102,12 @@ namespace MyMediaLite.ItemRecommendation
 		/// <param name="update_item">true if item factors to be updated</param>
 		protected virtual void Iterate(bool update_user, bool update_item)
 		{
+			var shuffled_idx = Enumerable.Range(0, Feedback.Count).ToArray();
+			shuffled_idx.Shuffle();
 			for (int index = 0; index < Feedback.Count; index++)
 			{
-				int u = Feedback.Users[index];
-				int i = Feedback.Items[index];
+				int u = Feedback.Users[shuffled_idx[index]];
+				int i = Feedback.Items[shuffled_idx[index]];
 
 				UpdateFactors(u, i, update_user, update_item);
 			}
