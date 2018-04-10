@@ -187,7 +187,7 @@ namespace MyMediaLite.ItemRecommendation
 				item = entry.Item2;
 
 				double psum = 0;
-				double target = boosting_learn_rate; // * 1 (actual target is 1)
+				double target = 1;
 
 				for (int i = 0; i < num_nodes; i++)
 				{

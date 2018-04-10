@@ -189,7 +189,7 @@ namespace MyMediaLite.ItemRecommendation
 				item = entry.Item2;
 
 				double psum = 0;
-				double target = node_lr[0];
+				double target = 1;
 
 				for (int i = 0; i < num_nodes; i++)
 				{
