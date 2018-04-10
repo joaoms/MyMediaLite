@@ -21,7 +21,6 @@ using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MathNet.Numerics.Distributions;
 using MyMediaLite.Data;
 using MyMediaLite.DataType;
 
@@ -49,7 +48,7 @@ namespace MyMediaLite.ItemRecommendation
 	///     This algorithm supports (and encourages) incremental updates. 
 	///   </para>
 	/// </remarks>
-	public class SGBoostedISGD4bUB2 : IncrementalItemRecommender, IIterativeModel
+	public class SGBoostedISGD4c : IncrementalItemRecommender, IIterativeModel
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
@@ -91,19 +90,15 @@ namespace MyMediaLite.ItemRecommendation
 
 		///
 		protected MyMediaLite.Random rand;
-
+		
 		/// 
 		protected List<ISGD> recommender_nodes;
 
 		///
-		protected double[] predictions, partial_sum, node_err;
-
-
-		protected System.Collections.Generic.IList<int> user_counts;
-		protected List<double>[] user_err, user_shrink;
+		protected double[] predictions, errors, partial_sum, node_lr;
 
 		///
-		public SGBoostedISGD4bUB2 ()
+		public SGBoostedISGD4c ()
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
@@ -115,13 +110,13 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
 			predictions = new double[num_nodes];
+			errors = new double[num_nodes];
 			partial_sum = new double[num_nodes];
-			node_err = new double[num_nodes];
-			user_err = new List<double>[num_nodes];
-			user_shrink = new List<double>[num_nodes];
+			node_lr = new double[num_nodes];
 			ISGD recommender_node;
 			IPosOnlyFeedback train_data;
 			for (int i = 0; i < num_nodes; i++) {
+				node_lr[i] = boosting_learn_rate;
 				recommender_node = new ISGD();
 				recommender_node.UpdateUsers = true;
 				recommender_node.UpdateItems = true;
@@ -136,16 +131,7 @@ namespace MyMediaLite.ItemRecommendation
 					train_data.Add(Feedback.Users[j], Feedback.Items[j]);
 				recommender_node.Feedback = train_data;
 				recommender_nodes.Add(recommender_node);
-				node_err[i] = 0;
-				user_err[i] = new List<double>(MaxUserID);
-				user_shrink[i] = new List<double>(MaxUserID);
-				for (int j = 0; j <= MaxUserID; j++)
-				{
-					user_err[i].Add(0);
-					user_shrink[i].Add(1);
-				}
 			}
-			user_counts = Feedback.CountByUser;
 		}
 
 		///
@@ -178,12 +164,9 @@ namespace MyMediaLite.ItemRecommendation
 			double result = 0;
 			float p = 0;
 
-
 			for (int i = 0; i < num_nodes; i++)
 				if (!float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
-					result += user_shrink[i][user_id] * p;
-
-			result *= boosting_learn_rate;
+					result += node_lr[i] * p;
 
 			if (bound)
 			{
@@ -192,7 +175,7 @@ namespace MyMediaLite.ItemRecommendation
 				if (result < 0)
 					return 0;
 			}
-			return (float) result;
+			return (float)result;
 		}
 
 		///
@@ -205,36 +188,27 @@ namespace MyMediaLite.ItemRecommendation
 				user = entry.Item1;
 				item = entry.Item2;
 
-				user_counts[user]++;
-
 				double psum = 0;
-				double target = 1;
-				double err;
+				double target = node_lr[0];
 
 				for (int i = 0; i < num_nodes; i++)
 				{
 					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, 0);
 					predictions[i] = recommender_nodes[i].Predict(user, item);
-					psum += user_shrink[i][user] * boosting_learn_rate * predictions[i];
+					psum += node_lr[i] * predictions[i];
 					partial_sum[i] = psum;
 				}
 
 				for (int i = 0; i < num_nodes; i++)
 				{
-					err = target - predictions[i];
-					node_err[i] += (err - node_err[i]) / Feedback.Count;
-					user_err[i][user] += (err - user_err[i][user]) / user_counts [user];
-					if(user_err[i][user] > node_err[i])
-						user_shrink[(i+1)%num_nodes][user] = Math.Min(user_shrink[i][user] * 2, 2);
-					else
-						user_shrink[(i+1)%num_nodes][user] = Math.Max(user_shrink[i][user] / 2, 0.01);
 					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, target);
-					target -= user_shrink[i][user] * boosting_learn_rate * partial_sum[i];
+					node_lr[i] += (1 - partial_sum[i]) * predictions[i];
+					target -= node_lr[i] * partial_sum[i];
 				}
 			}
 		}
 
-
+	
 		///
 		public override void RemoveFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
@@ -299,16 +273,6 @@ namespace MyMediaLite.ItemRecommendation
 			return ordered_items;
 		}
 
-		protected override void AddUser(int user_id)
-		{
-			base.AddUser(user_id);
-			user_counts.Add(0);
-			for (int i = 0; i < num_nodes; i++)
-			{
-				user_err[i].Add(0);
-				user_shrink[i].Add(1);
-			}
-		}
 
 		///
 		public override string ToString()

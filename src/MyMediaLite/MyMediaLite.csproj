@@ -253,6 +253,7 @@
     <Compile Include="ItemRecommendation\SGBoostedISGD4bIterNoP.cs" />
     <Compile Include="ItemRecommendation\SGBoostedISGD4bUB.cs" />
     <Compile Include="ItemRecommendation\SGBoostedISGD4bUB2.cs" />
+    <Compile Include="ItemRecommendation\SGBoostedISGD4c.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <Import Project="MyMediaLite.targets" />
