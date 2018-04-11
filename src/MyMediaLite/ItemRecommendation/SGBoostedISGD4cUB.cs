@@ -212,7 +212,14 @@ namespace MyMediaLite.ItemRecommendation
 			}
 		}
 
-	
+
+		protected override void AddUser (int user_id)
+		{
+			base.AddUser (user_id);
+			for (int i = 0; i < num_nodes; i++)
+				user_node_lr[i].Add(boosting_learn_rate);
+		}
+
 		///
 		public override void RemoveFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
