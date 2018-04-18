@@ -95,7 +95,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected List<ISGD> recommender_nodes;
 
 		///
-		protected double[] predictions, errors, partial_sum, node_lr;
+		protected double[] predictions, errors, partial_sum, node_weight;
 
 		///
 		public SGBoostedISGD4c ()
@@ -112,11 +112,11 @@ namespace MyMediaLite.ItemRecommendation
 			predictions = new double[num_nodes];
 			errors = new double[num_nodes];
 			partial_sum = new double[num_nodes];
-			node_lr = new double[num_nodes];
+			node_weight = new double[num_nodes];
 			ISGD recommender_node;
 			IPosOnlyFeedback train_data;
 			for (int i = 0; i < num_nodes; i++) {
-				node_lr[i] = boosting_learn_rate;
+				node_weight[i] = 1;
 				recommender_node = new ISGD();
 				recommender_node.UpdateUsers = true;
 				recommender_node.UpdateItems = true;
@@ -166,7 +166,7 @@ namespace MyMediaLite.ItemRecommendation
 
 			for (int i = 0; i < num_nodes; i++)
 				if (!float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
-					result += node_lr[i] * p;
+					result += node_weight[i] * p;
 
 			if (bound)
 			{
@@ -175,7 +175,7 @@ namespace MyMediaLite.ItemRecommendation
 				if (result < 0)
 					return 0;
 			}
-			return (float)result;
+			return boosting_learn_rate * (float) result;
 		}
 
 		///
@@ -195,15 +195,15 @@ namespace MyMediaLite.ItemRecommendation
 				{
 					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, 0);
 					predictions[i] = recommender_nodes[i].Predict(user, item);
-					psum += node_lr[i] * predictions[i];
+					psum += boosting_learn_rate * node_weight[i] * predictions[i];
 					partial_sum[i] = psum;
 				}
 
 				for (int i = 0; i < num_nodes; i++)
 				{
 					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, target);
-					node_lr[i] += (1 - partial_sum[i]) * predictions[i];
-					target -= node_lr[i] * partial_sum[i];
+					node_weight[i] += 2 * boosting_learn_rate * predictions[i] * (1 - psum);
+					target -= boosting_learn_rate * node_weight[i] * partial_sum[i];
 				}
 			}
 		}
