@@ -95,7 +95,8 @@ namespace MyMediaLite.ItemRecommendation
 		protected List<ISGD> recommender_nodes;
 
 		///
-		protected double[] predictions, errors, partial_sum, node_weight;
+		protected double[] errors, partial_sum, node_weight;
+		protected float[] predictions;
 
 		///
 		public SGBoostedISGD4c ()
@@ -109,7 +110,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected virtual void InitModel()
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
-			predictions = new double[num_nodes];
+			predictions = new float[num_nodes];
 			errors = new double[num_nodes];
 			partial_sum = new double[num_nodes];
 			node_weight = new double[num_nodes];
@@ -202,7 +203,7 @@ namespace MyMediaLite.ItemRecommendation
 				for (int i = 0; i < num_nodes; i++)
 				{
 					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, target);
-					node_weight[i] += 2 * boosting_learn_rate * predictions[i] * (1 - psum);
+					node_weight[i] = Math.Max(0, Math.Min(1, node_weight[i] + boosting_learn_rate * predictions[i] * (1 - psum)));
 					target -= boosting_learn_rate * node_weight[i] * partial_sum[i];
 				}
 			}

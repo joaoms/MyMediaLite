@@ -134,7 +134,7 @@ namespace MyMediaLite.ItemRecommendation
 				recommender_nodes.Add(recommender_node);
 				user_node_lr[i] = new List<double>(MaxUserID);
 				for (int j = 0; j <= MaxUserID; j++)
-					user_node_lr[i].Add(boosting_learn_rate);
+					user_node_lr[i].Add(1);
 			}
 		}
 
@@ -179,7 +179,7 @@ namespace MyMediaLite.ItemRecommendation
 				if (result < 0)
 					return 0;
 			}
-			return (float)result;
+			return boosting_learn_rate * (float) result;
 		}
 
 		///
@@ -199,15 +199,15 @@ namespace MyMediaLite.ItemRecommendation
 				{
 					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, 0);
 					predictions[i] = recommender_nodes[i].Predict(user, item);
-					psum += user_node_lr[i][user] * predictions[i];
+					psum += user_node_lr[i][user] * boosting_learn_rate * predictions[i];
 					partial_sum[i] = psum;
 				}
 
 				for (int i = 0; i < num_nodes; i++)
 				{
 					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, target);
-					user_node_lr[i][user] += (1 - partial_sum[i]) * predictions[i];
-					target -= user_node_lr[i][user] * partial_sum[i];
+					user_node_lr[i][user] = Math.Min(0, Math.Max(1, user_node_lr[i][user] + boosting_learn_rate * predictions[i] * (1 - psum)));
+					target -= user_node_lr[i][user] * boosting_learn_rate * partial_sum[i];
 				}
 			}
 		}
