@@ -95,7 +95,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected List<ISGD> recommender_nodes;
 
 		///
-		protected double[] errors, partial_sum, node_weight, boosting_learn_rate;
+		protected double[] errors, partial_sum, boosting_learn_rate;
 		protected float[] predictions;
 
 		///
@@ -113,12 +113,10 @@ namespace MyMediaLite.ItemRecommendation
 			predictions = new float[num_nodes];
 			errors = new double[num_nodes];
 			partial_sum = new double[num_nodes];
-			node_weight = new double[num_nodes];
 			boosting_learn_rate = new double[num_nodes];
 			ISGD recommender_node;
 			IPosOnlyFeedback train_data;
 			for (int i = 0; i < num_nodes; i++) {
-				node_weight[i] = 0;
 				boosting_learn_rate[i] = 2 / (i + 2);
 				recommender_node = new ISGD();
 				recommender_node.UpdateUsers = true;
@@ -281,8 +279,8 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"SGBoostedISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} boosting_learn_rate={7}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, BoostingLearnRate);
+				"SGBoostedISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6}",
+				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes);
 		}
 
 
