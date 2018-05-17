@@ -21,7 +21,6 @@ using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MathNet.Numerics.Distributions;
 using MyMediaLite.Data;
 using MyMediaLite.DataType;
 
@@ -91,17 +90,14 @@ namespace MyMediaLite.ItemRecommendation
 
 		///
 		protected MyMediaLite.Random rand;
-
+		
 		/// 
 		protected List<ISGD> recommender_nodes;
 
 		///
-		protected double[] predictions, partial_sum, node_err;
+		protected double[] predictions, errors, partial_sum;
 
-		protected List<uint>[] user_iter;
-
-		protected System.Collections.Generic.IList<int> user_counts;
-		protected List<double>[] user_err;
+		protected List<double> user_learn_rate;
 
 		///
 		public SGBoostedISGD4bUB ()
@@ -116,10 +112,9 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
 			predictions = new double[num_nodes];
+			errors = new double[num_nodes];
 			partial_sum = new double[num_nodes];
-			node_err = new double[num_nodes];
-			user_err = new List<double>[num_nodes];
-			user_iter = new List<uint>[num_nodes];
+			user_learn_rate = new List<double>();
 			ISGD recommender_node;
 			IPosOnlyFeedback train_data;
 			for (int i = 0; i < num_nodes; i++) {
@@ -137,16 +132,11 @@ namespace MyMediaLite.ItemRecommendation
 					train_data.Add(Feedback.Users[j], Feedback.Items[j]);
 				recommender_node.Feedback = train_data;
 				recommender_nodes.Add(recommender_node);
-				node_err[i] = 0;
-				user_err[i] = new List<double>(MaxUserID);
-				user_iter[i] = new List<uint>(MaxUserID);
-				for (int j = 0; j <= MaxUserID; j++)
-				{
-					user_err[i].Add(0);
-					user_iter[i].Add(1);
-				}
 			}
-			user_counts = Feedback.CountByUser;
+			for (int i = 0; i <= Feedback.MaxUserID; i++)
+			{
+				user_learn_rate.Add(boosting_learn_rate);
+			}
 		}
 
 		///
@@ -176,15 +166,12 @@ namespace MyMediaLite.ItemRecommendation
 			if (user_id > recommender_nodes[0].MaxUserID || item_id >= recommender_nodes[0].MaxItemID)
 				return float.MinValue;
 
-			double result = 0;
+			float result = 0;
 			float p = 0;
-
 
 			for (int i = 0; i < num_nodes; i++)
 				if (!float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
-					result += p;
-
-			result *= boosting_learn_rate;
+					result += boosting_learn_rate * p;
 
 			if (bound)
 			{
@@ -193,7 +180,7 @@ namespace MyMediaLite.ItemRecommendation
 				if (result < 0)
 					return 0;
 			}
-			return (float) result;
+			return result;
 		}
 
 		///
@@ -206,37 +193,27 @@ namespace MyMediaLite.ItemRecommendation
 				user = entry.Item1;
 				item = entry.Item2;
 
-				user_counts[user]++;
-
 				double psum = 0;
 				double target = 1;
-				double err;
 
 				for (int i = 0; i < num_nodes; i++)
 				{
 					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, 0);
 					predictions[i] = recommender_nodes[i].Predict(user, item);
-					psum += boosting_learn_rate * predictions[i];
+					psum += user_learn_rate[user] * predictions[i];
 					partial_sum[i] = psum;
 				}
 
 				for (int i = 0; i < num_nodes; i++)
 				{
-					err = target - predictions[i];
-					node_err[i] += (err - node_err[i]) / Feedback.Count;
-					user_err[i][user] += (err - user_err[i][user]) / user_counts [user];
-					if(user_err[i][user] > node_err[i])
-						user_iter[i][user] = Math.Min(user_iter[i][user] + 1, NumIter);
-					else
-						user_iter[i][user] = Math.Max(user_iter[i][user] - 1, 1);
-					recommender_nodes[i].IncrIter = user_iter[i][user];
 					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, target);
-					target -= boosting_learn_rate * partial_sum[i];
+					target -= user_learn_rate[user] * partial_sum[i];
+					user_learn_rate[user] = Math.Max(0, Math.Min(1, user_learn_rate[user] + (psum / user_learn_rate[user]) * (1 - psum)));
 				}
 			}
 		}
 
-
+	
 		///
 		public override void RemoveFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
@@ -301,15 +278,10 @@ namespace MyMediaLite.ItemRecommendation
 			return ordered_items;
 		}
 
-		protected override void AddUser(int user_id)
+		protected override void AddUser (int user_id)
 		{
-			base.AddUser(user_id);
-			user_counts.Add(0);
-			for (int i = 0; i < num_nodes; i++)
-			{
-				user_err[i].Add(0);
-				user_iter[i].Add(1);
-			}
+			base.AddUser (user_id);
+			user_learn_rate.Add(boosting_learn_rate);
 		}
 
 		///

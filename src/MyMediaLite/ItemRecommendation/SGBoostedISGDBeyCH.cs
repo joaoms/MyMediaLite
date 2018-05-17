@@ -117,7 +117,7 @@ namespace MyMediaLite.ItemRecommendation
 			ISGD recommender_node;
 			IPosOnlyFeedback train_data;
 			for (int i = 0; i < num_nodes; i++) {
-				boosting_learn_rate[i] = 2 / (i + 2);
+				boosting_learn_rate[i] = 2.0 / (i + 2);
 				recommender_node = new ISGD();
 				recommender_node.UpdateUsers = true;
 				recommender_node.UpdateItems = true;

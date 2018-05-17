@@ -203,7 +203,7 @@ namespace MyMediaLite.ItemRecommendation
 				for (int i = 0; i < num_nodes; i++)
 				{
 					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, target);
-					node_weight[i] = Math.Max(0, Math.Min(1, node_weight[i] + boosting_learn_rate * predictions[i] * (1 - psum)));
+					node_weight[i] = Math.Max(0, Math.Min(1, node_weight[i] + (boosting_learn_rate * predictions[i] * (1 - psum)) / Math.Sqrt(Feedback.Count)));
 					target = (1 - node_weight[i]) * target + node_weight[i] - boosting_learn_rate * partial_sum[i];
 				}
 			}
