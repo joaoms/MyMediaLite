@@ -167,7 +167,7 @@ namespace MyMediaLite.ItemRecommendation
 
 			for (int i = 0; i < num_nodes; i++)
 				if (!float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
-					result += p;
+					result = (1 - node_weight[i] * boosting_learn_rate) * result + boosting_learn_rate * p;
 
 			if (bound)
 			{
@@ -176,7 +176,7 @@ namespace MyMediaLite.ItemRecommendation
 				if (result < 0)
 					return 0;
 			}
-			return boosting_learn_rate * (float) result;
+			return (float) result;
 		}
 
 		///
@@ -191,20 +191,16 @@ namespace MyMediaLite.ItemRecommendation
 
 				double psum = 0;
 				double target = 1;
+				double prediction;
 
 				for (int i = 0; i < num_nodes; i++)
 				{
 					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, 0);
-					predictions[i] = recommender_nodes[i].Predict(user, item);
-					psum = (1 - node_weight[i]) * psum + boosting_learn_rate * predictions[i];
-					partial_sum[i] = psum;
-				}
-
-				for (int i = 0; i < num_nodes; i++)
-				{
+					prediction = recommender_nodes[i].Predict(user, item);
+					psum = (1 - node_weight[i] * boosting_learn_rate) * psum + boosting_learn_rate * prediction;
 					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, target);
-					node_weight[i] = Math.Max(0, Math.Min(1, node_weight[i] + (boosting_learn_rate * predictions[i] * (1 - psum)) / Math.Sqrt(Feedback.Count)));
-					target = (1 - node_weight[i]) * target + node_weight[i] - boosting_learn_rate * partial_sum[i];
+					target = target - psum;
+					node_weight[i] = Math.Max(0, Math.Min(1, node_weight[i] + target * psum / Math.Sqrt(Feedback.Count)));
 				}
 			}
 		}
