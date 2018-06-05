@@ -48,7 +48,7 @@ namespace MyMediaLite.ItemRecommendation
 	///     This algorithm supports (and encourages) incremental updates. 
 	///   </para>
 	/// </remarks>
-	public class SGBoostedISGD4b : IncrementalItemRecommender, IIterativeModel
+	public class SGBoostedISGD4b2 : IncrementalItemRecommender, IIterativeModel
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
@@ -95,7 +95,7 @@ namespace MyMediaLite.ItemRecommendation
 		protected List<ISGD> recommender_nodes;
 
 		///
-		public SGBoostedISGD4b ()
+		public SGBoostedISGD4b2 ()
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
@@ -190,7 +190,7 @@ namespace MyMediaLite.ItemRecommendation
 					prediction = recommender_nodes[i].Predict(user, item);
 					psum += boosting_learn_rate * prediction;
 					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, target);
-					target -= boosting_learn_rate * psum;
+					target -= psum;
 				}
 
 			}

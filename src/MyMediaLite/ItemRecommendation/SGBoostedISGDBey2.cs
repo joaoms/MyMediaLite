@@ -48,7 +48,7 @@ namespace MyMediaLite.ItemRecommendation
 	///     This algorithm supports (and encourages) incremental updates. 
 	///   </para>
 	/// </remarks>
-	public class SGBoostedISGD4b : IncrementalItemRecommender, IIterativeModel
+	public class SGBoostedISGDBey2 : IncrementalItemRecommender, IIterativeModel
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
@@ -95,7 +95,11 @@ namespace MyMediaLite.ItemRecommendation
 		protected List<ISGD> recommender_nodes;
 
 		///
-		public SGBoostedISGD4b ()
+		protected double[] errors, partial_sum, shrinkage;
+		protected float[] predictions;
+
+		///
+		public SGBoostedISGDBey2 ()
 		{
 			UpdateUsers = true;
 			UpdateItems = true;
@@ -106,9 +110,14 @@ namespace MyMediaLite.ItemRecommendation
 		protected virtual void InitModel()
 		{
 			recommender_nodes = new List<ISGD>(num_nodes);
+			predictions = new float[num_nodes];
+			errors = new double[num_nodes];
+			partial_sum = new double[num_nodes];
+			shrinkage = new double[num_nodes];
 			ISGD recommender_node;
 			IPosOnlyFeedback train_data;
 			for (int i = 0; i < num_nodes; i++) {
+				shrinkage[i] = 0;
 				recommender_node = new ISGD();
 				recommender_node.UpdateUsers = true;
 				recommender_node.UpdateItems = true;
@@ -153,12 +162,12 @@ namespace MyMediaLite.ItemRecommendation
 			if (user_id > recommender_nodes[0].MaxUserID || item_id >= recommender_nodes[0].MaxItemID)
 				return float.MinValue;
 
-			float result = 0;
+			double result = 0;
 			float p = 0;
 
 			for (int i = 0; i < num_nodes; i++)
 				if (!float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
-					result += boosting_learn_rate * p;
+					result = (1 - shrinkage[i] * boosting_learn_rate) * result + boosting_learn_rate * p;
 
 			if (bound)
 			{
@@ -167,7 +176,7 @@ namespace MyMediaLite.ItemRecommendation
 				if (result < 0)
 					return 0;
 			}
-			return result;
+			return (float) result;
 		}
 
 		///
@@ -180,19 +189,19 @@ namespace MyMediaLite.ItemRecommendation
 				user = entry.Item1;
 				item = entry.Item2;
 
-				double prediction;
 				double psum = 0;
 				double target = 1;
+				double prediction;
 
 				for (int i = 0; i < num_nodes; i++)
 				{
 					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, 0);
 					prediction = recommender_nodes[i].Predict(user, item);
-					psum += boosting_learn_rate * prediction;
+					psum = (1 - shrinkage[i] * boosting_learn_rate) * psum + boosting_learn_rate * prediction;
 					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, target);
-					target -= boosting_learn_rate * psum;
+					target = (1 - shrinkage[i] * boosting_learn_rate) * target - boosting_learn_rate * psum;
+					shrinkage[i] = Math.Max(0, Math.Min(1, shrinkage[i] + target * psum / Math.Sqrt(Feedback.Count)));
 				}
-
 			}
 		}
 
