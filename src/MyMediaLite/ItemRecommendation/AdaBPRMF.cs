@@ -23,6 +23,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using MyMediaLite.Data;
 using MyMediaLite.DataType;
+using MathNet.Numerics.Distributions;
+
 
 namespace MyMediaLite.ItemRecommendation
 {
@@ -48,41 +50,47 @@ namespace MyMediaLite.ItemRecommendation
 	///     This algorithm supports (and encourages) incremental updates. 
 	///   </para>
 	/// </remarks>
-	public class SGBoostedISGD4b2 : IncrementalItemRecommender, IIterativeModel
+	public class AdaBPRMF : IncrementalItemRecommender, IIterativeModel
 	{
 		/// <summary>Regularization parameter</summary>
-		public double Regularization { get { return regularization; } set { regularization = value; } }
-		double regularization = 0.032;
-
-		/// <summary>Learn rate (update step size)</summary>
-		public float LearnRate { get { return learn_rate; } set { learn_rate = value; } }
-		float learn_rate = 0.31f;
-
-		/// <summary>Learn rate (update step size)</summary>
-		public float BoostingLearnRate { get { return boosting_learn_rate; } set { boosting_learn_rate = value; } }
-		float boosting_learn_rate = 0.31f;
-
-		/// <summary>Multiplicative learn rate decay</summary>
-		/// <remarks>Applied after each epoch (= pass over the whole dataset)</remarks>
-		public float Decay { get { return decay; } set { decay = value; } }
-		float decay = 1.0f;
+		public float Regularization { get { return regularization; } set { regularization = value; } }
+		float regularization = 0.032f;
 
 		/// <summary>Number of latent factors per user/item</summary>
 		public uint NumFactors { get { return (uint) num_factors; } set { num_factors = (int) value; } }
 		/// <summary>Number of latent factors per user/item</summary>
 		protected int num_factors = 10;
 
-
 		/// <summary>Number of iterations over the training data</summary>
 		public uint NumIter { get { return num_iter; } set { num_iter = value; } }
 		uint num_iter = 10;
 
-		/// <summary>Incremental iteration number</summary>
-		public uint IncrIter { get; set; }
+		/// <summary>Item bias terms</summary>
+		//protected float[] item_bias;
 
-		/// <summary>Incremental iteration number</summary>
-		public bool UseMulticore { get { return use_multicore; } set { use_multicore = value; } }
-		bool use_multicore = true;
+		/// <summary>Sample positive observations with (true) or without (false) replacement</summary>
+		public bool WithReplacement { get; set; }
+
+		/// <summary>Sample uniformly from users</summary>
+		public bool UniformUserSampling { get; set; } = true;
+
+		/// <summary>Regularization parameter for the bias term</summary>
+		public float BiasReg { get; set; }
+
+		/// <summary>Learning rate alpha</summary>
+		public float LearnRate { get; set; } = 0.05f;
+
+		/// <summary>Regularization parameter for user factors</summary>
+		public float RegU { get; set; } = 0.0025f;
+
+		/// <summary>Regularization parameter for positive item factors</summary>
+		public float RegI { get; set; } = 0.0025f;
+
+		/// <summary>Regularization parameter for negative item factors</summary>
+		public float RegJ { get; set; } = 0.00025f;
+
+		/// <summary>If set (default), update factors for negative sampled items during learning</summary>
+		public bool UpdateJ { get; set; } = true;
 
 		/// <summary>Number of bootstrap nodes.</summary>
 		public int NumNodes { get { return num_nodes; } set { num_nodes = value; } }
@@ -90,34 +98,34 @@ namespace MyMediaLite.ItemRecommendation
 
 		///
 		protected MyMediaLite.Random rand;
-		
+
 		/// 
-		protected List<ISGD> recommender_nodes;
+		protected List<BPRMFforAda> recommender_nodes;
 
 		///
-		public SGBoostedISGD4b2 ()
+		public AdaBPRMF ()
 		{
-			UpdateUsers = true;
-			UpdateItems = true;
+			RegU = regularization;
+			RegI = regularization;
 			rand = MyMediaLite.Random.GetInstance();
 		}
 
 		///
 		protected virtual void InitModel()
 		{
-			recommender_nodes = new List<ISGD>(num_nodes);
-			ISGD recommender_node;
+			recommender_nodes = new List<BPRMFforAda>(num_nodes);
+			BPRMFforAda recommender_node;
 			IPosOnlyFeedback train_data;
 			for (int i = 0; i < num_nodes; i++) {
-				recommender_node = new ISGD();
+				recommender_node = new BPRMFforAda();
 				recommender_node.UpdateUsers = true;
 				recommender_node.UpdateItems = true;
-				recommender_node.Regularization = Regularization;
+				recommender_node.RegU = RegU;
+				recommender_node.RegI = RegI;
+				recommender_node.RegJ = RegJ;
 				recommender_node.NumFactors = NumFactors;
 				recommender_node.LearnRate = LearnRate;
-				recommender_node.IncrIter = IncrIter;
 				recommender_node.NumIter = NumIter;
-				recommender_node.Decay = Decay;
 				train_data = new PosOnlyFeedback<SparseBooleanMatrix>();
 				for (int j = 0; j < Feedback.Count; j++)
 					train_data.Add(Feedback.Users[j], Feedback.Items[j]);
@@ -156,9 +164,11 @@ namespace MyMediaLite.ItemRecommendation
 			float result = 0;
 			float p = 0;
 
-			for (int i = 0; i < num_nodes; i++)
+			int i;
+			for (i = 0; i < num_nodes; i++)
 				if (!float.IsNaN(p = recommender_nodes[i].Predict(user_id, item_id)))
-					result += boosting_learn_rate * p;
+					result += p;
+			result /= i;
 
 			if (bound)
 			{
@@ -173,30 +183,64 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		public override void AddFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
-			int user, item;
+			int user, item, other_item, k;
+			double lambda, err;
 			base.AddFeedback(feedback);
+			int[] correct = Enumerable.Repeat(0,num_nodes).ToArray();
+			int[] wrong = Enumerable.Repeat(0,num_nodes).ToArray();
 			foreach (var entry in feedback)
 			{
 				user = entry.Item1;
 				item = entry.Item2;
 
-				double prediction;
-				double psum = 0;
-				double target = 1;
+				lambda = 1;
 
+				SampleOtherItem(user, item, out other_item);
 				for (int i = 0; i < num_nodes; i++)
 				{
-					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, 0);
-					prediction = recommender_nodes[i].Predict(user, item);
-					psum += boosting_learn_rate * prediction;
-					recommender_nodes[i].Retrain(new Tuple<int,int>[] {entry}, target);
-					target -= psum;
+					k = Poisson.Sample(lambda);
+					recommender_nodes[i].AddFeedbackRetrainN(new Tuple<int,int>[] {entry}, k);
+					if (Predict(user, item) >= Predict(user, other_item))
+					{	
+						correct[i]++;
+						err = wrong[i] / (correct[i] + wrong[i]);
+						lambda /= 2 * ( 1 - err );
+					} 
+					else
+					{
+						wrong[i]++;
+						err = wrong[i] / (correct[i] + wrong[i]);
+						lambda /= 2 * err;
+					}
 				}
 
 			}
 		}
 
-	
+		 
+		/// <summary>Sample another item, given the first one and the user</summary>
+		/// <param name="user_id">the user ID</param>
+		/// <param name="item_id">the ID of the given item</param>
+		/// <param name="other_item_id">the ID of the other item</param>
+		/// <returns>true if the given item was already seen by user u</returns>
+		protected virtual bool SampleOtherItem(int user_id, int item_id, out int other_item_id)
+		{
+			if (Feedback.Count >= (MaxUserID + 1) * (MaxItemID + 1)) 
+			{
+				other_item_id = item_id;
+				return true;
+			}
+
+			bool item_is_positive = Feedback.UserMatrix[user_id, item_id];
+
+			do
+				other_item_id = rand.Next(MaxItemID + 1);
+			while (Feedback.UserMatrix[user_id, other_item_id] == item_is_positive);
+
+			return item_is_positive;
+		}
+
+
 		///
 		public override void RemoveFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
@@ -205,70 +249,14 @@ namespace MyMediaLite.ItemRecommendation
 				rnode.RemoveFeedback(feedback);
 		}
 
-		///
-		public override System.Collections.Generic.IList<Tuple<int, float>> Recommend(
-			int user_id, int n = -1,
-			System.Collections.Generic.ICollection<int> ignore_items = null,
-			System.Collections.Generic.ICollection<int> candidate_items = null)
-		{
-			if (candidate_items == null)
-				candidate_items = Enumerable.Range(0, MaxItemID - 1).ToList();
-			if (ignore_items == null)
-				ignore_items = new int[0];
-
-			System.Collections.Generic.IList<Tuple<int, float>> ordered_items;
-
-			if (n == -1)
-			{
-				var scored_items = new List<Tuple<int, float>>();
-				foreach (int item_id in candidate_items)
-					if (!ignore_items.Contains(item_id))
-				{
-					float error = Math.Abs(1 - Predict(user_id, item_id));
-					if (error > float.MaxValue)
-						error = float.MaxValue;
-					scored_items.Add(Tuple.Create(item_id, error));
-				}
-
-				ordered_items = scored_items.OrderBy(x => x.Item2).ToArray();
-			}
-			else
-			{
-				var comparer = new DelegateComparer<Tuple<int, float>>( (a, b) => a.Item2.CompareTo(b.Item2) );
-				var heap = new IntervalHeap<Tuple<int, float>>(n, comparer);
-				float max_error = float.MaxValue;
-
-				foreach (int item_id in candidate_items)
-					if (!ignore_items.Contains(item_id))
-				{
-					float error = Math.Abs(1 - Predict(user_id, item_id));
-					if (error < max_error)
-					{
-						heap.Add(Tuple.Create(item_id, error));
-						if (heap.Count > n)
-						{
-							heap.DeleteMax();
-							max_error = heap.FindMax().Item2;
-						}
-					}
-				}
-
-				ordered_items = new Tuple<int, float>[heap.Count];
-				for (int i = 0; i < ordered_items.Count; i++)
-					ordered_items[i] = heap.DeleteMin();
-			}
-
-			return ordered_items;
-		}
-
 
 		///
 		public override string ToString()
 		{
 			return string.Format(
 				CultureInfo.InvariantCulture,
-				"SGBoostedISGD num_factors={0} regularization={1} learn_rate={2} num_iter={3} incr_iter={4} decay={5} num_nodes={6} boosting_learn_rate={7}",
-				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay, NumNodes, BoostingLearnRate);
+				"AdaBPRMF num_factors={0} regularization={1} learn_rate={2} num_iter={3} num_nodes={4}",
+				NumFactors, Regularization, LearnRate, NumIter, NumNodes);
 		}
 
 
