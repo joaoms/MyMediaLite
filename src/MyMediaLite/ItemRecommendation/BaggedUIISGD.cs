@@ -265,6 +265,9 @@ namespace MyMediaLite.ItemRecommendation
 				}
 			});
 
+			if(results.Count() == 0)
+				return new List<Tuple<int, float>>();
+
 			switch(aggregation_strategy) {
 			case "average":
 				return AvgResults(results);
