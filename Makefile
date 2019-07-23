@@ -3,7 +3,7 @@ EDITOR:=editor
 GENDARME_OPTIONS:=--quiet --severity critical+
 SRC_DIR:=src
 PREFIX:=/usr/local
-VERSION:=3.12
+VERSION:=3.13
 HOMEPAGE:=../mymedialite.net/public_html
 HOMEPAGE_SRC:=../mymedialite.net/src
 HOMEPAGE_INC:=../mymedialite.net/lib
@@ -58,11 +58,11 @@ MyMediaLite-${VERSION}.tar.gz:
 	mkdir MyMediaLite-${VERSION}/lib/mymedialite
 	cp ${ITEM_REC_DIR}/bin/Debug/*.exe MyMediaLite-${VERSION}/lib/mymedialite
 	cp ${ITEM_REC_DIR}/bin/Debug/*.dll MyMediaLite-${VERSION}/lib/mymedialite
-	cp ${ITEM_REC_DIR}/bin/Debug/*.mdb MyMediaLite-${VERSION}/lib/mymedialite
+	cp ${ITEM_REC_DIR}/bin/Debug/*.pdb MyMediaLite-${VERSION}/lib/mymedialite
 	cp ${RATING_PRED_DIR}/bin/Debug/*.exe MyMediaLite-${VERSION}/lib/mymedialite
-	cp ${RATING_PRED_DIR}/bin/Debug/*.exe.mdb MyMediaLite-${VERSION}/lib/mymedialite
+	cp ${RATING_PRED_DIR}/bin/Debug/*.exe.pdb MyMediaLite-${VERSION}/lib/mymedialite
 	cp ${RATING_RANK_DIR}/bin/Debug/*.exe MyMediaLite-${VERSION}/lib/mymedialite
-	cp ${RATING_RANK_DIR}/bin/Debug/*.exe.mdb MyMediaLite-${VERSION}/lib/mymedialite
+	cp ${RATING_RANK_DIR}/bin/Debug/*.exe.pdb MyMediaLite-${VERSION}/lib/mymedialite
 	tar -cvzf MyMediaLite-${VERSION}.tar.gz MyMediaLite-${VERSION}
 	rm -rf MyMediaLite-${VERSION}
 
@@ -113,6 +113,7 @@ data:
 
 data/ml-100k/u.data: data
 	scripts/download_ml-100k.sh
+	touch $@
 
 download-movielens: data/ml-100k/u.data
 	scripts/download_movielens.sh
