@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>MyMediaLite</RootNamespace>
     <AssemblyName>MyMediaLite</AssemblyName>
-    <ReleaseVersion>3.13</ReleaseVersion>
+    <ReleaseVersion>3.12</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -234,6 +234,11 @@
     <Compile Include="ItemRecommendation\ISGD.cs" />
     <Compile Include="ItemRecommendation\RAISGD.cs" />
     <Compile Include="ItemRecommendation\BigramRules.cs" />
+    <Compile Include="ItemRecommendation\MFLegacy.cs" />
+    <Compile Include="ItemRecommendation\BaggedUIISGD.cs" />
+    <Compile Include="ItemRecommendation\BoostedISGDHu.cs" />
+    <Compile Include="ItemRecommendation\BoostedISGDBeyShrink.cs" />
+    <Compile Include="ItemRecommendation\BoostedISGDBey.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)/Microsoft.CSharp.targets" />
   <Import Project="MyMediaLite.targets" />

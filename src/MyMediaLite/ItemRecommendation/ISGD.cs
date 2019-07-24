@@ -52,7 +52,7 @@ namespace MyMediaLite.ItemRecommendation
 	///     This algorithm supports (and encourages) incremental updates. 
 	///   </para>
 	/// </remarks>
-	public class ISGD : MF
+	public class ISGD : MFLegacy
 	{
 		/// <summary>Regularization parameter</summary>
 		public double Regularization { get { return regularization; } set { regularization = value; } }
@@ -68,7 +68,7 @@ namespace MyMediaLite.ItemRecommendation
 		float decay = 1.0f;
 
 		/// <summary>Incremental iteration number (if unset assumes the value for batch)</summary>
-		public uint IncrIter { get; set; }
+		public uint IncrIter { get; set; } = 0;
 
 		/// <summary>The learn rate used for the current epoch</summary>
 		protected internal float current_learnrate;
@@ -88,7 +88,7 @@ namespace MyMediaLite.ItemRecommendation
 		{
 			base.InitModel();
 			current_learnrate = LearnRate;
-			IncrIter = NumIter;
+			if (IncrIter == 0) IncrIter = NumIter;
 		}
 
 		///
@@ -102,14 +102,12 @@ namespace MyMediaLite.ItemRecommendation
 		/// <param name="update_item">true if item factors to be updated</param>
 		protected virtual void Iterate(bool update_user, bool update_item)
 		{
-			var shuffled_idx = Enumerable.Range(0, Feedback.Count).ToArray();
-			shuffled_idx.Shuffle();
 			for (int index = 0; index < Feedback.Count; index++)
 			{
-				int u = Feedback.Users[shuffled_idx[index]];
-				int i = Feedback.Items[shuffled_idx[index]];
+				int u = Feedback.Users[index];
+				int i = Feedback.Items[index];
 
-				UpdateFactors(u, i, update_user, update_item);
+				UpdateFactors(u, i, update_user, update_item, 1);
 			}
 
 			UpdateLearnRate();
@@ -150,55 +148,43 @@ namespace MyMediaLite.ItemRecommendation
 		///
 		public override void AddFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
-			AddFeedback(feedback,true);
+			AddFeedbackRetrainN(feedback, 1, 1);
 		}
 
 		/// 
-		public virtual void AddFeedback(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, bool retrain)
-		{
-			base.AddFeedback(feedback);
-			if (retrain) Retrain(feedback);
-		}
-
-		/// 
-		public virtual void AddFeedbackRetrainN(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, int n_retrain)
+		public virtual void AddFeedbackRetrainN(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, int n_retrain, double target = 1)
 		{
 			base.AddFeedback(feedback);
 			for(int i = 0; i < n_retrain; i++)
-				Retrain(feedback);
+				Retrain(feedback, target);
+		}
+
+		/// 
+		public virtual void AddFeedbackRetrainW(System.Collections.Generic.ICollection<Tuple<int,int>> feedback, double weight, double target = 1)
+		{
+			base.AddFeedback(feedback);
+			RetrainW(feedback, weight, target);
 		}
 
 		///
 		public override void RemoveFeedback(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
 		{
 			base.RemoveFeedback(feedback);
-			Retrain(feedback);
+			Retrain(feedback, 1);
 		}
 
 		/// 
-		protected virtual void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback)
+		public virtual void Retrain(System.Collections.Generic.ICollection<Tuple<int, int>> feedback, double target)
+		{
+			RetrainW(feedback, 1, target);
+		}
+
+		/// 
+		protected virtual void RetrainW(System.Collections.Generic.ICollection<Tuple<int, int>> feedback, double weight, double target)
 		{
 			for (int i = 0; i < IncrIter; i++)
 				foreach (var entry in feedback)
-					UpdateFactors(entry.Item1, entry.Item2, UpdateUsers, UpdateItems);
-		}
-
-		/// 
-		protected override void RetrainUser(int user_id)
-		{
-			user_factors.RowInitNormal(user_id, InitMean, InitStdDev);
-			foreach (int item in Feedback.UserMatrix[user_id])
-				for (int i = 0; i < IncrIter; i++)
-					UpdateFactors(user_id, item, true, false);
-		}
-
-		///
-		protected override void RetrainItem(int item_id)
-		{
-			item_factors.RowInitNormal(item_id, InitMean, InitStdDev);
-			foreach (int user in Feedback.ItemMatrix[item_id])
-				for (int i = 0; i < IncrIter; i++)
-					UpdateFactors(user, item_id, false, true);
+					UpdateFactorsW(entry.Item1, entry.Item2, UpdateUsers, UpdateItems, weight, target);
 		}
 
 		///
@@ -238,16 +224,38 @@ namespace MyMediaLite.ItemRecommendation
 			item_factors.SetRowToOneValue(item_id, 0);
 		}
 
+		/*
+		/// 
+		protected override void RetrainUser(int user_id)
+		{
+			user_factors.RowInitNormal(user_id, InitMean, InitStdDev);
+			foreach (int item in Feedback.UserMatrix[user_id])
+				for (int i = 0; i < IncrIter; i++)
+					UpdateFactors(user_id, item, true, false);
+		}
+
+		///
+		protected override void RetrainItem(int item_id)
+		{
+			item_factors.RowInitNormal(item_id, InitMean, InitStdDev);
+			foreach (int user in Feedback.ItemMatrix[item_id])
+				for (int i = 0; i < IncrIter; i++)
+					UpdateFactors(user, item_id, false, true);
+		}
+		*/
+
 		/// <summary>
-		/// Performs factor updates for a user and item pair.
+		/// Performs weighted factor updates for a user and item pair.
 		/// </summary>
 		/// <param name="user_id">User_id.</param>
 		/// <param name="item_id">Item_id.</param>
 		/// <param name="update_user">true to update user factors.</param>
 		/// <param name="update_item">true to update item factors.</param> 
-		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item)
+		/// <param name="weight">Weight of the training example</param>
+		/// <param name="target">Target value</param>
+		protected virtual void UpdateFactorsW(int user_id, int item_id, bool update_user, bool update_item, double weight, double target)
 		{
-			float err = 1 - Predict(user_id, item_id, false);
+			double err = weight * (target - Predict(user_id, item_id, false));
 
 			// adjust factors
 			for (int f = 0; f < NumFactors; f++)
@@ -270,6 +278,18 @@ namespace MyMediaLite.ItemRecommendation
 
 		}
 
+		/// <summary>
+		/// Performs factor updates for a user and item pair.
+		/// </summary>
+		/// <param name="user_id">User_id.</param>
+		/// <param name="item_id">Item_id.</param>
+		/// <param name="update_user">true to update user factors.</param>
+		/// <param name="update_item">true to update item factors.</param> 
+		/// <param name="target">Target value.</param> 
+		protected virtual void UpdateFactors(int user_id, int item_id, bool update_user, bool update_item, double target)
+		{
+			UpdateFactorsW(user_id, item_id, update_user, update_item, 1, target);
+		}
 
 		///
 		public override System.Collections.Generic.IList<Tuple<int, float>> Recommend(
@@ -289,12 +309,12 @@ namespace MyMediaLite.ItemRecommendation
 				var scored_items = new List<Tuple<int, float>>();
 				foreach (int item_id in candidate_items)
 					if (!ignore_items.Contains(item_id))
-					{
-						float error = Math.Abs(1 - Predict(user_id, item_id));
-						if (error > float.MaxValue)
-							error = float.MaxValue;
-						scored_items.Add(Tuple.Create(item_id, error));
-					}
+				{
+					float error = Math.Abs(1 - Predict(user_id, item_id));
+					if (error > float.MaxValue)
+						error = float.MaxValue;
+					scored_items.Add(Tuple.Create(item_id, error));
+				}
 
 				ordered_items = scored_items.OrderBy(x => x.Item2).ToArray();
 			}
@@ -306,18 +326,18 @@ namespace MyMediaLite.ItemRecommendation
 
 				foreach (int item_id in candidate_items)
 					if (!ignore_items.Contains(item_id))
+				{
+					float error = Math.Abs(1 - Predict(user_id, item_id));
+					if (error < max_error)
 					{
-						float error = Math.Abs(1 - Predict(user_id, item_id));
-						if (error < max_error)
+						heap.Add(Tuple.Create(item_id, error));
+						if (heap.Count > n)
 						{
-							heap.Add(Tuple.Create(item_id, error));
-							if (heap.Count > n)
-							{
-								heap.DeleteMax();
-								max_error = heap.FindMax().Item2;
-							}
+							heap.DeleteMax();
+							max_error = heap.FindMax().Item2;
 						}
 					}
+				}
 
 				ordered_items = new Tuple<int, float>[heap.Count];
 				for (int i = 0; i < ordered_items.Count; i++)
@@ -337,7 +357,11 @@ namespace MyMediaLite.ItemRecommendation
 				NumFactors, Regularization, LearnRate, NumIter, IncrIter, Decay);
 		}
 
-
+		/// 
+		public override float ComputeObjective ()
+		{
+			return -1;
+		}
 	}
 }
 
