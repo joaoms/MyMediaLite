@@ -10,7 +10,7 @@
     <RootNamespace>KFoldPrequentialEval</RootNamespace>
     <AssemblyName>KFoldPrequentialEval</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <ReleaseVersion>3.12</ReleaseVersion>
+    <ReleaseVersion>3.13-liaad</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
