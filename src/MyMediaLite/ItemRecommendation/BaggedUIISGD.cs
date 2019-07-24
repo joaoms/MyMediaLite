@@ -26,7 +26,7 @@ using MathNet.Numerics.Distributions;
 namespace MyMediaLite.ItemRecommendation
 {
 	/// <summary>
-	///   User-based bagging with Incremental Stochastic Gradient Descent (BaggedUserISGD) algorithm for item prediction.
+	///   User- and Item-based bagging with Incremental Stochastic Gradient Descent (BaggedUserISGD) algorithm for item prediction.
 	/// </summary>
 	/// <remarks>
 	///   <para>
@@ -34,6 +34,8 @@ namespace MyMediaLite.ItemRecommendation
 	/// 	<list type="bullet">
 	///       <item><description>
 	///         João Vinagre, Alípio Mário Jorge, João Gama:
+	/// 		Online bagging for recommender systems
+	/// 		Expert Systems, 2018
 	///       </description></item>
 	///     </list>
 	///   </para>
