@@ -52,11 +52,12 @@ class OnlineEvaluator
 	StreamWriter output_scores;
 	StreamWriter output_times;
 	int output_interval = 1000;
+	int eval_interval = 1;
 
-	public OnlineEvaluator(string[] args)
+	public OnlineEvaluator (string[] args)
 	{
 		if(args.Length < 4) {
-			Console.WriteLine("Usage: online_evaluator <recommender> <\"recommender params\"> <training_file> <test_file> [<random_seed> [<n_recs> [<repeated_items> [<output_interval> [<attributes>]]]]]");
+			Console.WriteLine("Usage: online_evaluator <recommender> <\"recommender params\"> <training_file> <test_file> [<random_seed> [<n_recs> [<repeated_items> [<eval_iterval> [<output_interval> [<attributes>]]]]]]");
 			Environment.Exit(1);
 		}
 		
@@ -77,20 +78,22 @@ class OnlineEvaluator
 		
 		if(args.Length > 5) n_recs = Int32.Parse(args[5]);
 
-		if(args.Length > 6) repeated_items = Boolean.Parse(args[6]);
+		if (args.Length > 6) repeated_items = Boolean.Parse(args [6]);
 
-		if(args.Length > 7) output_interval = Int32.Parse(args[7]);
+		if (args.Length > 7) eval_interval = Int32.Parse(args [7]);
 
-		if(args.Length > 8)
+		if (args.Length > 8) output_interval = Int32.Parse(args[8]);
+
+		if (args.Length > 9)
 		{
 			if(recommender is IUserAttributeAwareRecommender) 
 			{
-				user_attributes = AttributeData.Read(args[8], user_mapping);
+				user_attributes = AttributeData.Read(args[9], user_mapping);
 				((IUserAttributeAwareRecommender)recommender).UserAttributes = user_attributes;
 			}
 			else if(recommender is IItemAttributeAwareRecommender)
 			{
-				item_attributes = AttributeData.Read(args[8], item_mapping);
+				item_attributes = AttributeData.Read(args[9], item_mapping);
 				((IItemAttributeAwareRecommender)recommender).ItemAttributes = item_attributes;
 			}
 		}
@@ -144,54 +147,57 @@ class OnlineEvaluator
 		{
 			tu = test_data.Users[i];
 			ti = test_data.Items[i];
-			//Console.WriteLine("\n" + tu + " " + ti);
-			output_recs_buffer[output_recs_buffer_count] = "\n" + tu + " " + ti + "\n";
-			if (train_data.AllUsers.Contains(tu))
-			{
-				recommend = true;
-				if(!repeated_items)
-					if(train_data.UserMatrix[tu].Contains(ti))
-						recommend = false;
-				if(recommend)
+			if (i % eval_interval == 0)
+			{ 
+				//Console.WriteLine("\n" + tu + " " + ti);
+				output_recs_buffer[output_recs_buffer_count] = "\n" + tu + " " + ti + "\n";
+				if (train_data.AllUsers.Contains(tu))
 				{
-					if(repeated_items)
-						ignore_items = new HashSet<int>();
-					else
-						ignore_items = new HashSet<int>(train_data.UserMatrix[tu]);
-					rec_start = DateTime.Now;
-					rec_list_score = recommender.Recommend(tu, n_recs, ignore_items, candidate_items);
-					rec_end = DateTime.Now;
-					rec_list = new List<int>();
-					foreach (var rec in rec_list_score)
+					recommend = true;
+					if(!repeated_items)
+						if(train_data.UserMatrix[tu].Contains(ti))
+							recommend = false;
+					if(recommend)
 					{
-						output_recs_buffer[output_recs_buffer_count] += rec.Item1 + "\t" + rec.Item2 + "\n";
-						rec_list.Add(rec.Item1);
+						if(repeated_items)
+							ignore_items = new HashSet<int>();
+						else
+							ignore_items = new HashSet<int>(train_data.UserMatrix[tu]);
+						rec_start = DateTime.Now;
+						rec_list_score = recommender.Recommend(tu, n_recs, ignore_items, candidate_items);
+						rec_end = DateTime.Now;
+						rec_list = new List<int>();
+						foreach (var rec in rec_list_score)
+						{
+							output_recs_buffer[output_recs_buffer_count] += rec.Item1 + "\t" + rec.Item2 + "\n";
+							rec_list.Add(rec.Item1);
+						}
+						output_recs_buffer_count++;
+
+						til = new List<int>(){ ti };
+
+						recall1 = MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 1);
+						recall5 = MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 5);
+						recall10 = MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 10);
+						recall20 = MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 20);
+						map = MyMediaLite.Eval.Measures.PrecisionAndRecall.AP(rec_list, til);
+						num_dropped = candidate_items.Count - ignore_items.Count - n_recs;
+						auc = MyMediaLite.Eval.Measures.AUC.Compute(rec_list, til, num_dropped);
+						ndcg = MyMediaLite.Eval.Measures.NDCG.Compute(rec_list, til);
+						rec_time = (rec_end - rec_start).TotalMilliseconds;
+						measures["recall@1"].Add(recall1);
+						measures["recall@5"].Add(recall5);
+						measures["recall@10"].Add(recall10);
+						measures["recall@20"].Add(recall20);
+						measures["MAP"].Add(map);
+						measures["AUC"].Add(auc);
+						measures["NDCG"].Add(ndcg);
+						measures["rec_time"].Add(rec_time);
+						output_measure_buffer[output_measure_buffer_count++] = i + "\t" + user_mapping.ToOriginalID(tu) + "\t" + 
+							item_mapping.ToOriginalID(ti) + "\t" + recall1 + "\t" +
+							recall5 + "\t" + recall10 + "\t" + recall20 + "\t" + map + "\t" +
+							auc + "\t" + ndcg + "\t" + rec_time;
 					}
-					output_recs_buffer_count++;
-
-					til = new List<int>(){ ti };
-
-					recall1 = MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 1);
-					recall5 = MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 5);
-					recall10 = MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 10);
-					recall20 = MyMediaLite.Eval.Measures.PrecisionAndRecall.RecallAt(rec_list, til, 20);
-					map = MyMediaLite.Eval.Measures.PrecisionAndRecall.AP(rec_list, til);
-					num_dropped = candidate_items.Count - ignore_items.Count - n_recs;
-					auc = MyMediaLite.Eval.Measures.AUC.Compute(rec_list, til, num_dropped);
-					ndcg = MyMediaLite.Eval.Measures.NDCG.Compute(rec_list, til);
-					rec_time = (rec_end - rec_start).TotalMilliseconds;
-					measures["recall@1"].Add(recall1);
-					measures["recall@5"].Add(recall5);
-					measures["recall@10"].Add(recall10);
-					measures["recall@20"].Add(recall20);
-					measures["MAP"].Add(map);
-					measures["AUC"].Add(auc);
-					measures["NDCG"].Add(ndcg);
-					measures["rec_time"].Add(rec_time);
-					output_measure_buffer[output_measure_buffer_count++] = i + "\t" + user_mapping.ToOriginalID(tu) + "\t" + 
-						item_mapping.ToOriginalID(ti) + "\t" + recall1 + "\t" +
-						recall5 + "\t" + recall10 + "\t" + recall20 + "\t" + map + "\t" +
-						auc + "\t" + ndcg + "\t" + rec_time;
 				}
 			}
 			// update recommender

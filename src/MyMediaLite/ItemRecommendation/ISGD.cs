@@ -290,19 +290,29 @@ namespace MyMediaLite.ItemRecommendation
 		}
 
 		///
-		public override System.Collections.Generic.IList<Tuple<int, float>> Recommend(
+		public override System.Collections.Generic.IList<Tuple<int, float>> Recommend (
 			int user_id, int n = -1,
 			System.Collections.Generic.ICollection<int> ignore_items = null,
 			System.Collections.Generic.ICollection<int> candidate_items = null)
+		{
+			return Recommend (user_id, n, ignore_items, candidate_items);
+		}
+
+		///
+		public System.Collections.Generic.IList<Tuple<int, float>> Recommend(
+			int user_id, int n = -1,
+			System.Collections.Generic.ICollection<int> ignore_items = null,
+			System.Collections.Generic.ICollection<int> candidate_items = null,
+			bool sort = true)
 		{
 			if (candidate_items == null)
 				candidate_items = Enumerable.Range(0, MaxItemID - 1).ToList();
 			if (ignore_items == null)
 				ignore_items = new int[0];
 
-			System.Collections.Generic.IList<Tuple<int, float>> ordered_items;
+			System.Collections.Generic.IList<Tuple<int, float>> rec_list;
 
-			if (n == -1)
+			if (n == -1 || !sort)
 			{
 				var scored_items = new List<Tuple<int, float>>();
 				foreach (int item_id in candidate_items)
@@ -314,7 +324,10 @@ namespace MyMediaLite.ItemRecommendation
 						scored_items.Add(Tuple.Create(item_id, error));
 					}
 
-				ordered_items = scored_items.OrderBy(x => x.Item2).ToArray();
+				if (sort)
+					rec_list = scored_items.OrderBy (x => x.Item2).ToArray ();
+				else
+					rec_list = scored_items.ToArray ();
 			}
 			else
 			{
@@ -337,12 +350,12 @@ namespace MyMediaLite.ItemRecommendation
 						}
 					}
 
-				ordered_items = new Tuple<int, float>[heap.Count];
-				for (int i = 0; i < ordered_items.Count; i++)
-					ordered_items[i] = heap.DeleteMin();
+				rec_list = new Tuple<int, float>[heap.Count];
+				for (int i = 0; i < rec_list.Count; i++)
+					rec_list[i] = heap.DeleteMin();
 			}
 
-			return ordered_items;
+			return rec_list;
 		}
 
 

@@ -258,7 +258,7 @@ namespace MyMediaLite.ItemRecommendation
 				if (user_k[i][user_id] > 0)
 				{
 					var rnode = recommender_nodes[i];
-					var res = rnode.Recommend(user_id, n, ignore_items, candidate_items);
+					var res = rnode.Recommend(user_id, n, ignore_items, candidate_items, false);
 					if(res.Count > 0)
 						lock(resultsLock) 
 							results.Add(res);
